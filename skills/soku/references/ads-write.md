@@ -19,9 +19,24 @@ delivery-changing write still returns a pending review for a human to approve.
 
 ```bash
 soku ads meta account pages --account-id <meta_account_id>
+soku ads meta account instagram --account-id <meta_account_id>
 soku ads meta campaign get --account-id <meta_account_id> --campaign-id <campaign_id>
 soku ads meta ad get --account-id <meta_account_id> --ad-id <ad_id>
 ```
+
+### Instagram identity (required for IG placements)
+
+Before creating any creative that runs on Instagram, resolve the
+**ad-account-connected** IG identity. The public IG `@handle` or the Facebook
+Page id is rejected by the ads API — you must use the id returned by:
+
+```bash
+soku ads meta account instagram --account-id <meta_account_id>
+```
+
+Pass that `data[].id` as `instagram_user_id` (e.g. `-p instagram_user_id=<id>`)
+when building the creative. An empty result means no IG account is connected to
+the ad account — connect it in Business Manager first.
 
 ## Meta Assets
 

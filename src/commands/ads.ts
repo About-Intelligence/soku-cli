@@ -341,6 +341,22 @@ function registerMetaAccountCommands(meta: Command): void {
         account_id: opts.accountId,
       })
     })
+
+  account
+    .command('instagram')
+    .description(
+      'List Instagram accounts connected to a Meta ad account (use the returned id ' +
+        'as instagram_user_id; a public @handle or Page id is rejected by the ads API)',
+    )
+    .requiredOption('--account-id <id>', 'Meta ad account id')
+    .option(...PARAM_OPT, collectParam, {})
+    .action(async (opts: { accountId: string; param: Record<string, unknown> }) => {
+      await callTypedAction('ads', 'get_connected_instagram_accounts', {
+        ...opts.param,
+        platform: 'meta',
+        account_id: opts.accountId,
+      })
+    })
 }
 
 function registerMetaCampaignCommands(meta: Command): void {

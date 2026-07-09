@@ -1564,7 +1564,7 @@
           "name": "instagram_user_id",
           "type": "string",
           "required": false,
-          "description": "Optional Instagram user id for cross-posting."
+          "description": "Optional Instagram user id for cross-posting. Must be the ad-account-connected IG identity from action:ads/get_connected_instagram_accounts — a public IG @handle or the Facebook Page id is rejected by the ads API."
         },
         {
           "name": "instagram_actor_id",
@@ -3581,7 +3581,7 @@
           "name": "instagram_user_id",
           "type": "string",
           "required": false,
-          "description": "Optional Instagram user id for the creative object_story_spec.",
+          "description": "Optional Instagram user id for the creative object_story_spec. Must be the ad-account-connected IG identity from action:ads/get_connected_instagram_accounts — a public IG @handle or the Facebook Page id is rejected by the ads API.",
           "example": "17841400000000000"
         },
         {
@@ -4024,7 +4024,7 @@
         "action:ads/bulk_create_adsets",
         "action:ads/update_adset"
       ],
-      "long_description": "Primary use:\nRealtime single-ad-set verification after create_adset, bulk_create_adsets, or update_adset. Use this when the workflow already has an adset_id and needs the current platform state or the extended detail fields (attribution_spec, promoted_object, pacing_type, budget_remaining) that list_adsets does not return.\n\nUse when:\n- A write just returned a Meta adset_id and the agent needs to verify status.\n- The user asks for one ad set's current targeting, budget, bid strategy, promoted object, or learning stage without paging through list_adsets.\n\nDo not use when:\n- The adset_id is unknown. Use action:ads/list_adsets first.\n- The platform is Google. Google uses ad groups; use action:ads/gaql_search.\n- The user needs cached analytics. Use action:ads/query_single_dimension with dimension=adgroup.\n\nWorkflow:\n1. Obtain account_id from list_ad_accounts and adset_id from create_adset, bulk_create_adsets, or list_adsets.\n2. Call this action directly; no HITL review is required.\n3. Read raw.status, raw.budget_remaining, and raw.learning_stage_info to confirm delivery state before the next write.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API ad set object with id, name, campaign_id, status, daily_budget, lifetime_budget, targeting, bid_amount, bid_strategy, optimization_goal, billing_event, start_time, end_time, created_time, updated_time, attribution_spec, destination_type, promoted_object, pacing_type, budget_remaining, and learning_stage_info.\n- daily_budget, lifetime_budget, and budget_remaining are strings in cents; targeting is a nested object.\n\nSide effects:\n- None. Read-only Graph API call.",
+      "long_description": "Primary use:\nRealtime single-ad-set verification after create_adset, bulk_create_adsets, or update_adset. Use this when the workflow already has an adset_id and needs the current platform state or the extended detail fields (attribution_spec, promoted_object, pacing_type, budget_remaining) that list_adsets does not return.\n\nUse when:\n- A write just returned a Meta adset_id and the agent needs to verify status.\n- The user asks for one ad set's current targeting, budget, bid strategy, promoted object, or learning stage without paging through list_adsets.\n\nDo not use when:\n- The adset_id is unknown. Use action:ads/list_adsets first.\n- The platform is Google. Google uses ad groups; use action:ads/gaql_search.\n- The user needs cached analytics. Use action:ads/query_single_dimension with dimension=adgroup.\n\nWorkflow:\n1. Obtain account_id from list_ad_accounts and adset_id from create_adset, bulk_create_adsets, or list_adsets.\n2. Call this action directly; no HITL review is required.\n3. Read raw.status, raw.budget_remaining, and raw.learning_stage_info to confirm delivery state before the next write.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API ad set object with id, name, campaign_id, status, daily_budget, lifetime_budget, targeting, bid_amount, bid_strategy, optimization_goal, billing_event, start_time, end_time, created_time, updated_time, attribution_spec, destination_type, promoted_object, pacing_type, budget_remaining, and learning_stage_info.\n- daily_budget, lifetime_budget, and budget_remaining are strings in cents; targeting is a nested object.\n- Spend caps: an ad set has NO spend_cap field — spend_cap is a campaign/account concept. Its absence here does NOT mean 'no spend cap'; it was never a field on this resource. To confirm a spend cap, read action:ads/get_campaign (returns spend_cap) or action:ads/get_account_info. More generally, a field missing from raw means 'not present on this resource', never a confirmed value; and this action ignores any custom fields param (you cannot widen the returned field set here).\n\nSide effects:\n- None. Read-only Graph API call.",
       "input_params": [
         {
           "name": "platform",
@@ -4262,6 +4262,54 @@
         }
       ],
       "output_shape": "{\"success\": true, \"platform\": \"google|meta\", \"raw\": {\"changes\": [{\"changeEvent\": {\"changeDateTime\": \"ISO\", \"userEmail\": \"...\", \"changedFields\": \"field1,field2\"}}, {\"event_time\": \"...\", \"translated_event_type\": \"...\", \"actor_name\": \"...\", \"extra_data\": \"...\"}]}}"
+    },
+    {
+      "id": "action:ads/get_connected_instagram_accounts",
+      "namespace": "ads",
+      "action": "get_connected_instagram_accounts",
+      "description": "Read Instagram accounts connected to this Meta ad account; returns data[] with the IG id and username to use as instagram_user_id in creatives.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/create_ad_creative",
+        "action:ads/deploy_image_ads_batch",
+        "action:ads/get_account_pages"
+      ],
+      "long_description": "Primary use:\nResolve the ad-account-connected Instagram identity BEFORE building any creative that runs on Instagram placements. The ads API rejects a public IG handle or Page id as instagram_user_id — it requires the IG identity connected to the ad account, which this action returns.\n\nUse when:\n- You are about to call action:ads/create_ad_creative or deploy_image_ads_batch with an Instagram placement and need a valid instagram_user_id.\n- A creative or ad create failed because the supplied Instagram id was rejected (e.g. a public @handle or the Page id).\n\nDo not use when:\n- The platform is Google.\n- You only need Facebook Pages. Use action:ads/get_account_pages.\n\nWorkflow:\n1. Call this action with platform=meta, account_id.\n2. Pick the returned data[].id and pass it as instagram_user_id to create_ad_creative / deploy_image_ads_batch.\n3. If data is empty, no IG account is connected to this ad account — connect it in Business Manager first (a public handle will not work).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[].id is the ad-account-connected IG identity; use it directly as instagram_user_id (creatives currently map it to that field). If a creative still rejects it, fall back to the Page's page_backed_instagram_accounts.\n\nSide effects:\n- None. Read-only Graph API call.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "meta (Meta-only action).",
+          "example": "meta"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Meta ad account id from ads.list_ad_accounts.rows[].account_id.",
+          "example": "1234567890"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Meta only: page size for the connected IG accounts list."
+        },
+        {
+          "name": "after",
+          "type": "string",
+          "required": false,
+          "description": "Meta only: pagination cursor from a prior response's paging.cursors.after; pass it back to fetch the next page.",
+          "example": "QVFIU..."
+        }
+      ],
+      "output_shape": "{\"data\": [{\"id\": \"17841400000000000\", \"username\": \"arthaus.works\"}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}"
     },
     {
       "id": "action:ads/get_dataset_quality",
@@ -5338,7 +5386,7 @@
         "action:ads/remove_adset",
         "action:ads/query_single_dimension"
       ],
-      "long_description": "Primary use:\nLive ad set inventory under a Meta account or campaign. Use this to discover adset_id values before ad, targeting, or budget writes.\n\nUse when:\n- You need an adset_id for action:ads/create_ad, update_adset, or remove_adset.\n- The user asks what ad sets exist under a Meta campaign.\n\nDo not use when:\n- The platform is Google. Google uses ad groups; use action:ads/gaql_search.\n- The user needs cached analytics. Use action:ads/query_single_dimension with dimension=adgroup.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Optionally call action:ads/list_campaigns to pick a campaign_id filter.\n3. Call this action with platform=meta, account_id, optional campaign_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API paged response; daily_budget and lifetime_budget are strings in cents; targeting is a nested object.\n- Default limit=25; use 'after' for pagination.",
+      "long_description": "Primary use:\nLive ad set inventory under a Meta account or campaign. Use this to discover adset_id values before ad, targeting, or budget writes.\n\nUse when:\n- You need an adset_id for action:ads/create_ad, update_adset, or remove_adset.\n- The user asks what ad sets exist under a Meta campaign.\n\nDo not use when:\n- The platform is Google. Google uses ad groups; use action:ads/gaql_search.\n- The user needs cached analytics. Use action:ads/query_single_dimension with dimension=adgroup.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Optionally call action:ads/list_campaigns to pick a campaign_id filter.\n3. Call this action with platform=meta, account_id, optional campaign_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API paged response; daily_budget and lifetime_budget are strings in cents; targeting is a nested object.\n- Ad sets have no spend_cap field (spend_cap is campaign/account-level); a missing field is never a confirmed value — read get_campaign or get_account_info to confirm a spend cap.\n- Default limit=25; use 'after' for pagination.",
       "input_params": [
         {
           "name": "platform",
@@ -5805,7 +5853,7 @@
         "action:ads/list_conversion_groups",
         "action:ads/gaql_search"
       ],
-      "long_description": "Primary use:\nSchema discovery for cached ads analytics. This is the primary way to learn which business-layer dimensions, metrics, filters, scopes, and Parquet-backed views can be queried.\n\nUse when:\n- Before the first query_single_dimension or query_multi_dimension call in a workflow.\n- You need valid dimension slugs for a granted ads platform. ChatGPT Ads currently supports account, date, campaign, and landing_page only.\n- You need filterable_fields, parent_dimensions, scope_caveat, or cg fan-out support.\n- You need to know which raw and derived metrics are available.\n\nDo not use when:\n- You need Google Ads native fields not listed here. Use get_resource_metadata then gaql_search.\n- You need conversion group slugs for cg.{slug}.* columns. Use list_conversion_groups.\n\nWorkflow:\n1. Call list_ad_accounts if account_id is unknown.\n2. Call this action with platform when possible. If platform is omitted and multiple ads platforms are granted, read by_platform[platform].\n3. Use query_single_dimension for one dimension or mapping-aware metrics.\n4. Use query_multi_dimension for valid multi-dimensional raw breakdowns.\n\nOutput semantics:\n- dimensions[].name is the dimension slug to pass as dimension or dimensions[].\n- dimensions[].filterable_fields are the only supported filter keys for that dimension.\n- dimensions[].supports_cg_fanout tells whether cg.{slug}.* columns can be requested.\n- metrics[].slug is the metric name to read from query output columns.\n- When multiple ads platforms are granted and platform is omitted, the response uses by_platform instead of a misleading cross-platform dimension list.",
+      "long_description": "Primary use:\nSchema discovery for cached ads analytics. This is the primary way to learn which business-layer dimensions, metrics, filters, scopes, and Parquet-backed views can be queried.\n\nUse when:\n- Before the first query_single_dimension or query_multi_dimension call in a workflow.\n- You need valid dimension slugs for a granted ads platform. ChatGPT Ads currently supports account, date, campaign, landing_page, and the system-managed UTM dimensions (utm_source, utm_medium, utm_campaign, utm_content) only.\n- UTM dimensions are derived from campaign metadata (Gravity utm_params, Google final_url_suffix, Meta creative url_tags) and are available on google, meta, and chatgpt_ads. Campaigns without a value fall into the '(not set)' bucket, so UTM totals match the campaign scope. Value filters and campaign filters are not supported on UTM scope yet.\n- You need filterable_fields, parent_dimensions, scope_caveat, or cg fan-out support.\n- You need to know which raw and derived metrics are available.\n\nDo not use when:\n- You need Google Ads native fields not listed here. Use get_resource_metadata then gaql_search.\n- You need conversion group slugs for cg.{slug}.* columns. Use list_conversion_groups.\n\nWorkflow:\n1. Call list_ad_accounts if account_id is unknown.\n2. Call this action with platform when possible. If platform is omitted and multiple ads platforms are granted, read by_platform[platform].\n3. Use query_single_dimension for one dimension or mapping-aware metrics.\n4. Use query_multi_dimension for valid multi-dimensional raw breakdowns.\n\nOutput semantics:\n- dimensions[].name is the dimension slug to pass as dimension or dimensions[].\n- dimensions[].filterable_fields are the only supported filter keys for that dimension.\n- dimensions[].supports_cg_fanout tells whether cg.{slug}.* columns can be requested.\n- metrics[].slug is the metric name to read from query output columns.\n- When multiple ads platforms are granted and platform is omitted, the response uses by_platform instead of a misleading cross-platform dimension list.",
       "input_params": [
         {
           "name": "platform",
@@ -6290,7 +6338,7 @@
         "action:ads/gaql_search",
         "action:ads/list_dimensions"
       ],
-      "long_description": "PRIMARY PATH for cached multi-dimensional breakdowns.\n\nPrimary use:\nMulti-dimensional reporting over synced Nex ads data, such as campaign x country or campaign x device. Use it when the user needs more than one group-by dimension.\n\nUse when:\n- The user asks for a breakdown by two or more supported dimensions.\n- The requested combination is valid for the selected platform according to the service viable-combo table.\n- Raw platform metrics are sufficient.\n\nDo not use when:\n- The user needs CPA, CPP, ROAS, Reg Rate, Pur Rate, or cg.{slug}.* columns. Use query_single_dimension.\n- A single dimension is enough. Use query_single_dimension for richer semantics.\n- The selected platform is chatgpt_ads. ChatGPT Ads has no multi-dimensional breakdown support; use query_single_dimension instead.\n- The dimension combination is unsupported and must use Google-native fields. Use get_resource_metadata then gaql_search for Google only.\n\nWorkflow:\n1. Call list_ad_accounts if account_id is unknown.\n2. Call list_dimensions to choose legal dimension slugs and filters.\n3. Prefer the most specific child dimension; the handler may drop redundant parent dimensions and report that in notice.\n4. Call this action with platform, account_id, date range, and dimensions[].\n\nOutput semantics:\n- Returns column-oriented data. Read data.columns.<column>[i], not data.rows.\n- Only platform-raw conversion metrics are available.\n- requested_dimensions preserves the original request when normalization occurs.\n- notice describes dropped parent dimensions; unsupported combinations return 400 unsupported_dimension_combination. Google errors include nearest viable combos and a GAQL fallback hint; platforms without live fallback return supported_combos.\n- For id-keyed dimensions (campaign / account / adgroup / ad), the response includes both the raw id column (e.g., adset_id) and the resolved name column (e.g., adset_name) for agent display. Use the id column for filters / drills; use the name column for user-facing output.",
+      "long_description": "PRIMARY PATH for cached multi-dimensional breakdowns.\n\nPrimary use:\nMulti-dimensional reporting over synced Nex ads data, such as campaign x country or campaign x device. Use it when the user needs more than one group-by dimension.\n\nUse when:\n- The user asks for a breakdown by two or more supported dimensions.\n- The requested combination is valid for the selected platform according to the service viable-combo table.\n- Raw platform metrics are sufficient.\n\nDo not use when:\n- The user needs CPA, CPP, ROAS, Reg Rate, Pur Rate, or cg.{slug}.* columns. Use query_single_dimension.\n- A single dimension is enough. Use query_single_dimension for richer semantics.\n- The selected platform is chatgpt_ads. ChatGPT Ads has no multi-dimensional breakdown support; use query_single_dimension instead.\n- The dimension combination is unsupported and must use Google-native fields. Use get_resource_metadata then gaql_search for Google only.\n\nWorkflow:\n1. Call list_ad_accounts if account_id is unknown.\n2. Call list_dimensions to choose legal dimension slugs and filters.\n3. Prefer the most specific child dimension; the handler may drop redundant parent dimensions and report that in notice.\n4. Call this action with platform, account_id, date range, and dimensions[].\n\nOutput semantics:\n- Returns column-oriented data. Read data.columns.<column>[i], not data.rows.\n- Only platform-raw conversion metrics are available.\n- requested_dimensions preserves the original request when normalization occurs.\n- notice describes dropped parent dimensions; unsupported combinations return 400 unsupported_dimension_combination. Google errors include nearest viable combos and a GAQL fallback hint; platforms without live fallback return supported_combos.\n- For id-keyed dimensions (campaign / account / adgroup / ad), the response includes both the raw id column (e.g., adset_id) and the resolved name column (e.g., adset_name) for agent display. Use the id column for filters / drills; use the name column for user-facing output.\nFreshly-onboarded accounts (first-time sync in progress):\n- If the requested window has NO data yet, this returns 409 data_syncing with details.readiness (bootstrap_state, per-window status, eta_hint) instead of an empty result — an empty window that is still syncing is NOT genuinely-zero spend.\n- If the requested range spans BOTH ready and not-yet-ready windows and returns rows, you still get the rows plus a top-level readiness object with partial=true — treat the result as incomplete, not a full-range total.\n- For google, the readiness/fallback body names ads/gaql_search for live data while the window syncs; switch back once ready (vacuum-only, never the default). meta/tiktok have no live fallback — report the eta_hint and retry later.",
       "input_params": [
         {
           "name": "platform",
@@ -6351,7 +6399,7 @@
           "description": "Row cap. Omit to use the service default; hard budget still applies."
         }
       ],
-      "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"dimensions\": [\"campaign\", \"country\"], \"data_basis\": {...}, \"scope_caveat\": \"...\", \"row_count\": N, \"columns\": {<col>: [...]}, \"summary\": null}"
+      "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"dimensions\": [\"campaign\", \"country\"], \"data_basis\": {...}, \"scope_caveat\": \"...\", \"row_count\": N, \"columns\": {<col>: [...]}, \"summary\": null, \"readiness\": null | {\"partial\": true, \"readiness\": {...}, \"fallback\": {...}}}"
     },
     {
       "id": "action:ads/query_single_dimension",
@@ -6373,7 +6421,7 @@
         "action:ads/gaql_search",
         "action:ads/list_conversion_groups"
       ],
-      "long_description": "PRIMARY PATH for cached ads analytics.\n\nPrimary use:\nSingle-dimension reporting over synced Nex business-layer ads data. Use this for metrics report KPIs, platform-supported breakdowns, cross-platform-consistent metrics, and mapping-aware derived metrics. ChatGPT Ads supports account, date, campaign, and landing_page only.\n\nUse when:\n- The analysis has exactly one group-by dimension.\n- The user asks for CPA, CPP, ROAS, Reg Rate, Pur Rate, or cg.{slug}.* metrics.\n- The result should use the Nex metrics report cache first and fall back to synced Parquet data when the cache cannot exactly represent the request.\n\nDo not use when:\n- The user needs multiple group-by dimensions. Use query_multi_dimension.\n- The field or segment is not exposed by list_dimensions. Use get_resource_metadata then gaql_search for Google-native exploration; ChatGPT Ads has no GAQL fallback.\n- The user needs platform-side change history. Use get_change_history.\n- The user needs Nex-side agent action records. Use list_operation_records.\n\nWorkflow:\n1. Call list_ad_accounts if account_id is unknown.\n2. If the user's metric/dimension wording is ambiguous, call resolve_terms.\n3. Call list_dimensions to choose a valid dimension, filters, and metrics.\n4. Call list_conversion_groups only if conversion-group fan-out or CPA/ROAS-like metrics are needed.\n5. Call this action with platform, account_id, date_start, date_end, and dimension.\n\nOutput semantics:\n- Returns column-oriented data. Read data.columns.<column>[i], not data.rows.\n- spend_micros and cpc_micros are micros; ctr is a 0-1 ratio.\n- scope_caveat explains aggregation limits for the selected scope.\n- mode=summary returns summary data such as top rows, totals, and p95 where supported.\n- truncated or warning means the agent must mention partial result limits.\n- For id-keyed dimensions (campaign / account / adgroup / ad), dimension_label is the resolved entity name (e.g., adset name for adgroup dimension); falls back to the platform id when the entity record is missing or has no name.",
+      "long_description": "PRIMARY PATH for cached ads analytics.\n\nPrimary use:\nSingle-dimension reporting over synced Nex business-layer ads data. Use this for metrics report KPIs, platform-supported breakdowns, cross-platform-consistent metrics, and mapping-aware derived metrics. ChatGPT Ads supports account, date, campaign, landing_page, and the UTM dimensions (utm_source, utm_medium, utm_campaign, utm_content) only.\n\nUTM dimensions are system-managed campaign-metadata breakdowns available on google, meta, and chatgpt_ads. They return the same spend/impressions/clicks/conversions/derived metrics as any other scope; campaigns with no value for the key aggregate into the '(not set)' bucket so totals reconcile with the campaign scope. Values reflect current campaign metadata — history outside the cache refresh window keeps earlier values until a full rebuild. UTM value filters and campaign filters are not supported yet.\n\nUse when:\n- The analysis has exactly one group-by dimension.\n- The user asks for CPA, CPP, ROAS, Reg Rate, Pur Rate, or cg.{slug}.* metrics.\n- The result should use the Nex metrics report cache first and fall back to synced Parquet data when the cache cannot exactly represent the request.\n\nDo not use when:\n- The user needs multiple group-by dimensions. Use query_multi_dimension.\n- The field or segment is not exposed by list_dimensions. Use get_resource_metadata then gaql_search for Google-native exploration; ChatGPT Ads has no GAQL fallback.\n- The user needs platform-side change history. Use get_change_history.\n- The user needs Nex-side agent action records. Use list_operation_records.\n\nWorkflow:\n1. Call list_ad_accounts if account_id is unknown.\n2. If the user's metric/dimension wording is ambiguous, call resolve_terms.\n3. Call list_dimensions to choose a valid dimension, filters, and metrics.\n4. Call list_conversion_groups only if conversion-group fan-out or CPA/ROAS-like metrics are needed.\n5. Call this action with platform, account_id, date_start, date_end, and dimension.\n\nOutput semantics:\n- Returns column-oriented data. Read data.columns.<column>[i], not data.rows.\n- spend_micros and cpc_micros are micros; ctr is a 0-1 ratio.\n- scope_caveat explains aggregation limits for the selected scope.\n- mode=summary returns summary data such as top rows, totals, and p95 where supported.\n- truncated or warning means the agent must mention partial result limits.\n- For id-keyed dimensions (campaign / account / adgroup / ad), dimension_label is the resolved entity name (e.g., adset name for adgroup dimension); falls back to the platform id when the entity record is missing or has no name.\nFreshly-onboarded accounts (first-time sync in progress):\n- If the requested window has NO data yet, this returns 409 data_syncing with details.readiness (bootstrap_state, per-window status, eta_hint) instead of an empty result — an empty window that is still syncing is NOT genuinely-zero spend. (409, not 5xx, so the structured body survives the public proxy.)\n- If the requested range spans BOTH ready and not-yet-ready windows and returns rows, you still get the rows plus a top-level readiness object with partial=true — treat the result as incomplete, not a full-range total.\n- For google, the readiness/fallback body names ads/gaql_search: use it for live Google Ads data while the window is syncing, then switch back to this action once the window is ready. Offered ONLY during the bootstrap vacuum; once ready the 409 stops firing, so do not keep using gaql for synced windows. meta/tiktok/chatgpt_ads have no live fallback — report the eta_hint and retry later.",
       "input_params": [
         {
           "name": "platform",
@@ -6441,7 +6489,7 @@
           "description": "Override conversion-mapping default; one of 1d_click, 7d_click, 1d_view, 7d_view, 28d_view, 1d_click_1d_view, 7d_click_1d_view, 28d_click_1d_view, default"
         }
       ],
-      "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"dimension\": \"campaign\", \"data_basis\": {\"view\": \"...\", \"parquet_table\": \"...\", \"selected_scope\": \"campaign\", \"cg_fan_out_available\": true}, \"scope_caveat\": \"...\", \"row_count\": 128, \"truncated\": false, \"warning\": null, \"columns\": {\"campaign_id\": [...], \"spend_micros\": [...], \"ctr\": [...], \"cg.qualified-new-user.all_conv\": [...]}, \"summary\": null}"
+      "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"dimension\": \"campaign\", \"data_basis\": {\"view\": \"...\", \"parquet_table\": \"...\", \"selected_scope\": \"campaign\", \"cg_fan_out_available\": true}, \"scope_caveat\": \"...\", \"row_count\": 128, \"truncated\": false, \"warning\": null, \"columns\": {\"campaign_id\": [...], \"spend_micros\": [...], \"ctr\": [...], \"cg.qualified-new-user.all_conv\": [...]}, \"summary\": null, \"readiness\": null | {\"partial\": true, \"readiness\": {...}, \"fallback\": {...}}}"
     },
     {
       "id": "action:ads/remove_account_negative_keywords",
@@ -9671,41 +9719,171 @@
       "output_shape": "{\"id\": \"video_id\", \"success\": true}"
     },
     {
+      "id": "action:appsflyer/list_accounts",
+      "namespace": "appsflyer",
+      "action": "list_accounts",
+      "description": "List the AppsFlyer accounts this brand can query.",
+      "mode": "read",
+      "platforms": [
+        "appsflyer"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns the AppsFlyer accounts granted to the current brand (account_id + name). START HERE for any AppsFlyer task: every other appsflyer action requires one of these account_ids. Do NOT ask the user for an account id — this action is the source of truth. A single AppsFlyer MCP token maps to one account; individual apps within it are chosen via tool arguments, not as separate resources.",
+      "input_params": [],
+      "output_shape": "data.rows[].{account_id, name}"
+    },
+    {
+      "id": "action:appsflyer/list_tools",
+      "namespace": "appsflyer",
+      "action": "list_tools",
+      "description": "List the AppsFlyer attribution/analytics tools available for an account.",
+      "mode": "read",
+      "platforms": [
+        "appsflyer"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns the live AppsFlyer MCP tool catalog for one granted account, each annotated with `requires_review`. The default response is a slim catalog without input schemas. Pass `tool` to fetch one exact tool's full input schema before calling `appsflyer/query`. Tools with `requires_review=true` (anything not on our read-only allowlist) must go through `appsflyer/request_change`, not `appsflyer/query`. Data is live from AppsFlyer (realtime, no cached pipeline); AppsFlyer MCP is Open Beta, so treat results as best-effort.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": false,
+          "description": "AppsFlyer account id (from appsflyer/list_accounts).",
+          "example": "af_acct_demo"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": false,
+          "description": "Exact AppsFlyer tool name; when provided, returns that tool's full input schema.",
+          "example": "fetch_aggregated_data"
+        }
+      ],
+      "output_shape": "data.project_id, data.tools[].{name, description, requires_review[, input_schema when tool is provided]}"
+    },
+    {
+      "id": "action:appsflyer/query",
+      "namespace": "appsflyer",
+      "action": "query",
+      "description": "Run a read-only AppsFlyer tool (aggregated performance, SKAN, cost & ad-revenue integrations, OneLink, audiences, app settings).",
+      "mode": "read",
+      "platforms": [
+        "appsflyer"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Forwards a read-only AppsFlyer tool call for one granted account and returns live data (realtime — there is no cached sync pipeline). The hosted MCP exposes aggregated attribution/performance (`fetch_aggregated_data`: installs, ROAS, LTV, retention by media-source/campaign/date), SKAN aggregates (`skan_get_app_data`), cost & ad-revenue integration health, OneLink templates/links, active audiences, and app settings. Choose the app via tool arguments. Get the account_id from `appsflyer/list_accounts` (never ask the user for it). Only allowlisted read tools run immediately; anything else returns `requires_review` — call `appsflyer/request_change`. The response echoes which account was queried.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "AppsFlyer account id (from appsflyer/list_accounts).",
+          "example": "af_acct_demo"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Exact AppsFlyer tool name from appsflyer/list_tools.",
+          "example": "fetch_aggregated_data"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Tool arguments object per the tool's input schema.",
+          "example": {
+            "app_id": "id123456789",
+            "from": "2026-06-01",
+            "to": "2026-06-30",
+            "metrics": [
+              "installs",
+              "roas"
+            ]
+          }
+        }
+      ],
+      "output_shape": "data.{project_id, tool, is_error, content[], structured, truncated}"
+    },
+    {
+      "id": "action:appsflyer/request_change",
+      "namespace": "appsflyer",
+      "action": "request_change",
+      "description": "Request a non-allowlisted AppsFlyer tool (or a future write) via human approval.",
+      "mode": "risk",
+      "platforms": [
+        "appsflyer"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Submits an AppsFlyer tool call that is not on our read-only allowlist for human approval (HITL). Returns a pending_review_id immediately; the call is forwarded to AppsFlyer only after a human approves. Use this for anything `appsflyer/query` rejected as requires_review. Note: account-wide user listing (`get_users`) and product feedback (`send_feedback`) are hard-hidden and never available, even here.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "AppsFlyer account id (from appsflyer/list_accounts).",
+          "example": "af_acct_demo"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Exact AppsFlyer tool name.",
+          "example": "fetch_aggregated_data"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Tool arguments object per the tool's input schema.",
+          "example": {
+            "app_id": "id123456789"
+          }
+        }
+      ],
+      "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
+    },
+    {
       "id": "action:composio/graphql_mutate",
       "namespace": "composio",
       "action": "graphql_mutate",
       "description": "Write to a GraphQL toolkit's official API by POSTing a mutation GraphQL document via human approval.",
       "mode": "risk",
       "platforms": [
-        "monday"
+        "composio_managed"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
       "see_also": [],
-      "long_description": "The write action for GraphQL toolkits (e.g. Monday). GraphQL uses one POST endpoint for reads and writes, so writes cannot use request_change; this action POSTs a mutation document for human approval (HITL). Returns a pending_review_id immediately; the request is forwarded to the vendor only after a human approves. The document must contain a top-level mutation (a pure query is steered to composio/graphql_query; subscriptions are rejected). Get the (account_id, toolkit) from composio/list_accounts; the toolkit's runtime skill documents the exact GraphQL endpoint and mutations.",
+      "long_description": "The write action for GraphQL toolkits (e.g. Monday). GraphQL uses one POST endpoint for reads and writes, so writes cannot use request_change; this action POSTs a mutation document for human approval (HITL). Returns a pending_review_id immediately; the request is forwarded to the vendor only after a human approves. The document must contain a top-level mutation (a pure query is steered to composio/graphql_query; subscriptions are rejected). Get the (account_id, toolkit) from composio/list_accounts; the mutation schema comes from the provider's official API reference (docs_url, or web_search it) — never guess a mutation shape.",
       "input_params": [
         {
           "name": "account_id",
           "type": "string",
           "required": true,
           "description": "Connected account id from composio/list_accounts.",
-          "example": "ca_9hk2..."
+          "example": "monday:ca_9hk2..."
         },
         {
           "name": "toolkit",
           "type": "string",
           "required": true,
           "description": "GraphQL toolkit of the account (from composio/list_accounts).",
-          "example": "monday",
-          "enum": [
-            "monday"
-          ]
+          "example": "monday"
         },
         {
           "name": "endpoint",
           "type": "string",
           "required": true,
-          "description": "Absolute https URL of the GraphQL endpoint (toolkit host; e.g. monday).",
+          "description": "The toolkit's GraphQL endpoint — a relative path (recommended) or an absolute https URL on the toolkit's official host.",
           "example": "https://api.monday.com/v2"
         },
         {
@@ -9738,37 +9916,32 @@
       "description": "Read from a GraphQL toolkit's official API by POSTing a query-only GraphQL document (relayed through Composio; runs immediately).",
       "mode": "read",
       "platforms": [
-        "fireflies",
-        "monday"
+        "composio_managed"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
       "see_also": [],
-      "long_description": "The read action for GraphQL toolkits (e.g. Fireflies). GraphQL uses one POST endpoint for reads and writes, so it cannot use proxy_get; this action POSTs a query-only document to the toolkit's GraphQL endpoint and runs immediately (no HITL). Mutations and subscriptions are rejected — writes are not enabled for GraphQL toolkits. Get the (account_id, toolkit) from composio/list_accounts; the toolkit's runtime skill documents the exact GraphQL endpoint, queries and variables. Data is realtime (no cached pipeline).",
+      "long_description": "The read action for GraphQL toolkits (e.g. Fireflies). GraphQL uses one POST endpoint for reads and writes, so it cannot use proxy_get; this action POSTs a query-only document to the toolkit's GraphQL endpoint and runs immediately (no HITL). Mutations and subscriptions are rejected here — writes go through composio/graphql_mutate where the toolkit has them enabled. Get the (account_id, toolkit) from composio/list_accounts; the schema (types, queries, variables) comes from the provider's official API reference (docs_url, or web_search it). Data is realtime (no cached pipeline).",
       "input_params": [
         {
           "name": "account_id",
           "type": "string",
           "required": true,
           "description": "Connected account id from composio/list_accounts.",
-          "example": "ca_3kf9..."
+          "example": "fireflies:ca_3kf9..."
         },
         {
           "name": "toolkit",
           "type": "string",
           "required": true,
           "description": "GraphQL toolkit of the account (from composio/list_accounts).",
-          "example": "fireflies",
-          "enum": [
-            "fireflies",
-            "monday"
-          ]
+          "example": "fireflies"
         },
         {
           "name": "endpoint",
           "type": "string",
           "required": true,
-          "description": "Absolute https URL of the GraphQL endpoint (toolkit host; e.g. fireflies, monday).",
+          "description": "The toolkit's GraphQL endpoint — a relative path (recommended, e.g. /graphql) or an absolute https URL on the toolkit's official host.",
           "example": "https://api.fireflies.ai/graphql"
         },
         {
@@ -9797,21 +9970,14 @@
       "description": "List the connected third-party accounts (Gmail, Notion, Google Sheets, ...) this brand can use.",
       "mode": "read",
       "platforms": [
-        "notion",
-        "gmail",
-        "googledocs",
-        "googlesheets",
-        "googledrive",
-        "googlecalendar",
-        "fireflies",
-        "monday"
+        "composio_managed"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
       "see_also": [],
-      "long_description": "Returns the Composio connected accounts granted to the current brand: each row is an (account_id, toolkit, name, status). START HERE for any third-party task — every composio/proxy_get and composio/request_change call needs an (account_id, toolkit) pair from this list. Do NOT ask the user for an account id; this action is the source of truth. The matching runtime skill for the toolkit (e.g. the gmail skill) tells you which official endpoints to call.",
+      "long_description": "Returns the Composio connected accounts granted to the current brand: each row is (account_id, toolkit, name, status, execution_available, api_shape, docs_url, api_hosts, recommended). START HERE for any third-party task — every proxy action needs an (account_id, toolkit) pair from this list; neither is guessable. Do NOT ask the user for an account id; this action is the source of truth. Every connected toolkit is executable (execution_available is true). api_shape is 'rest' (use proxy_get / request_change) or 'graphql' (use graphql_query / graphql_mutate). docs_url is the provider's OFFICIAL API reference when vetted; when null, web_search the provider's official API reference before building requests. Unless you are certain of the exact endpoint, consult the reference first — never guess endpoints from memory or use Composio tool names. api_hosts lists the toolkit's official hosts: a relative endpoint resolves against the toolkit's PRIMARY host only, so an endpoint served from any other host in api_hosts must be an absolute https URL.",
       "input_params": [],
-      "output_shape": "data.rows[].{account_id, toolkit, name, status}"
+      "output_shape": "data.rows[].{account_id, toolkit, name, status, execution_available, api_shape, docs_url, api_hosts, recommended}"
     },
     {
       "id": "action:composio/proxy_get",
@@ -9820,45 +9986,32 @@
       "description": "Read from a connected account's official API (HTTP GET, relayed through Composio with the account credential injected).",
       "mode": "read",
       "platforms": [
-        "notion",
-        "gmail",
-        "googledocs",
-        "googlesheets",
-        "googledrive",
-        "googlecalendar"
+        "composio_managed"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
       "see_also": [],
-      "long_description": "Forwards a GET request to the toolkit's official API; Composio injects the connected account's OAuth credential server-side (you never see a token). Get the (account_id, toolkit) from composio/list_accounts. Put query parameters directly in the endpoint URL. Only the toolkit's official API host is allowed. Anything that mutates state (POST/PUT/PATCH/DELETE) must go through composio/request_change. Data is realtime (no cached pipeline).",
+      "long_description": "Forwards a GET request to the toolkit's official API; Composio injects the connected account's OAuth credential server-side (you never see a token). Get the (account_id, toolkit) from composio/list_accounts FIRST, and consult the official API reference (docs_url, or web_search it) when unsure of an endpoint. Put query parameters directly in the endpoint URL. Only the toolkit's official API hosts are allowed. Anything that mutates state (POST/PUT/PATCH/DELETE) must go through composio/request_change. Data is realtime (no cached pipeline).",
       "input_params": [
         {
           "name": "account_id",
           "type": "string",
           "required": true,
-          "description": "Connected account id from composio/list_accounts.",
-          "example": "google_user:1163774059..."
+          "description": "Connected account id, copied verbatim from composio/list_accounts — never constructed by hand.",
+          "example": "googledocs:google_user:1163774059..."
         },
         {
           "name": "toolkit",
           "type": "string",
           "required": true,
           "description": "Toolkit of the account (from composio/list_accounts).",
-          "example": "gmail",
-          "enum": [
-            "notion",
-            "gmail",
-            "googledocs",
-            "googlesheets",
-            "googledrive",
-            "googlecalendar"
-          ]
+          "example": "gmail"
         },
         {
           "name": "endpoint",
           "type": "string",
           "required": true,
-          "description": "Absolute https URL of the official API endpoint (must be one of: notion, gmail, googledocs, googlesheets, googledrive, googlecalendar official hosts).",
+          "description": "Relative path (e.g. /gmail/v1/users/me/profile) ONLY for endpoints on the toolkit's primary host — Composio pins relative paths to that one host. For an endpoint on any other official host of the toolkit (see api_hosts from list_accounts), pass an absolute https URL — e.g. listing Google Docs/Sheets files is a Drive API call: https://www.googleapis.com/drive/v3/files?q=...",
           "example": "https://gmail.googleapis.com/gmail/v1/users/me/profile"
         },
         {
@@ -9877,39 +10030,26 @@
       "description": "Write to a connected account's official API (POST/PUT/PATCH/DELETE) via human approval.",
       "mode": "risk",
       "platforms": [
-        "notion",
-        "gmail",
-        "googledocs",
-        "googlesheets",
-        "googledrive",
-        "googlecalendar"
+        "composio_managed"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
       "see_also": [],
-      "long_description": "Submits an official-API write for human approval (HITL). Returns a pending_review_id immediately; the request is forwarded to the vendor only after a human approves. Provide method + endpoint + body (e.g. send a Gmail message, append a Google Sheets row, update a Notion page). Get the (account_id, toolkit) from composio/list_accounts; the toolkit's runtime skill documents the exact endpoint and body shape.",
+      "long_description": "Submits an official-API write for human approval (HITL). Returns a pending_review_id immediately; the request is forwarded to the vendor only after a human approves. Provide method + endpoint + body (e.g. send a Gmail message, append a Google Sheets row, update a Notion page). Get the (account_id, toolkit) from composio/list_accounts; the exact endpoint and body shape come from the provider's official API reference (docs_url, or web_search it) — never guess a write payload.",
       "input_params": [
         {
           "name": "account_id",
           "type": "string",
           "required": true,
-          "description": "Connected account id from composio/list_accounts.",
-          "example": "google_user:1163774059..."
+          "description": "Connected account id, copied verbatim from composio/list_accounts — never constructed by hand.",
+          "example": "gmail:google_user:1163774059..."
         },
         {
           "name": "toolkit",
           "type": "string",
           "required": true,
           "description": "Toolkit of the account (from composio/list_accounts).",
-          "example": "gmail",
-          "enum": [
-            "notion",
-            "gmail",
-            "googledocs",
-            "googlesheets",
-            "googledrive",
-            "googlecalendar"
-          ]
+          "example": "gmail"
         },
         {
           "name": "method",
@@ -9928,7 +10068,7 @@
           "name": "endpoint",
           "type": "string",
           "required": true,
-          "description": "Absolute https URL of the official API endpoint (toolkit host).",
+          "description": "Relative path ONLY for endpoints on the toolkit's primary host (Composio pins relative paths to that one host); for any other official host of the toolkit (see api_hosts from list_accounts), pass an absolute https URL.",
           "example": "https://gmail.googleapis.com/gmail/v1/users/me/drafts"
         },
         {
