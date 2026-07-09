@@ -1,0 +1,8 @@
+packages:
+  - "."
+
+allowBuilds:
+  keytar: true
+
+onlyBuiltDependencies:
+  - keytar
