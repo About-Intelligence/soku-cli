@@ -1,0 +1,190 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "soku-ai-cli-v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run every publish check without publishing to npm"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup npm trusted publishing runtime
+        run: |
+          npm install -g npm@11.5.1
+          npm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify package version
+        run: |
+          set -euo pipefail
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          SRC_VERSION="$(node - <<'NODE'
+          const fs = require('node:fs')
+          const src = fs.readFileSync('./src/version.ts', 'utf8')
+          const match = src.match(/CLI_VERSION = '([^']+)'/)
+          if (!match) throw new Error('CLI_VERSION not found in src/version.ts')
+          console.log(match[1])
+          NODE
+          )"
+          if [[ "$PACKAGE_VERSION" != "$SRC_VERSION" ]]; then
+            echo "package.json version ($PACKAGE_VERSION) does not match CLI_VERSION ($SRC_VERSION)"
+            exit 1
+          fi
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            EXPECTED_TAG="soku-ai-cli-v${PACKAGE_VERSION}"
+            if [[ "${GITHUB_REF_NAME}" != "$EXPECTED_TAG" ]]; then
+              echo "Tag ${GITHUB_REF_NAME} must match ${EXPECTED_TAG}"
+              exit 1
+            fi
+          fi
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify npm package contents
+        run: |
+          set -euo pipefail
+          npm pack --dry-run --json > /tmp/soku-cli-pack.json
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const [pack] = JSON.parse(fs.readFileSync('/tmp/soku-cli-pack.json', 'utf8'))
+          const files = new Set(pack.files.map((f) => f.path))
+          for (const required of [
+            'dist/index.js',
+            'dist/generated/capabilities.json',
+            'skills/soku/SKILL.md',
+            'package.json',
+          ]) {
+            if (!files.has(required)) {
+              throw new Error(`npm pack is missing ${required}`)
+            }
+          }
+          console.log(`Packed ${pack.name}@${pack.version} with ${pack.files.length} files`)
+          NODE
+
+      - name: Publish dry run
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: npm publish --dry-run --access public --tag latest
+
+  publish:
+    name: Publish to npm
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: npm-production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup npm trusted publishing runtime
+        run: |
+          npm install -g npm@11.5.1
+          npm --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify package version
+        run: |
+          set -euo pipefail
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          SRC_VERSION="$(node - <<'NODE'
+          const fs = require('node:fs')
+          const src = fs.readFileSync('./src/version.ts', 'utf8')
+          const match = src.match(/CLI_VERSION = '([^']+)'/)
+          if (!match) throw new Error('CLI_VERSION not found in src/version.ts')
+          console.log(match[1])
+          NODE
+          )"
+          if [[ "$PACKAGE_VERSION" != "$SRC_VERSION" ]]; then
+            echo "package.json version ($PACKAGE_VERSION) does not match CLI_VERSION ($SRC_VERSION)"
+            exit 1
+          fi
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            EXPECTED_TAG="soku-ai-cli-v${PACKAGE_VERSION}"
+            if [[ "${GITHUB_REF_NAME}" != "$EXPECTED_TAG" ]]; then
+              echo "Tag ${GITHUB_REF_NAME} must match ${EXPECTED_TAG}"
+              exit 1
+            fi
+          fi
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> "$GITHUB_ENV"
+
+      - name: Ensure version is not already published
+        run: |
+          set -euo pipefail
+          if npm view "@soku-ai/cli@${PACKAGE_VERSION}" version >/dev/null 2>&1; then
+            echo "@soku-ai/cli@${PACKAGE_VERSION} is already published"
+            exit 1
+          fi
+
+      - name: Publish to npm
+        env:
+          # While this repository is private, npm provenance attestations are
+          # not supported. Trusted Publishing still works through OIDC. When the
+          # repository is made public, add `--provenance` (or let trusted
+          # publishing generate it automatically) here.
+          NPM_CONFIG_PROVENANCE: "false"
+        run: |
+          set -euo pipefail
+          npm publish --access public --tag latest
+
+      - name: Verify published package
+        run: |
+          set -euo pipefail
+          for attempt in {1..12}; do
+            if npm view "@soku-ai/cli@${PACKAGE_VERSION}" version --json; then
+              exit 0
+            fi
+            echo "Package is not visible on npm yet; retrying (${attempt}/12)"
+            sleep 5
+          done
+          echo "@soku-ai/cli@${PACKAGE_VERSION} was published but did not become visible in time"
+          exit 1

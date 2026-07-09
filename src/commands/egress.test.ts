@@ -1,0 +1,57 @@
+import assert from 'node:assert/strict'
+import { test } from 'node:test'
+
+import { parseCurl, stripPlaceholderAuth } from './egress.js'
+
+test('parses method, url, headers, and body from a curl command', () => {
+  const r = parseCurl([
+    'curl',
+    '-X',
+    'POST',
+    '-H',
+    'Authorization: Bearer abc',
+    '-H',
+    'Content-Type: application/json',
+    'https://api.ahrefs.com/v3/x',
+    '-d',
+    '{"a":1}',
+  ])
+  assert.equal(r.method, 'POST')
+  assert.equal(r.url, 'https://api.ahrefs.com/v3/x')
+  assert.equal(r.headers['authorization'], 'Bearer abc')
+  assert.equal(r.headers['content-type'], 'application/json')
+  assert.equal(r.body?.toString(), '{"a":1}')
+})
+
+test('infers GET with no body and POST when a body is present', () => {
+  assert.equal(parseCurl(['curl', 'https://x.test/a']).method, 'GET')
+  assert.equal(parseCurl(['curl', 'https://x.test/a', '-d', 'k=v']).method, 'POST')
+})
+
+test('accepts --url and is tolerant of unknown flags', () => {
+  const r = parseCurl(['curl', '-s', '--url', 'https://x.test/a', '-H', 'X-Key: v'])
+  assert.equal(r.url, 'https://x.test/a')
+  assert.equal(r.headers['x-key'], 'v')
+})
+
+test('-G folds data into the query string', () => {
+  const r = parseCurl(['curl', '-G', 'https://x.test/a', '-d', 'q=hello&n=2'])
+  assert.equal(r.method, 'GET')
+  assert.equal(r.body, undefined)
+  const u = new URL(r.url as string)
+  assert.equal(u.searchParams.get('q'), 'hello')
+  assert.equal(u.searchParams.get('n'), '2')
+})
+
+test('strips empty / bare-scheme auth headers but keeps real credentials', () => {
+  const out = stripPlaceholderAuth({
+    authorization: 'Bearer ', // unset $X expansion
+    'x-apptweak-key': '', // empty raw key
+    'x-real': 'Bearer real-token',
+    'content-type': 'application/json',
+  })
+  assert.ok(!('authorization' in out))
+  assert.ok(!('x-apptweak-key' in out))
+  assert.equal(out['x-real'], 'Bearer real-token')
+  assert.equal(out['content-type'], 'application/json')
+})

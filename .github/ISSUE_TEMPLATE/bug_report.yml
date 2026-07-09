@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a problem with the Soku CLI
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please do **not** include
+        auth tokens or other secrets in this report.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: Running `soku ...` produced ... but I expected ...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. soku auth login
+        2. soku ...
+        3. See error
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: CLI version
+      description: Output of `soku --version`
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS / Node version
+      placeholder: macOS 14 / Node 20.11
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Paste any error output. Redact tokens and workspace identifiers.
+      render: shell

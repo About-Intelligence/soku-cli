@@ -1,0 +1,63 @@
+{
+  "name": "@soku-ai/cli",
+  "version": "0.1.0-alpha.15",
+  "description": "Soku CLI — call Soku ads/GA4/PostHog data capabilities from any AI agent or shell.",
+  "license": "MIT",
+  "author": "About Intelligence",
+  "homepage": "https://soku.ai/cli",
+  "bugs": {
+    "url": "https://github.com/About-Intelligence/soku-cli/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/About-Intelligence/soku-cli.git"
+  },
+  "keywords": [
+    "soku",
+    "cli",
+    "ai-agent",
+    "marketing-analytics",
+    "google-ads",
+    "ga4",
+    "posthog"
+  ],
+  "type": "module",
+  "bin": {
+    "soku": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "postinstall.cjs",
+    "skills"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsc && mkdir -p dist/generated && cp src/generated/capabilities.json dist/generated/capabilities.json",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc -p tsconfig.test.json && find .test-build -name '*.test.js' -print | sort | xargs node --test",
+    "clean": "rm -rf dist .test-build",
+    "postinstall": "node postinstall.cjs",
+    "prepublishOnly": "pnpm run clean && pnpm run build"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "fflate": "^0.8.2",
+    "open": "^10.1.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "optionalDependencies": {
+    "keytar": "^7.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/qrcode-terminal": "^0.12.2",
+    "typescript": "^5.7.0"
+  }
+}

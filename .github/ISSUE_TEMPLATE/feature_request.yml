@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an improvement to the Soku CLI
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Note: the CLI's command surface is generated from the Soku backend's
+        capability manifest. Requests for **new data/ads capabilities** may need
+        a backend change — describe the capability and we'll route it.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: I'm trying to ... but the CLI doesn't ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      placeholder: It would help if `soku ...` could ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

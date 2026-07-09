@@ -1,0 +1,7 @@
+dist/
+.test-build/
+node_modules/
+*.tsbuildinfo
+pnpm-debug.log
+npm-debug.log*
+.DS_Store

@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Type check, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify npm package contents
+        run: |
+          set -euo pipefail
+          npm pack --dry-run --json > /tmp/soku-cli-pack.json
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const [pack] = JSON.parse(fs.readFileSync('/tmp/soku-cli-pack.json', 'utf8'))
+          const files = new Set(pack.files.map((f) => f.path))
+          for (const required of [
+            'dist/index.js',
+            'dist/generated/capabilities.json',
+            'skills/soku/SKILL.md',
+            'package.json',
+          ]) {
+            if (!files.has(required)) {
+              throw new Error(`npm pack is missing ${required}`)
+            }
+          }
+          console.log(`Packed ${pack.name}@${pack.version} with ${pack.files.length} files`)
+          NODE
