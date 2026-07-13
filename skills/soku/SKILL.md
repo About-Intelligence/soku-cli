@@ -5,9 +5,9 @@ description: >-
   selection, ads/GA4/PostHog data reads, typed ads writes, SEO Hosting,
   automations, Context Hub files, temporary file publishing, brand skills,
   third-party egress, review-gated writes, skill installation, or CLI updates.
-license: Proprietary
+license: MIT
 metadata:
-  author: nex-ad
+  author: About Intelligence
   version: "0.4"
 ---
 
