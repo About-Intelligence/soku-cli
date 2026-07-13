@@ -1,6 +1,139 @@
 {
   "actions": [
     {
+      "id": "action:adjust/list_accounts",
+      "namespace": "adjust",
+      "action": "list_accounts",
+      "description": "List the Adjust accounts this brand can query.",
+      "mode": "read",
+      "platforms": [
+        "adjust"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns the Adjust accounts granted to the current brand (account_id + name). START HERE for any Adjust task: every other adjust action requires one of these account_ids. Do NOT ask the user for an account id — this action is the source of truth. Adjust supports multi-account, so one connected token can expose more than one account; each is pinned per request by its real account id.",
+      "input_params": [],
+      "output_shape": "data.rows[].{account_id, name}"
+    },
+    {
+      "id": "action:adjust/list_tools",
+      "namespace": "adjust",
+      "action": "list_tools",
+      "description": "List the Adjust attribution/analytics tools available for an account.",
+      "mode": "read",
+      "platforms": [
+        "adjust"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns the live Adjust MCP tool catalog for one granted account, each annotated with `requires_review`. The default response is a slim catalog without input schemas. Pass `tool` to fetch one exact tool's full input schema before calling `adjust/query`. Tools with `requires_review=true` (anything not on our read-only allowlist) must go through `adjust/request_change`, not `adjust/query`. Data is live from Adjust (realtime, no cached pipeline); Adjust MCP is Early Access, so treat results as best-effort.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": false,
+          "description": "Adjust account id (from adjust/list_accounts).",
+          "example": "adjust_acct_demo"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": false,
+          "description": "Exact Adjust tool name; when provided, returns that tool's full input schema.",
+          "example": "get_report"
+        }
+      ],
+      "output_shape": "data.project_id, data.tools[].{name, description, requires_review[, input_schema when tool is provided]}"
+    },
+    {
+      "id": "action:adjust/query",
+      "namespace": "adjust",
+      "action": "query",
+      "description": "Run a read-only Adjust tool (aggregated performance, cohorts, events, SKAN, app metadata).",
+      "mode": "read",
+      "platforms": [
+        "adjust"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Forwards a read-only Adjust tool call for one granted account and returns live data (realtime — there is no cached sync pipeline). The hosted MCP exposes aggregated attribution/performance reporting (installs, cost, revenue, ROAS, retention by network/campaign/date), cohort and event aggregates, SKAN (iOS) data, and app metadata. Get the account_id from `adjust/list_accounts` (never ask the user for it). Only allowlisted read tools run immediately; anything else returns `requires_review` — call `adjust/request_change`. The response echoes which account was queried.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "Adjust account id (from adjust/list_accounts).",
+          "example": "adjust_acct_demo"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Exact Adjust tool name from adjust/list_tools.",
+          "example": "get_report"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Tool arguments object per the tool's input schema.",
+          "example": {
+            "app_token": "abc123",
+            "from": "2026-06-01",
+            "to": "2026-06-30",
+            "metrics": [
+              "installs",
+              "revenue"
+            ]
+          }
+        }
+      ],
+      "output_shape": "data.{project_id, tool, is_error, content[], structured, truncated}"
+    },
+    {
+      "id": "action:adjust/request_change",
+      "namespace": "adjust",
+      "action": "request_change",
+      "description": "Request a non-allowlisted Adjust tool (or a future write) via human approval.",
+      "mode": "risk",
+      "platforms": [
+        "adjust"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Submits an Adjust tool call that is not on our read-only allowlist for human approval (HITL). Returns a pending_review_id immediately; the call is forwarded to Adjust only after a human approves. Use this for anything `adjust/query` rejected as requires_review. Note: account/org-wide listings (e.g. listing all accounts or users) are hard-hidden and never available, even here.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "Adjust account id (from adjust/list_accounts).",
+          "example": "adjust_acct_demo"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Exact Adjust tool name.",
+          "example": "get_report"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Tool arguments object per the tool's input schema.",
+          "example": {
+            "app_token": "abc123"
+          }
+        }
+      ],
+      "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
+    },
+    {
       "id": "action:ads/add_account_negative_keywords",
       "namespace": "ads",
       "action": "add_account_negative_keywords",
