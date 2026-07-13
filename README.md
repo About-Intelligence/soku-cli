@@ -19,10 +19,30 @@ npx @soku-ai/cli --help
 
 Requires Node.js >= 20.
 
-## Quickstart
+## Use it from an AI agent (recommended)
+
+The fastest way to onboard is to let your coding agent (Claude Code, Codex,
+Cursor, …) drive the whole setup. Paste this prompt:
+
+```
+Read https://soku.ai/cli/skill.md, install or update Soku CLI, sign in,
+select my workspace, and install all business skills.
+```
+
+`https://soku.ai/cli/skill.md` is an agent-facing Markdown manual. The agent
+will install/update `@soku-ai/cli`, run the split-flow device login
+(`soku auth login --no-wait`), select your Soku workspace
+(`soku workspace resolve` / `use-brand`), install the bundled `soku` meta skill,
+and run `soku skill install --all --global` to add every business skill. It then
+verifies with `ads` / `ga4` / `egress providers` / `seo-hosting status`.
+
+The bundled skill lives at [`skills/soku/SKILL.md`](./skills/soku/SKILL.md).
+
+## Manual setup (shell)
 
 ```bash
-# 1. Authenticate (device flow — opens a browser / prints a QR code)
+# 1. Authenticate (device flow — opens a browser / prints a QR code).
+#    For agents / non-interactive shells, use: soku auth login --no-wait
 soku auth login
 
 # 2. Pick your workspace (org + brand)
@@ -30,13 +50,21 @@ soku workspace resolve <brand>     # find a brand you can access
 soku workspace use-brand <brand>   # switch to it
 soku workspace status              # confirm the active workspace
 
-# 3. Discover capabilities and make a call
+# 3. (optional) install the business skills
+soku skill install --all --global
+
+# 4. Discover capabilities and make a call
 soku --help
 soku ads --help                    # list ads subcommands (e.g. get-google-ads-report)
 ```
 
-Optional: install the bundled `soku` agent skill so an AI agent knows how to
-drive the CLI — see [`skills/soku/SKILL.md`](./skills/soku/SKILL.md).
+## Output
+
+In non-interactive (non-TTY) contexts the CLI emits a stable JSON envelope, so
+agents and scripts can parse results deterministically:
+
+- success → `{"ok":true,"data":...}`
+- error → `{"ok":false,"error":...}` (with a non-zero exit code)
 
 ## Capability model
 
