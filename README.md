@@ -26,11 +26,13 @@ Requires Node.js >= 20.
 soku auth login
 
 # 2. Pick your workspace (org + brand)
-soku workspace use
+soku workspace resolve <brand>     # find a brand you can access
+soku workspace use-brand <brand>   # switch to it
+soku workspace status              # confirm the active workspace
 
 # 3. Discover capabilities and make a call
 soku --help
-soku ads report --help
+soku ads --help                    # list ads subcommands (e.g. get-google-ads-report)
 ```
 
 Optional: install the bundled `soku` agent skill so an AI agent knows how to
