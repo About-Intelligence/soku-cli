@@ -43,13 +43,35 @@ soku ads query-single-dimension \
   --date-end 2026-05-07
 ```
 
-ChatGPT Ads is synced reporting only — no campaign/ad write actions, and
-`query-multi-dimension` does not support it (use `query-single-dimension`
-instead).
+For reporting, ChatGPT Ads is still cached-first. `query-multi-dimension` does
+not support it (use `query-single-dimension` instead). Campaign/ad-unit writes
+now exist as review-gated `ads` actions; use `ads-write.md` for the write flow.
 
 ## Google Ads GAQL Fallback
 
-Use GAQL only when cached actions cannot answer the request:
+For common account, campaign, ad, keyword, search-term, and bidding-strategy
+reports, prefer the predefined report command over ad-hoc GAQL. It selects a
+stable set of columns and uses the last 30 days when dates are omitted:
+
+```bash
+soku ads get-google-ads-report \
+  --platform google \
+  --account-id <account_id> \
+  --report-type campaign \
+  --start-date 2026-06-01 \
+  --end-date 2026-06-30
+```
+
+Supported report types are `account`, `campaign`, `ad`, `keyword`,
+`search_term`, and `bidding_strategy`.
+
+Use GAQL only when cached actions cannot answer the request.
+
+`get-resource-metadata` needs a native Google credential; accounts connected
+through a proxy credential (Pipedream / Composio) fail with
+`field_metadata_unavailable` (400). In that case skip field discovery and run
+`gaql-search` directly — an unknown field fails with `gaql_invalid_query`
+naming the offending field.
 
 ```bash
 soku ads get-resource-metadata --platform google --account-id <account_id> --resource-name campaign

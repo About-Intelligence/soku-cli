@@ -26,7 +26,7 @@ Read only the reference files needed for the user's task:
 | --- | --- |
 | First-time setup, expired token, workspace selection, org/brand ambiguity | `references/auth-workspace.md` |
 | Ads, GA4, or PostHog reads; raw `soku call`; command discovery | `references/data-capabilities.md` and `references/capability-flow.md` |
-| Meta/Google Ads writes, uploads, bulk create, review-gated approval | `references/ads-write.md` |
+| Meta/Google/ChatGPT Ads writes, uploads, bulk create, review-gated approval | `references/ads-write.md` |
 | SEO Hosting, automations, Context Hub files, temporary public file URLs | `references/seo-automation-files.md` |
 | Third-party APIs through server-side credential injection; security rules | `references/egress-security.md` |
 | Installing, updating, or removing Soku-managed local skills | `references/skills-updates.md` |

@@ -1,8 +1,8 @@
 # Ads Writes
 
-Meta and Google write commands use typed CLI surfaces where available. Most
-delivery-changing writes are review-gated: the command creates a pending review
-and does not execute until a human approves.
+Meta, Google, and ChatGPT Ads write commands use typed CLI surfaces where
+available. Most delivery-changing writes are review-gated: the command creates a
+pending review and does not execute until a human approves.
 
 ## Prerequisites
 
@@ -154,6 +154,35 @@ soku ads google keyword --help
 
 The command path determines platform. Do not add `--platform`; the CLI injects
 `platform=google`.
+
+## ChatGPT Ads Writes
+
+ChatGPT Ads uses the generic `ads` action surface. The platform object model is
+ad unit first, campaign second:
+
+1. Create one or more ad units with `ads/create_ad_unit`.
+2. Create the campaign with `ads/create_campaign`, `platform=chatgpt_ads`, and a
+   non-empty `ad_unit_ids` list.
+3. Keep new campaigns paused. The backend forces create to paused; do not submit
+   `update_campaign(status=active)` unless the user explicitly asks for
+   activation and approves that exact review.
+
+Use `soku call` when a typed command is not obvious:
+
+```bash
+soku call ads create_ad_unit \
+  --payload '{"platform":"chatgpt_ads","account_id":"<account_id>","platform_extras":{"description":"Ad unit description","landing_page":"https://example.com/?utm_source=chatgpt_ads","static_ad_text":"Primary text","static_cta":"Learn more"}}' \
+  --summary "Create paused ChatGPT Ads ad unit input"
+
+soku call ads create_campaign \
+  --payload '{"platform":"chatgpt_ads","account_id":"<account_id>","name":"Launch Test","budget_daily_micros":300000000,"platform_extras":{"landing_page":"https://example.com/?utm_source=chatgpt_ads","campaign_objective":"clicks","ad_unit_ids":["<ad_unit_id>"]}}' \
+  --summary "Create paused ChatGPT Ads campaign Launch Test"
+```
+
+Available ChatGPT Ads write actions: `create_ad_unit`, `create_campaign`,
+`generate_ad_units`, `add_campaign_ad_units`, `replace_campaign_ad_units`,
+`update_campaign`, and `archive_ad_unit`. Treat `archive_ad_unit` as a toggle:
+verify current state before using it.
 
 ## Review Gate
 

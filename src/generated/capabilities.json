@@ -240,6 +240,56 @@
       "output_shape": "{\"success\": true, \"message\": \"Added 2 callout asset(s)\", \"results\": [...]}"
     },
     {
+      "id": "action:ads/add_campaign_ad_units",
+      "namespace": "ads",
+      "action": "add_campaign_ad_units",
+      "description": "Append ChatGPT Ads ad units to a campaign.",
+      "mode": "risk",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/create_ad_unit",
+        "action:ads/get_campaign"
+      ],
+      "long_description": "Primary use:\nAppend ChatGPT Ads ad units to a campaign while keeping existing campaign ad units.\n\nUse when:\n- The user approved additional ad units for an existing campaign.\n- Existing campaign ad units should remain attached.\n\nDo not use when:\n- The desired final set should exactly match a new list. Use replace_campaign_ad_units.\n- The ad_unit_ids are unknown. Create or inspect ad units first.\n\nWorkflow:\n1. Resolve campaign_id and ad_unit_ids.\n2. Submit the append operation for HITL review.\n3. Read the campaign back to confirm the final binding.\n\nSide effects:\n- Mutates the campaign's attached ad units by adding ids.\n- Does not activate the campaign.\n\nOutput semantics:\n- raw is the Gravity response for the ad-unit binding mutation.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "chatgpt_ads only",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
+        },
+        {
+          "name": "ad_unit_ids",
+          "type": "list",
+          "required": true,
+          "description": "",
+          "source": "upstream:action:ads/create_ad_unit"
+        }
+      ],
+      "output_shape": "{\"success\": true, \"raw\": {...}}"
+    },
+    {
       "id": "action:ads/add_campaign_audience_targeting",
       "namespace": "ads",
       "action": "add_campaign_audience_targeting",
@@ -826,6 +876,48 @@
         }
       ],
       "output_shape": "{\"success\": true}"
+    },
+    {
+      "id": "action:ads/archive_ad_unit",
+      "namespace": "ads",
+      "action": "archive_ad_unit",
+      "description": "Toggle archive state for one ChatGPT Ads ad unit; review-gated risk action.",
+      "mode": "risk",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/get_campaign"
+      ],
+      "long_description": "Primary use:\nToggle archive state for one ChatGPT Ads ad unit after explicit user confirmation.\n\nUse when:\n- The current ad-unit state has been verified and the user wants to archive it.\n- The user understands Gravity's endpoint is a toggle, not a one-way delete.\n\nDo not use when:\n- The current state is unknown. Read dashboard/campaign detail first.\n- The intent is campaign removal. Campaign archive is not exposed because it is also a toggle.\n\nWorkflow:\n1. Verify the target ad_unit_id and current state.\n2. Present the toggle risk in the HITL summary.\n3. Submit archive_ad_unit only after explicit approval.\n\nSide effects:\n- Calls Gravity's ad-unit archive toggle endpoint.\n- Repeating the same action may unarchive the ad unit.\n\nOutput semantics:\n- resource_id is the ad_unit_id when available or the requested id fallback.\n- raw preserves the Gravity response.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "chatgpt_ads only",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "ad_unit_id",
+          "type": "string",
+          "required": true,
+          "description": "",
+          "source": "upstream:action:ads/create_ad_unit,action:ads/get_campaign"
+        }
+      ],
+      "output_shape": "{\"success\": true, \"resource_id\": \"AD_UNIT_ID\", \"raw\": {...}}"
     },
     {
       "id": "action:ads/archive_lead_form",
@@ -1829,6 +1921,107 @@
       "output_shape": "{\"id\": \"rule_id\"}"
     },
     {
+      "id": "action:ads/create_ad_unit",
+      "namespace": "ads",
+      "action": "create_ad_unit",
+      "description": "Create a ChatGPT Ads ad unit draft; review-gated.",
+      "mode": "write",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/create_campaign"
+      ],
+      "long_description": "Primary use:\nCreate one ChatGPT Ads ad unit before creating a campaign. Gravity campaigns require at least one ad_unit_id.\n\nUse when:\n- The user has approved ChatGPT Ads copy and landing page inputs.\n- A deployment flow needs an ad_unit_id for action:ads/create_campaign.\n\nDo not use when:\n- The platform is Google or Meta. Use their creative/ad actions instead.\n- The user only needs a media plan draft. Use the ChatGPT Ads media-plan workflow.\n\nWorkflow:\n1. Prepare description, landing_page, static_ad_text, and static_cta.\n2. Submit create_ad_unit for HITL review.\n3. Use the returned resource_id/id in create_campaign.ad_unit_ids.\n\nSide effects:\n- Creates a draft ad unit in the advertiser dashboard.\n- Rejects upstream server-managed fields like ad_text_mode, source, status, review_status, review_reason, metadata, and generate_static_text before calling the dashboard API.\n- Does not create or activate a campaign and does not start spend by itself.\n\nOutput semantics:\n- resource_id is the ad unit id when the dashboard response includes id.\n- raw preserves the Gravity response for later campaign binding.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "chatgpt_ads only",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "ChatGPT Ads advertiser account id from ads.list_ad_accounts.",
+          "example": "<chatgpt_ads_account_id>"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "Optional ad unit name."
+        },
+        {
+          "name": "headline",
+          "type": "string",
+          "required": false,
+          "description": "Optional ad unit headline."
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": true,
+          "description": "Required ad unit description.",
+          "example": "Sustainable, machine-washable wool sneakers."
+        },
+        {
+          "name": "landing_page",
+          "type": "string",
+          "required": true,
+          "description": "Required ad unit landing page URL.",
+          "example": "https://example.com/?utm_source=chatgpt_ads"
+        },
+        {
+          "name": "static_ad_text",
+          "type": "string",
+          "required": true,
+          "description": "Required static ad body text.",
+          "example": "Meet the shoes made from nature."
+        },
+        {
+          "name": "static_cta",
+          "type": "string",
+          "required": true,
+          "description": "Required static call to action.",
+          "example": "Shop now"
+        },
+        {
+          "name": "brand_name",
+          "type": "string",
+          "required": false,
+          "description": "Advertised brand name.",
+          "example": "Allbirds"
+        },
+        {
+          "name": "favicon_url",
+          "type": "string",
+          "required": false,
+          "description": "Optional favicon URL."
+        },
+        {
+          "name": "image_url",
+          "type": "string",
+          "required": false,
+          "description": "Optional image URL."
+        },
+        {
+          "name": "utm_params",
+          "type": "list",
+          "required": false,
+          "description": "Optional UTM parameter list."
+        }
+      ],
+      "output_shape": "{\"success\": true, \"resource_id\": \"AD_UNIT_ID\", \"raw\": {\"id\": \"AD_UNIT_ID\"}}"
+    },
+    {
       "id": "action:ads/create_adset",
       "namespace": "ads",
       "action": "create_adset",
@@ -2008,32 +2201,104 @@
       "output_shape": "{\"id\": \"23...\"}"
     },
     {
-      "id": "action:ads/create_campaign",
+      "id": "action:ads/create_bidding_strategy",
       "namespace": "ads",
-      "action": "create_campaign",
-      "description": "Create a campaign on Google/Meta Ads in PAUSED state; review-gated, reversible via remove_campaign.",
+      "action": "create_bidding_strategy",
+      "description": "Create a reusable Google portfolio Target CPA or Target ROAS strategy.",
       "mode": "write",
       "platforms": [
-        "google",
-        "meta"
+        "google"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
-        "action:ads/list_campaigns",
-        "action:ads/update_campaign",
-        "action:ads/remove_campaign",
-        "action:_batch/submit",
-        "action:ads/list_operation_records"
+        "action:ads/update_campaign"
       ],
-      "long_description": "Primary use:\nCreate a new advertising campaign shell. Always force-paused at create time so the agent can attach budgets, ad groups, ads, and targeting before manually activating.\n\nUse when:\n- The user asks to launch a new campaign with a chosen objective and budget.\n- A workflow needs a fresh campaign to host new ad groups or ad sets.\n\nDo not use when:\n- The user wants to enable spend immediately. Use create_campaign first then action:ads/update_campaign with status=ENABLED (Google) or ACTIVE (Meta).\n- The user wants a Google Performance Max campaign. Use action:ads/create_pmax_campaign; create_campaign rejects PERFORMANCE_MAX because a campaign shell without an asset group is not usable.\n- The campaign already exists. Use action:ads/update_campaign instead.\n- The user is exploring potential reach. Use action:ads/estimate_audience_size.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. (Google) Choose campaign_type and budget_daily_micros; (Meta) choose objective.\n3. Submit via action:_batch/submit for HITL review.\n4. After approval, call action:ads/list_campaigns or action:ads/gaql_search to confirm.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new campaign's numeric id. raw.results contains two entries (campaignBudgetResult, campaignResult) from one atomic mutate.\n- Meta raw.id is the new campaign id; the envelope's resource_id matches it.\n\nSide effects:\n- Creates a Campaign on the platform; Google also creates a dedicated CampaignBudget named 'Budget for {name}' in the same atomic mutate.\n- Status is force-paused on both platforms (Google PAUSED, Meta PAUSED) regardless of any status the caller supplies.\n- No immediate spend; spend begins only after a later update_campaign sets status to ENABLED (Google) or ACTIVE (Meta).\n- Reversible via action:ads/remove_campaign (Google REMOVED is terminal; Meta archives and can be un-archived to PAUSED).",
+      "long_description": "Primary use:\nCreate a reusable Google portfolio Target CPA or Target ROAS strategy.\n\nUse when:\n- You need a reusable Google Target CPA or Target ROAS portfolio strategy.\n\nDo not use when:\n- You need a campaign-specific standard bidding strategy; use action:ads/update_campaign.\n\nWorkflow:\n1. Read the current strategy or campaign state when changing an existing resource.\n2. For write operations, submit through action:_batch/submit for HITL review.\n3. Verify the resulting state with action:ads/get_bidding_strategy.\n\nOutput semantics:\n- Returns the created, read, updated, listed, or removed Google portfolio strategy result.\n\nSide effects:\n- Creates, updates, or removes a Google portfolio strategy. Removing a strategy is irreversible and requires it to be unused.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "google or meta",
+          "description": "Must be google.",
           "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id without dashes.",
+          "example": "1234567890"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Portfolio bidding strategy name; optional when updating.",
+          "example": "Target CPA portfolio"
+        },
+        {
+          "name": "bidding_strategy_type",
+          "type": "string",
+          "required": true,
+          "description": "Portfolio strategy type.",
+          "example": "TARGET_CPA",
+          "enum": [
+            "TARGET_CPA",
+            "TARGET_ROAS"
+          ]
+        },
+        {
+          "name": "target_cpa_micros",
+          "type": "integer",
+          "required": false,
+          "description": "Required when bidding_strategy_type is TARGET_CPA.",
+          "example": 5000000
+        },
+        {
+          "name": "target_roas",
+          "type": "number",
+          "required": false,
+          "description": "Required when bidding_strategy_type is TARGET_ROAS.",
+          "example": 3.5
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
+      "id": "action:ads/create_campaign",
+      "namespace": "ads",
+      "action": "create_campaign",
+      "description": "Create a campaign on Google, Meta, or ChatGPT Ads in PAUSED state; review-gated.",
+      "mode": "write",
+      "platforms": [
+        "google",
+        "meta",
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:_batch/submit",
+        "action:ads/list_campaigns",
+        "action:ads/get_campaign",
+        "action:ads/update_campaign",
+        "action:ads/create_ad_unit",
+        "action:ads/query_single_dimension"
+      ],
+      "long_description": "Primary use:\nCreate a new advertising campaign shell. Google, Meta, and ChatGPT Ads creation paths force the campaign into a paused/non-active state so the agent can finish setup and review before spend begins.\n\nUse when:\n- The user asks to launch a new campaign with a chosen objective and budget.\n- A workflow needs a fresh campaign to host ad groups, ad sets, or ChatGPT Ads ad units.\n\nDo not use when:\n- The user wants to enable spend immediately. Create paused first, then use action:ads/update_campaign only after explicit activation approval.\n- The user wants a Google Performance Max campaign. Use action:ads/create_pmax_campaign.\n- The campaign already exists. Use action:ads/update_campaign instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. For Google choose campaign_type and budget_daily_micros; for Meta choose objective; for ChatGPT Ads create ad units first and pass landing_page, campaign_objective, budget, and a non-empty ad_unit_ids list.\n3. Submit via action:_batch/submit for HITL review.\n4. After approval, call action:ads/list_campaigns or action:ads/get_campaign to confirm the paused/non-active state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new campaign's numeric id. Meta raw.id is the new campaign id. ChatGPT Ads raw.campaign_id or raw.id is surfaced as resource_id.\n\nSide effects:\n- Creates a Campaign on the platform; Google also creates a dedicated CampaignBudget named 'Budget for {name}' in the same atomic mutate.\n- Status is force-paused/non-active regardless of any status the caller supplies.\n- ChatGPT Ads create rejects upstream-removed fields like keywords, network_type, and network_config before calling the dashboard API.\n- No immediate spend; spend begins only after a later explicit activation update.\n- remove_campaign is available only for Google and Meta. ChatGPT Ads campaign archive is not exposed because Gravity's endpoint is a toggle.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "google, meta, or chatgpt_ads",
+          "example": "chatgpt_ads",
+          "enum": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "account_id",
@@ -2231,6 +2496,178 @@
           "type": "string",
           "required": false,
           "description": "Meta only: ISO-8601 scheduled stop time."
+        },
+        {
+          "name": "landing_page",
+          "type": "string",
+          "required": false,
+          "description": "ChatGPT Ads only (required): final landing page URL for the campaign. Use the UTM-tagged URL prepared by the ChatGPT Ads media plan.",
+          "example": "https://example.com/?utm_source=chatgpt_ads",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "ChatGPT Ads only (required): dashboard daily budget in dollars. Prefer budget_daily_micros for cross-platform payloads; either field satisfies the ChatGPT Ads required budget.",
+          "example": 300
+        },
+        {
+          "name": "is_active",
+          "type": "boolean",
+          "required": false,
+          "description": "ChatGPT Ads only: accepted by the upstream create API, but Soku forces new campaigns to non-active by sending status=paused and is_active=false.",
+          "example": false,
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "campaign_objective",
+          "type": "string",
+          "required": false,
+          "description": "ChatGPT Ads only (required): campaign objective. Current Gravity dashboard values are clicks or conversions.",
+          "example": "clicks",
+          "enum": [
+            "clicks",
+            "conversions"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_unit_ids",
+          "type": "list",
+          "required": false,
+          "description": "ChatGPT Ads only (required): non-empty ad unit id list. Create ad units first with action:ads/create_ad_unit, then pass the returned ids.",
+          "example": [
+            "ad_unit_123"
+          ],
+          "source": "upstream:action:ads/create_ad_unit",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "billing_model",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "click_goal",
+          "type": "integer",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "max_cpc",
+          "type": "number",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "impression_goal",
+          "type": "integer",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "max_cpm",
+          "type": "number",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "conversion_type",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "max_cpa",
+          "type": "number",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "demographics",
+          "type": "object",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "utm_params",
+          "type": "list",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_countries",
+          "type": "list",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_devices",
+          "type": "list",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "lead_form_config",
+          "type": "object",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Campaign created successfully\", \"resource_id\": \"123\", \"resource_name\": \"customers/X/campaigns/123\", \"results\": [{\"campaignBudgetResult\": {\"resourceName\": \"...\"}}, {\"campaignResult\": {\"resourceName\": \"...\"}}]}  // Meta: {\"id\": \"23...\"}"
@@ -3807,6 +4244,62 @@
       "output_shape": "{\"data\": [{\"body\": \"<iframe ...></iframe>\"}]}"
     },
     {
+      "id": "action:ads/generate_ad_units",
+      "namespace": "ads",
+      "action": "generate_ad_units",
+      "description": "Generate ChatGPT Ads draft ad units from a landing page URL.",
+      "mode": "write",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/get_campaign",
+        "action:ads/replace_campaign_ad_units"
+      ],
+      "long_description": "Primary use:\nAsk Gravity to generate 1-5 draft ad units from a site URL and attach them to an existing ChatGPT Ads campaign.\n\nUse when:\n- A campaign already exists and the user wants platform-generated draft variants.\n- The landing page is public and appropriate for creative generation.\n\nDo not use when:\n- The campaign does not exist yet. Create ad units and a campaign first.\n- The user needs deterministic approved copy. Use create_ad_unit instead.\n\nWorkflow:\n1. Resolve campaign_id via create_campaign, get_campaign, or list_campaigns.\n2. Submit site_url and count for HITL review. count must be between 1 and 5.\n3. Read the campaign back and review generated drafts before activation.\n\nSide effects:\n- Creates draft ad units on Gravity and attaches them to the campaign.\n- Does not activate the campaign.\n\nOutput semantics:\n- raw is the Gravity response and may include generated ad-unit records or ids.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "chatgpt_ads only",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
+        },
+        {
+          "name": "site_url",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "required": false,
+          "description": "Number of ad units to generate, 1-5. Default 2.",
+          "example": 2
+        }
+      ],
+      "output_shape": "{\"success\": true, \"raw\": {\"ad_units\": [...]}}"
+    },
+    {
       "id": "action:ads/get_account_info",
       "namespace": "ads",
       "action": "get_account_info",
@@ -4051,32 +4544,75 @@
       "output_shape": "{\"id\": \"120...\", \"name\": \"...\", \"campaign_id\": \"120...\", \"status\": \"ACTIVE|PAUSED|ARCHIVED\", \"daily_budget\": \"5000\", \"lifetime_budget\": \"...\", \"targeting\": {...}, \"bid_amount\": 100, \"bid_strategy\": \"...\", \"optimization_goal\": \"...\", \"billing_event\": \"...\", \"start_time\": \"ISO\", \"end_time\": \"ISO\", \"attribution_spec\": [...], \"destination_type\": \"...\", \"promoted_object\": {...}, \"pacing_type\": [...], \"budget_remaining\": \"...\", \"learning_stage_info\": {...}, \"created_time\": \"ISO\", \"updated_time\": \"ISO\"}"
     },
     {
+      "id": "action:ads/get_bidding_strategy",
+      "namespace": "ads",
+      "action": "get_bidding_strategy",
+      "description": "Read one reusable Google portfolio bidding strategy.",
+      "mode": "read",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/update_campaign"
+      ],
+      "long_description": "Primary use:\nRead one reusable Google portfolio bidding strategy.\n\nUse when:\n- You need a reusable Google Target CPA or Target ROAS portfolio strategy.\n\nDo not use when:\n- You need a campaign-specific standard bidding strategy; use action:ads/update_campaign.\n\nWorkflow:\n1. Read the current strategy or campaign state when changing an existing resource.\n2. For write operations, submit through action:_batch/submit for HITL review.\n3. Verify the resulting state with action:ads/get_bidding_strategy.\n\nOutput semantics:\n- Returns the created, read, updated, listed, or removed Google portfolio strategy result.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be google.",
+          "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id without dashes.",
+          "example": "1234567890"
+        },
+        {
+          "name": "bidding_strategy_id",
+          "type": "string",
+          "required": true,
+          "description": "Google portfolio bidding strategy id.",
+          "example": "123"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/get_campaign",
       "namespace": "ads",
       "action": "get_campaign",
-      "description": "Read one Meta campaign by id; returns realtime platform status, objective, budget, and timestamps.",
+      "description": "Read one Google, Meta, or ChatGPT Ads campaign by id; returns realtime platform state.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "google",
+        "meta",
+        "chatgpt_ads"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/list_campaigns",
         "action:ads/create_campaign",
-        "action:ads/bulk_create_campaigns",
         "action:ads/update_campaign"
       ],
-      "long_description": "Primary use:\nRealtime read-back for a known Meta campaign id, especially after a CLI create/update approval returns a campaign_id.\n\nUse when:\n- You already know a Meta campaign_id and need the current platform state.\n- You need to confirm status / effective_status after a write.\n- You need one campaign's objective, budget fields, or timestamps without paging through list_campaigns.\n\nDo not use when:\n- The campaign id is unknown. Use action:ads/list_campaigns first.\n- You need cached analytics or KPI data. Use action:ads/query_single_dimension.\n- The platform is Google. Use action:ads/list_campaigns or Google GAQL paths.\n\nWorkflow:\n1. Obtain account_id from list_ad_accounts and campaign_id from a create result, review result, or list_campaigns.\n2. Call this action with platform=meta, account_id, and campaign_id.\n3. Read raw.status and raw.effective_status for delivery state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Meta Graph API campaign object.\n- status is the configured switch (ACTIVE / PAUSED / ARCHIVED); effective_status is Meta's computed delivery status.",
+      "long_description": "Primary use:\nRealtime read-back for a known Google, Meta, or ChatGPT Ads campaign id, especially after a create/update approval returns a campaign_id.\n\nUse when:\n- You already know a campaign_id and need the current platform state.\n- You need to confirm status after a write.\n- You need one campaign's budget, bidding targets, targeting, landing page, objective, or timestamps without paging through list_campaigns.\n\nDo not use when:\n- The campaign id is unknown. Use action:ads/list_campaigns first.\n- You need cached analytics or KPI data. Use action:ads/query_single_dimension.\nWorkflow:\n1. Obtain account_id from list_ad_accounts and campaign_id from a create result, review result, or list_campaigns.\n2. Call this action with platform, account_id, and campaign_id.\n3. Read raw.campaign for Google, or the platform-native delivery fields for Meta and ChatGPT Ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaign includes status, budget, flight dates, bidding strategy and targets, network settings, language ids, and geo target ids.\n- Meta and ChatGPT Ads raw values are their platform-native campaign objects.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta only",
-          "example": "meta",
+          "description": "google, meta, or chatgpt_ads",
+          "example": "google",
           "enum": [
-            "meta"
+            "google",
+            "meta",
+            "chatgpt_ads"
           ]
         },
         {
@@ -4090,7 +4626,7 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Meta campaign id from create_campaign, bulk_create_campaigns, or list_campaigns.",
+          "description": "Campaign id from create_campaign, bulk_create_campaigns, or list_campaigns.",
           "example": "120251905634300079"
         }
       ],
@@ -4312,6 +4848,77 @@
       "output_shape": "{\"data\": [{\"id\": \"17841400000000000\", \"username\": \"arthaus.works\"}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}"
     },
     {
+      "id": "action:ads/get_conversion_tracking_snippets",
+      "namespace": "ads",
+      "action": "get_conversion_tracking_snippets",
+      "description": "Read installable Google website or call-conversion tag snippets.",
+      "mode": "read",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/create_conversion_action"
+      ],
+      "long_description": "Primary use:\nRetrieve the installable snippets for an existing Google website or click-to-call conversion.\n\nUse when:\n- A developer needs the global site tag and event snippet after conversion creation.\n\nDo not use when:\n- The conversion action has not been created; use action:ads/create_conversion_action first.\n- The conversion type does not provide website/call tag snippets.\n\nWorkflow:\n1. Pass the numeric conversion_action_id.\n2. Install the returned snippets according to the type and page format.\n\nOutput semantics:\n- Returns structured global_site_tag and event_snippet values; it does not modify the conversion action.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be google.",
+          "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id without dashes.",
+          "example": "1234567890"
+        },
+        {
+          "name": "conversion_action_id",
+          "type": "string",
+          "required": true,
+          "description": "Google conversion action id.",
+          "example": "123"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{\"tag_snippets\":[{\"global_site_tag\":\"...\",\"event_snippet\":\"...\"}]}}"
+    },
+    {
+      "id": "action:ads/get_data_readiness",
+      "namespace": "ads",
+      "action": "get_data_readiness",
+      "description": "Read per-account window×scope data-readiness so you can plan a segmented audit: audit ready windows now, flag not-ready windows as still syncing (never as zero).",
+      "mode": "read",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/list_ad_accounts",
+        "action:ads/query_single_dimension",
+        "action:ads/gaql_search"
+      ],
+      "long_description": "Primary use:\nBefore a deep / multi-window audit of a freshly-onboarded account, check which time windows are already synced. Onboarding metrics land in tiers, so recent windows are ready while older ones are still backfilling — an empty result for a not-ready window means 'still syncing', NOT zero spend.\n\nWindows: last_30d, 31_90d, ytd, history. Scopes per window: core (spend/impr/clicks/conv), dimensions (breakdowns), search_terms. Status per window×scope: ready | syncing | failed | stalled | pending. bootstrap_state is the account-level lifecycle (not_started | in_progress | completed | stalled); eta_hint is a coarse 'minutes' / 'hours' / null. live_fallback names a live query path (google -> gaql_search) available while syncing.\n\nSegmented-audit protocol:\n1. Call get_data_readiness first for the account(s) under audit.\n2. Audit ready window×scope with query_single_dimension / query_multi_dimension as normal.\n3. For a not-ready window: on google use gaql_search (live) if live_fallback=google; on meta/tiktok/chatgpt_ads note it is still syncing and revisit after eta_hint. NEVER report a not-ready window as zero spend.\n4. State the data boundary honestly in your answer, e.g. 'based on the last 30 days (ready); 31–90 days and full history are still syncing, ~{eta_hint}'.\n5. A 409 data_syncing error or a 200 response carrying a top-level 'readiness' object with partial=true means the same thing — apply this protocol.\n\nNotes:\n- readiness reflects the LAST PERSISTED bootstrap progress; it is not a live re-read of the ad platform.\n- A granted account on a platform with no ads metrics manifest (e.g. GA4) returns readiness=null with reason=no_metrics_manifest. That is NOT a missing or ungranted account — it simply has no window matrix.\n\nDo not use when:\n- bootstrap_state is already completed for the account (all windows are ready; just query normally).",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "Optional. Narrow to one granted account_id (from list_ad_accounts). Omit to return readiness for every brand-granted ads account.",
+          "example": "1234567890"
+        }
+      ],
+      "output_shape": "{\"accounts\": [{\"account_id\": \"1234567890\", \"platform\": \"google\", \"bootstrap_state\": \"in_progress\", \"windows\": {\"last_30d\": {\"core\": \"ready\", \"dimensions\": \"syncing\"}, \"31_90d\": {\"core\": \"syncing\"}}, \"eta_hint\": \"minutes\", \"pct\": 40, \"live_fallback\": \"google\"}, {\"account_id\": \"G-XYZ\", \"platform\": \"ga4\", \"readiness\": null, \"reason\": \"no_metrics_manifest\"}]}"
+    },
+    {
       "id": "action:ads/get_dataset_quality",
       "namespace": "ads",
       "action": "get_dataset_quality",
@@ -4369,6 +4976,73 @@
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"event_stats\": {...}, \"match_rate_approx\": \"...\"}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}  // Omitting both pixel_id and dataset_id triggers the list-all path (pass 'after' back to page). Supplying an unowned/nonexistent pixel_id returns {success:false, error:\"Dataset not found\", error_code:\"not_found\"}; match_rate_approx is approximate and may be null for low-volume or recently-created datasets."
+    },
+    {
+      "id": "action:ads/get_google_ads_report",
+      "namespace": "ads",
+      "action": "get_google_ads_report",
+      "description": "Run a predefined, fixed-column Google Ads performance report.",
+      "mode": "read",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/gaql_search",
+        "action:ads/get_resource_metadata"
+      ],
+      "long_description": "Use this action for account, campaign, ad, keyword, search-term, or bidding-strategy reports with stable default columns. It is read-only and uses the live Google Ads API. Omit dates for the latest continuous 30-day range.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be google.",
+          "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id without dashes.",
+          "example": "1234567890"
+        },
+        {
+          "name": "report_type",
+          "type": "string",
+          "required": true,
+          "description": "Predefined Google Ads report type.",
+          "example": "campaign",
+          "enum": [
+            "account",
+            "campaign",
+            "ad",
+            "keyword",
+            "search_term",
+            "bidding_strategy"
+          ]
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD; supply with end_date."
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD; supply with start_date."
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Row limit; defaults to 100."
+        }
+      ],
+      "output_shape": "{\"report_type\":\"campaign\",\"effective_date_range\":{\"start_date\":\"2026-01-01\",\"end_date\":\"2026-01-30\"},\"columns\":{}}"
     },
     {
       "id": "action:ads/get_insights",
@@ -4664,6 +5338,47 @@
       "output_shape": "{\"id\": \"act_...\", \"opportunity_score\": 82, \"recommendations\": {\"data\": [...]}, \"recommendations_error\": \"...optional, present only when the recommendations edge failed...\"}  // opportunity_score is an integer 0-100 (not a 0-1 fraction); may be null/absent when not yet rolled out for the account or when the token lacks ads performance read scope."
     },
     {
+      "id": "action:ads/get_pmax_campaign",
+      "namespace": "ads",
+      "action": "get_pmax_campaign",
+      "description": "Read a Google Performance Max campaign, asset-group state, attachments, and signal status.",
+      "mode": "read",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/create_pmax_campaign",
+        "action:ads/remove_campaign"
+      ],
+      "long_description": "Primary use:\nRead a Performance Max campaign and its persisted asset-group structure without changing delivery.\n\nUse when:\n- A create_pmax_campaign result must be verified through a live readback.\n- You need the asset attachments or signal approval state for an existing PMax campaign.\n\nDo not use when:\n- The campaign is a Search, Display, Shopping, or Video campaign; use action:ads/get_campaign.\n- You need to change assets or bidding; submit the relevant write action through HITL.\n\nWorkflow:\n1. Pass the numeric campaign_id returned by create_pmax_campaign.\n2. Inspect campaign status, asset-group final URLs, attachments, and signal records.\n\nOutput semantics:\n- Returns realtime campaign and asset-group state. Signal output contains resource identity and approval status because Google GAQL does not allow selecting audience or search-theme content.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be google.",
+          "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id, digits only without dashes.",
+          "example": "1234567890"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "Performance Max campaign id returned by create_pmax_campaign.",
+          "example": "123"
+        }
+      ],
+      "output_shape": "{\"success\": true, \"raw\": {\"campaign\": {\"campaign_id\": \"123\", \"status\": \"PAUSED\"}, \"asset_groups\": [{\"asset_group_id\": \"456\", \"status\": \"PAUSED\", \"final_urls\": [\"https://example.com\"], \"attachments\": [{\"asset_resource_name\": \"customers/.../assets/1\", \"field_type\": \"HEADLINE\"}], \"signals\": [{\"signal_resource_name\": \"customers/.../assetGroupSignals/1~2\", \"approval_status\": \"APPROVED\"}]}}]}}"
+    },
+    {
       "id": "action:ads/get_product_catalog_details",
       "namespace": "ads",
       "action": "get_product_catalog_details",
@@ -4933,7 +5648,7 @@
         "action:ads/resolve_terms",
         "action:ads/gaql_search"
       ],
-      "long_description": "FALLBACK PATH companion to gaql_search.\n\nPrimary use:\nGoogle Ads field discovery for a single GAQL resource such as campaign, ad_group, ad_group_criterion, or customer.\n\nUse when:\n- You plan to call gaql_search and need to know which native Google Ads fields exist.\n- You need to validate whether a field is selectable, filterable, or sortable.\n- A previous gaql_search failed because a raw field was unknown or not allowed.\n\nDo not use when:\n- You need cached business-layer analytics dimensions. Use list_dimensions.\n- You need conversion group business semantics. Use list_conversion_groups.\n- The platform is Meta. This action is Google-only.\n\nWorkflow:\n1. Choose the Google Ads GAQL resource name.\n2. Call this action to inspect fields.\n3. Use returned field names in gaql_search via raw.<resource>.<field>[.<subfield>...], raw.segments.X, or raw.metrics.X; pass resource_name to gaql_search when selecting related resources returned through selectable_with.\n\nOutput semantics:\n- selectable fields can be requested in gaql_search dimensions or metrics.\n- filterable fields can be used in gaql_search filters.\n- sortable fields can be used in gaql_search order_by.\n- data_type is the Google Ads API field data type.",
+      "long_description": "FALLBACK PATH companion to gaql_search.\n\nPrimary use:\nGoogle Ads field discovery for a single GAQL resource such as campaign, ad_group, ad_group_criterion, or customer.\n\nUse when:\n- You plan to call gaql_search and need to know which native Google Ads fields exist.\n- You need to validate whether a field is selectable, filterable, or sortable.\n- A previous gaql_search failed because a raw field was unknown or not allowed.\n\nDo not use when:\n- You need cached business-layer analytics dimensions. Use list_dimensions.\n- You need conversion group business semantics. Use list_conversion_groups.\n- The platform is Meta. This action is Google-only.\n\nAvailability:\n- Accounts connected through a proxy credential (rather than a native Google OAuth / service-account credential) cannot serve live field metadata; the action fails with field_metadata_unavailable (400). In that case validate fields by running gaql_search directly — an unknown field fails with gaql_invalid_query naming the field.\n\nWorkflow:\n1. Choose the Google Ads GAQL resource name.\n2. Call this action to inspect fields.\n3. Use returned field names in gaql_search via raw.<resource>.<field>[.<subfield>...], raw.segments.X, or raw.metrics.X; pass resource_name to gaql_search when selecting related resources returned through selectable_with.\n\nOutput semantics:\n- selectable fields can be requested in gaql_search dimensions or metrics.\n- filterable fields can be used in gaql_search filters.\n- sortable fields can be used in gaql_search order_by.\n- data_type is the Google Ads API field data type.",
       "input_params": [
         {
           "name": "platform",
@@ -5434,6 +6149,39 @@
       "output_shape": "{\"data\": [{\"id\": \"23...\", \"name\": \"...\", \"campaign_id\": \"23...\", \"status\": \"ACTIVE|PAUSED|ARCHIVED|DELETED\", \"daily_budget\": \"5000\", \"lifetime_budget\": \"...\", \"targeting\": {...}, \"bid_amount\": 100, \"bid_strategy\": \"...\", \"optimization_goal\": \"...\", \"billing_event\": \"...\", \"start_time\": \"ISO\", \"end_time\": \"ISO\"}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}"
     },
     {
+      "id": "action:ads/list_bidding_strategies",
+      "namespace": "ads",
+      "action": "list_bidding_strategies",
+      "description": "List reusable Google portfolio Target CPA and Target ROAS strategies.",
+      "mode": "read",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/update_campaign"
+      ],
+      "long_description": "Primary use:\nList reusable Google portfolio Target CPA and Target ROAS strategies.\n\nUse when:\n- You need a reusable Google Target CPA or Target ROAS portfolio strategy.\n\nDo not use when:\n- You need a campaign-specific standard bidding strategy; use action:ads/update_campaign.\n\nWorkflow:\n1. Read the current strategy or campaign state when changing an existing resource.\n2. For write operations, submit through action:_batch/submit for HITL review.\n3. Verify the resulting state with action:ads/get_bidding_strategy.\n\nOutput semantics:\n- Returns the created, read, updated, listed, or removed Google portfolio strategy result.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be google.",
+          "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id without dashes.",
+          "example": "1234567890"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/list_brand_campaigns",
       "namespace": "ads",
       "action": "list_brand_campaigns",
@@ -5528,18 +6276,19 @@
       "id": "action:ads/list_campaigns",
       "namespace": "ads",
       "action": "list_campaigns",
-      "description": "Read campaigns from Google/Meta Ads; returns campaigns[] or data[] with id, name, status, budget, and platform-specific fields.",
+      "description": "Read campaigns from Google, Meta, or ChatGPT Ads; returns platform-native campaign rows.",
       "mode": "read",
       "platforms": [
         "google",
-        "meta"
+        "meta",
+        "chatgpt_ads"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/create_campaign",
+        "action:ads/get_campaign",
         "action:ads/update_campaign",
-        "action:ads/remove_campaign",
         "action:ads/query_single_dimension"
       ],
       "long_description": "Primary use:\nLive campaign inventory directly from Google Ads or Meta Marketing API. Use this to confirm what exists on the platform before mutating, or to pick a campaign_id for a downstream write.\n\nUse when:\n- You need the current status, budget, or platform-side metadata of campaigns.\n- You are about to call update_campaign, remove_campaign, list_adsets, or set_geo_targeting and need a campaign_id.\n- The user asks what campaigns exist on the platform right now.\n\nDo not use when:\n- The user needs cached business-layer analytics or KPIs. Use action:ads/query_single_dimension instead.\n- The user needs Nex-side audit of agent actions. Use action:ads/list_operation_records instead.\n- The user needs platform-side change history. Use action:ads/get_change_history instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Call this action with platform and account_id.\n3. Use status_filter (Google or Meta) or objective_filter (Meta) to narrow.\n4. Pick a campaign_id for the next mutation.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaigns[] uses snake_case with budget_amount_micros (micros).\n- Meta raw.data[] is the Graph API body with daily_budget in cents and string IDs; effective_status reflects platform-side delivery state (WITH_ISSUES, IN_REVIEW, etc.) and may differ from status.\n- Google excludes REMOVED by default; pass status_filter to include it.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Docs do not state status_filter REMOVED returns only removed campaigns; no single call for all-including-removed Also note: Docs do not state ENABLED PAUSED REMOVED are the only accepted values; validate_status hard-errors otherwise Capability gap: No agent-facing limit or pagination for Google: returns all non-REMOVED campaigns, no SELECT LIMIT, no page token; relies on SDK implicit 10k-row paging with no cursor surfaced\n- meta: Guidance: Capability doc for status_filter says only 'Meta: effective_status filter' without enumerating allowed values; official effective_status enum is ACTIVE, PAUSED, ARCHIVED, DELETED, IN_PROCESS, WITH_ISSUES. Agent must guess valid strings. Also note: Doc does not state status_filter accepts only ONE value (single-element array), so an agent may try a comma list or array and get unexpected results. Capability gap: before cursor (reverse pagination) is not supported (handler only reads after); agents cannot page backward.",
@@ -5548,8 +6297,13 @@
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "google or meta",
-          "example": "google"
+          "description": "google, meta, or chatgpt_ads",
+          "example": "chatgpt_ads",
+          "enum": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "account_id",
@@ -6898,6 +7652,46 @@
       "output_shape": "{\"success\": true, \"message\": \"Removed 2 ad group audience criterion(s)\", \"removed_criteria\": [{\"resource_name\": \"customers/123/adGroupCriteria/111~222\", \"type\": \"USER_LIST\", \"negative\": false}], \"results\": [...]}"
     },
     {
+      "id": "action:ads/remove_bidding_strategy",
+      "namespace": "ads",
+      "action": "remove_bidding_strategy",
+      "description": "Remove an unused Google portfolio bidding strategy.",
+      "mode": "write",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/update_campaign"
+      ],
+      "long_description": "Primary use:\nRemove an unused Google portfolio bidding strategy.\n\nUse when:\n- You need a reusable Google Target CPA or Target ROAS portfolio strategy.\n\nDo not use when:\n- You need a campaign-specific standard bidding strategy; use action:ads/update_campaign.\n\nWorkflow:\n1. Read the current strategy or campaign state when changing an existing resource.\n2. For write operations, submit through action:_batch/submit for HITL review.\n3. Verify the resulting state with action:ads/get_bidding_strategy.\n\nOutput semantics:\n- Returns the created, read, updated, listed, or removed Google portfolio strategy result.\n\nSide effects:\n- Creates, updates, or removes a Google portfolio strategy. Removing a strategy is irreversible and requires it to be unused.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be google.",
+          "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id without dashes.",
+          "example": "1234567890"
+        },
+        {
+          "name": "bidding_strategy_id",
+          "type": "string",
+          "required": true,
+          "description": "Google portfolio bidding strategy id.",
+          "example": "123"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/remove_campaign",
       "namespace": "ads",
       "action": "remove_campaign",
@@ -7462,6 +8256,56 @@
         }
       ],
       "output_shape": "{\"success\": true}"
+    },
+    {
+      "id": "action:ads/replace_campaign_ad_units",
+      "namespace": "ads",
+      "action": "replace_campaign_ad_units",
+      "description": "Replace the full ChatGPT Ads ad-unit set on a campaign.",
+      "mode": "risk",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/create_ad_unit",
+        "action:ads/get_campaign"
+      ],
+      "long_description": "Primary use:\nReplace the complete ChatGPT Ads ad-unit set attached to a campaign.\n\nUse when:\n- The user approved an exact final list of campaign ad units.\n- Old campaign ad units should be detached from the campaign.\n\nDo not use when:\n- The user only wants to add variants. Use add_campaign_ad_units.\n- The provided ad_unit_ids list is empty.\n\nWorkflow:\n1. Resolve campaign_id and the exact non-empty ad_unit_ids list.\n2. Submit the replace operation for HITL review.\n3. Read the campaign back to confirm the final binding.\n\nSide effects:\n- Replaces the campaign's full ad-unit binding set.\n- Does not archive detached ad units and does not activate the campaign.\n\nOutput semantics:\n- raw is the Gravity response for the replacement mutation.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "chatgpt_ads only",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
+        },
+        {
+          "name": "ad_unit_ids",
+          "type": "list",
+          "required": true,
+          "description": "",
+          "source": "upstream:action:ads/create_ad_unit"
+        }
+      ],
+      "output_shape": "{\"success\": true, \"raw\": {...}}"
     },
     {
       "id": "action:ads/resolve_terms",
@@ -8188,7 +9032,7 @@
         "action:ads/update_campaign",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nEnable or disable search partners and display network distribution on a Google Search campaign.\n\nUse when:\n- The user wants to enable / disable Google Search Partners.\n- The user wants to enable / disable Display Network for a Search campaign.\n\nDo not use when:\n- The platform is Meta. Meta uses publisher_platforms inside the ad set targeting spec.\n- The user wants to toggle YouTube or other channels. This action handles only search_partners and display_network booleans.\n\nWorkflow:\n1. Decide which network booleans to flip.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns and/or gaql_search.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.message lists the field-mask paths that were updated.\n\nSide effects:\n- Campaign update with field-mask of network_settings.target_search_network and/or network_settings.target_content_network.\n- Raises ValueError if neither boolean is provided.\n- Reversible: re-call with the prior boolean values.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Naming/semantics gap: capability docs call the param 'search_partners' and describe it as 'search-partner distribution', which is correct, but the handler maps it to target_search_network. An agent reasoning from raw Google API field names might expect 'search_partners' to map to target_partner_search_network. The docs should state explicitly: search_partners -> network_settings.target_search_network (Search Partners), display_network -> target_content_network (Display Network). Also note: The official precondition that enabling search partners requires google.com search to be on (target_google_search=true) is not surfaced. If the API returns the corresponding error, the agent has no documented remedy (because target_google_search is not exposed). Capability gap: target_google_search: not exposed in any of the three layers. Low-impact (Search campaigns keep it on by default) but it is the only way to satisfy the API's target_search_network -> target_google_search dependency and to fully control google.com search serving.",
+      "long_description": "Primary use:\nEnable or disable search partners and display network distribution on a Google Search campaign.\n\nUse when:\n- The user wants to enable / disable Google Search Partners.\n- The user wants to enable / disable Display Network for a Search campaign.\n\nDo not use when:\n- The platform is Meta. Meta uses publisher_platforms inside the ad set targeting spec.\n- The user wants to toggle YouTube or other channels. This action handles only the four Google campaign network_settings booleans.\n\nWorkflow:\n1. Decide which network booleans to flip.\n   Prefer the native target_* parameters. search_partners maps to target_search_network and display_network maps to target_content_network.\n   Enabling target_search_network may require target_google_search=true in the same update.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns and/or gaql_search.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.message lists the field-mask paths that were updated.\n\nSide effects:\n- Campaign update with field-mask for the supplied native network_settings fields.\n- Raises ValueError if neither boolean is provided.\n- Reversible: re-call with the prior boolean values.",
       "input_params": [
         {
           "name": "platform",
@@ -8222,6 +9066,34 @@
           "type": "boolean",
           "required": false,
           "description": "Enable display-network distribution.",
+          "example": false
+        },
+        {
+          "name": "target_google_search",
+          "type": "boolean",
+          "required": false,
+          "description": "Native Google flag for Google Search distribution.",
+          "example": true
+        },
+        {
+          "name": "target_search_network",
+          "type": "boolean",
+          "required": false,
+          "description": "Native Google flag for search-partner distribution; preferred over legacy search_partners.",
+          "example": true
+        },
+        {
+          "name": "target_content_network",
+          "type": "boolean",
+          "required": false,
+          "description": "Native Google flag for Display Network distribution; preferred over legacy display_network.",
+          "example": false
+        },
+        {
+          "name": "target_partner_search_network",
+          "type": "boolean",
+          "required": false,
+          "description": "Native Google flag for partner Search Network distribution.",
           "example": false
         }
       ],
@@ -8800,6 +9672,78 @@
       "output_shape": "{\"success\": true}"
     },
     {
+      "id": "action:ads/update_bidding_strategy",
+      "namespace": "ads",
+      "action": "update_bidding_strategy",
+      "description": "Update a reusable Google portfolio Target CPA or Target ROAS strategy.",
+      "mode": "write",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/update_campaign"
+      ],
+      "long_description": "Primary use:\nUpdate a reusable Google portfolio Target CPA or Target ROAS strategy.\n\nUse when:\n- You need a reusable Google Target CPA or Target ROAS portfolio strategy.\n\nDo not use when:\n- You need a campaign-specific standard bidding strategy; use action:ads/update_campaign.\n\nWorkflow:\n1. Read the current strategy or campaign state when changing an existing resource.\n2. For write operations, submit through action:_batch/submit for HITL review.\n3. Verify the resulting state with action:ads/get_bidding_strategy.\n\nOutput semantics:\n- Returns the created, read, updated, listed, or removed Google portfolio strategy result.\n\nSide effects:\n- Creates, updates, or removes a Google portfolio strategy. Removing a strategy is irreversible and requires it to be unused.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be google.",
+          "example": "google"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Google customer id without dashes.",
+          "example": "1234567890"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "Portfolio bidding strategy name; optional when updating.",
+          "example": "Target CPA portfolio"
+        },
+        {
+          "name": "bidding_strategy_id",
+          "type": "string",
+          "required": true,
+          "description": "Google portfolio bidding strategy id.",
+          "example": "123"
+        },
+        {
+          "name": "bidding_strategy_type",
+          "type": "string",
+          "required": false,
+          "description": "Portfolio strategy type; optional for a rename-only update.",
+          "example": "TARGET_CPA",
+          "enum": [
+            "TARGET_CPA",
+            "TARGET_ROAS"
+          ]
+        },
+        {
+          "name": "target_cpa_micros",
+          "type": "integer",
+          "required": false,
+          "description": "Required when bidding_strategy_type is TARGET_CPA.",
+          "example": 5000000
+        },
+        {
+          "name": "target_roas",
+          "type": "number",
+          "required": false,
+          "description": "Required when bidding_strategy_type is TARGET_ROAS.",
+          "example": 3.5
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/update_campaign",
       "namespace": "ads",
       "action": "update_campaign",
@@ -8807,7 +9751,8 @@
       "mode": "risk",
       "platforms": [
         "google",
-        "meta"
+        "meta",
+        "chatgpt_ads"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -8824,8 +9769,13 @@
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "google or meta",
-          "example": "google"
+          "description": "google, meta, or chatgpt_ads",
+          "example": "chatgpt_ads",
+          "enum": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "account_id",
@@ -8851,8 +9801,9 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Lifecycle status. Google only accepts ENABLED, PAUSED, REMOVED (handler now returns a clear error for anything else, including Meta's 'ACTIVE', instead of silently pausing). Meta: ACTIVE, PAUSED, ARCHIVED. Google REMOVED is terminal/irreversible. Source: constant enum chosen by the agent.",
-          "example": "ENABLED"
+          "description": "Google/Meta use their native status contracts; for ChatGPT Ads, pass draft, active, or paused. active may fail with 402 if the advertiser has no payment method; deployment skills should keep new campaigns paused unless the user explicitly approves activation.",
+          "example": "paused",
+          "source": "constant"
         },
         {
           "name": "start_date",
@@ -8891,6 +9842,16 @@
             "TARGET_SPEND"
           ],
           "source": "constant",
+          "platform": [
+            "google"
+          ]
+        },
+        {
+          "name": "portfolio_bidding_strategy_id",
+          "type": "string",
+          "required": false,
+          "description": "Google only: reusable portfolio Target CPA/ROAS strategy id. Mutually exclusive with bidding_strategy and its target fields.",
+          "example": "123456789",
           "platform": [
             "google"
           ]
@@ -8983,6 +9944,92 @@
           "type": "string",
           "required": false,
           "description": "Meta only: ISO-8601 stop time."
+        },
+        {
+          "name": "daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "landing_page",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "campaign_objective",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "enum": [
+            "clicks",
+            "conversions"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "utm_params",
+          "type": "list",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_countries",
+          "type": "list",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_devices",
+          "type": "list",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "custom_favicon_url",
+          "type": "string",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "lead_form_config",
+          "type": "object",
+          "required": false,
+          "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Campaign updated: name, status, budget_amount_micros\", \"results\": [...]}  // Meta: {\"success\": true}"
