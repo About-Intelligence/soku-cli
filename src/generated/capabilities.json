@@ -2475,14 +2475,14 @@
           "name": "target_cpa_micros",
           "type": "integer",
           "required": false,
-          "description": "Google only: required companion when bidding_strategy=TARGET_CPA. Target cost-per-action in micros (1 USD = 1_000_000). The handler errors if TARGET_CPA is chosen without it. Source: user-provided target CPA converted to micros.",
+          "description": "Google only: target cost-per-action in micros (1 USD = 1_000_000). Required companion when bidding_strategy=TARGET_CPA (the handler errors without it). Optional target when bidding_strategy=MAXIMIZE_CONVERSIONS — Google's standard tCPA form since standalone TargetCpa strategies were deprecated. Any other strategy rejects it with a clear error. Source: user-provided target CPA converted to micros.",
           "example": 20000000
         },
         {
           "name": "target_roas",
           "type": "number",
           "required": false,
-          "description": "Google only: required companion when bidding_strategy=TARGET_ROAS. Target return on ad spend as a ratio (e.g. 4.0 = 400%). The handler errors if TARGET_ROAS is chosen without it. Source: user-provided target ROAS ratio.",
+          "description": "Google only: target return on ad spend as a ratio (e.g. 4.0 = 400%). Required companion when bidding_strategy=TARGET_ROAS (the handler errors without it). Optional target when bidding_strategy=MAXIMIZE_CONVERSION_VALUE — Google's standard tROAS form since standalone TargetRoas strategies were deprecated. Any other strategy rejects it with a clear error. Source: user-provided target ROAS ratio.",
           "example": 4.0
         },
         {
@@ -9896,7 +9896,7 @@
         "action:_batch/submit",
         "action:ads/list_operation_records"
       ],
-      "long_description": "Primary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas.\n- Reversibility: re-call with prior values to roll back.",
+      "long_description": "Primary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Reversibility: re-call with prior values to roll back.",
       "input_params": [
         {
           "name": "platform",
@@ -9993,7 +9993,7 @@
           "name": "target_cpa_micros",
           "type": "integer",
           "required": false,
-          "description": "Google only: required companion when bidding_strategy=TARGET_CPA. Target cost-per-action in micros (1 USD = 1_000_000).",
+          "description": "Google only: target cost-per-action in micros (1 USD = 1_000_000). Required companion when bidding_strategy=TARGET_CPA; optional target when bidding_strategy=MAXIMIZE_CONVERSIONS (Google's standard tCPA form). Rejected for other strategies.",
           "example": 12000000,
           "platform": [
             "google"
@@ -10003,7 +10003,7 @@
           "name": "target_roas",
           "type": "number",
           "required": false,
-          "description": "Google only: required companion when bidding_strategy=TARGET_ROAS. Return on ad spend as a ratio, e.g. 4.0 for 400%.",
+          "description": "Google only: return on ad spend as a ratio, e.g. 4.0 for 400%. Required companion when bidding_strategy=TARGET_ROAS; optional target when bidding_strategy=MAXIMIZE_CONVERSION_VALUE (Google's standard tROAS form). Rejected for other strategies.",
           "example": 4.0,
           "platform": [
             "google"
