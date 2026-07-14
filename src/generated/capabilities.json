@@ -1801,11 +1801,24 @@
           "name": "asset_feed_spec",
           "type": "object",
           "required": false,
-          "description": "Meta only: dynamic creative (Advantage+ creative) spec. When supplied, Meta auto-combines multiple assets into optimized variations, and the handler builds a minimal object_story_spec (page identity only) alongside it. Shape: {images:[{hash}] and/or videos:[{video_id,thumbnail_hash}], bodies:[{text}], titles:[{text}], descriptions:[{text}], link_urls:[{website_url}], call_to_action_types:[...], ad_formats:[...]}. REQUIRED sub-keys: at least one of images/videos, AND ad_formats (e.g. ['SINGLE_IMAGE'], ['CAROUSEL'], ['SINGLE_VIDEO']) — the handler rejects the call otherwise. Mutually exclusive with the single-asset fields (image_hash / image_url / video_id / child_attachments / object_story_id): put those assets inside the asset_feed_spec arrays. Top-level copy fields (message / headline / link / description / caption) are ignored on this path — put copy in bodies / titles / descriptions / link_urls instead. Top-level call_to_action_type and lead_gen_form_id are REJECTED (not silently dropped) — put call_to_action_types (and the lead form) inside the asset_feed_spec. Prerequisite: the ad set that runs this creative must be dynamic-creative-enabled (see update_adset.is_dynamic_creative). Source: user-provided per Meta Advantage+ creative / asset_feed_spec reference.",
+          "description": "Meta only: asset feed spec, serving TWO distinct modes. (A) Dynamic creative (Advantage+): multiple assets per type, Meta auto-combines optimized variations — this mode REQUIRES a dynamic-creative-enabled ad set (see update_adset.is_dynamic_creative). (B) Placement asset customization: one asset per placement (e.g. 4:5 image for feed, 9:16 for story) mapped via asset_customization_rules — this mode works on a NORMAL ad set, NO dynamic-creative flag needed (live-verified). Either way the handler builds a minimal object_story_spec (page identity only) alongside it. Shape: {images:[{hash, adlabels:[{name}]}] and/or videos:[{video_id,thumbnail_hash}], bodies:[{text}], titles:[{text}], descriptions:[{text}], link_urls:[{website_url}], call_to_action_types:[...], ad_formats:[...], asset_customization_rules:[{customization_spec:{publisher_platforms, facebook_positions and/or instagram_positions}, image_label:{name}, priority}]}. For mode B: give each image an adlabels name, then map it with a rule whose image_label.name matches; Meta auto-fills age_min/age_max into customization_spec on readback. REQUIRED sub-keys: at least one of images/videos, AND ad_formats (e.g. ['SINGLE_IMAGE'], ['CAROUSEL'], ['SINGLE_VIDEO']) — the handler rejects the call otherwise; placement customization uses ['SINGLE_IMAGE']. Mutually exclusive with the single-asset fields (image_hash / image_url / video_id / child_attachments / object_story_id): put those assets inside the asset_feed_spec arrays. Top-level copy fields (message / headline / link / description / caption) are ignored on this path — put copy in bodies / titles / descriptions / link_urls instead. Top-level call_to_action_type and lead_gen_form_id are REJECTED (not silently dropped) — put call_to_action_types (and the lead form) inside the asset_feed_spec. Instagram placements additionally need platform_extras.instagram_user_id from get_connected_instagram_accounts. Source: Meta Advantage+ creative / asset_feed_spec reference + live verification (2026-07, facebook feed+story placement customization end-to-end).",
           "example": {
             "images": [
               {
-                "hash": "abc123"
+                "hash": "hashA",
+                "adlabels": [
+                  {
+                    "name": "feed-45"
+                  }
+                ]
+              },
+              {
+                "hash": "hashB",
+                "adlabels": [
+                  {
+                    "name": "story-916"
+                  }
+                ]
               }
             ],
             "bodies": [
@@ -1818,8 +1831,46 @@
                 "text": "Summer Sale"
               }
             ],
+            "link_urls": [
+              {
+                "website_url": "https://example.com"
+              }
+            ],
+            "call_to_action_types": [
+              "LEARN_MORE"
+            ],
             "ad_formats": [
               "SINGLE_IMAGE"
+            ],
+            "asset_customization_rules": [
+              {
+                "customization_spec": {
+                  "publisher_platforms": [
+                    "facebook"
+                  ],
+                  "facebook_positions": [
+                    "feed"
+                  ]
+                },
+                "image_label": {
+                  "name": "feed-45"
+                },
+                "priority": 1
+              },
+              {
+                "customization_spec": {
+                  "publisher_platforms": [
+                    "facebook"
+                  ],
+                  "facebook_positions": [
+                    "story"
+                  ]
+                },
+                "image_label": {
+                  "name": "story-916"
+                },
+                "priority": 2
+              }
             ]
           },
           "source": "user"
@@ -2172,7 +2223,7 @@
         "action:ads/estimate_audience_size",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nCreate a new Meta ad set inside a campaign, with billing, optimization, targeting, and budget. Force-paused at create so ads can be attached before activating.\n\nUse when:\n- The user wants to add a new ad set to a Meta campaign.\n- A workflow needs an adset_id to host ads.\n\nDo not use when:\n- The platform is Google. Use action:ads/create_ad_group.\n- The campaign already has a matching ad set. Reuse via action:ads/list_adsets.\n\nWorkflow:\n1. Call action:ads/list_campaigns to choose a campaign_id.\n2. Build the targeting spec (geo_locations, age_min/max, interests, ...).\n3. Call action:ads/estimate_audience_size to validate reach if needed.\n4. Submit via action:_batch/submit for HITL review.\n5. After approval, call action:ads/create_ad with the new adset_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API response: {id: '...'}; the envelope's resource_id matches.\n- budget_daily_micros is converted to daily_budget in cents (int(micros/10_000)) by the dispatcher.\n\nMeta lead-gen / ON_AD notes:\n- For Campaign Budget Optimization campaigns, set is_cbo_adset=true and omit ad-set budget fields; budget stays on the campaign.\n- destination_type=ON_AD + optimization_goal=LEAD_GENERATION uses an instant form flow. The handler preserves manual targeting by defaulting targeting.targeting_automation.advantage_audience to 0 when omitted.\n- If targeting.instagram_positions contains explore_home, Meta also requires explore; the handler auto-adds explore when it is missing.\n\nSide effects:\n- Creates an AdSet under the campaign.\n- Force-paused at create (status=PAUSED), overwriting any caller value.\n- No immediate spend; activation requires a later action:ads/update_adset with status=ACTIVE.\n- Reversible via action:ads/remove_adset (archives; can un-archive to PAUSED).",
+      "long_description": "Primary use:\nCreate a new Meta ad set inside a campaign, with billing, optimization, targeting, and budget. Force-paused at create so ads can be attached before activating.\n\nUse when:\n- The user wants to add a new ad set to a Meta campaign.\n- A workflow needs an adset_id to host ads.\n\nDo not use when:\n- The platform is Google. Use action:ads/create_ad_group.\n- The campaign already has a matching ad set. Reuse via action:ads/list_adsets.\n\nWorkflow:\n1. Call action:ads/list_campaigns to choose a campaign_id.\n2. Build the targeting spec (geo_locations, age_min/max, interests, ...).\n3. Call action:ads/estimate_audience_size to validate reach if needed.\n4. Submit via action:_batch/submit for HITL review.\n5. After approval, call action:ads/create_ad with the new adset_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API response: {id: '...'}; the envelope's resource_id matches.\n- budget_daily_micros is converted to daily_budget in cents (int(micros/10_000)) by the dispatcher.\n\nMeta lead-gen / ON_AD notes:\n- For Campaign Budget Optimization campaigns, set is_cbo_adset=true and omit ad-set budget fields; budget stays on the campaign.\n- destination_type=ON_AD + optimization_goal=LEAD_GENERATION uses an instant form flow. The handler preserves manual targeting by defaulting targeting.targeting_automation.advantage_audience to 0 when omitted.\n- For OTHER objectives the handler does NOT inject that flag, and Meta now rejects detailed-targeting ad sets without it (error 100/1870227, live-verified): always set targeting.targeting_automation.advantage_audience explicitly (0 = manual targeting, 1 = Advantage+ audience).\n- If targeting.instagram_positions contains explore_home, Meta also requires explore; the handler auto-adds explore when it is missing.\n\nSide effects:\n- Creates an AdSet under the campaign.\n- Force-paused at create (status=PAUSED), overwriting any caller value.\n- No immediate spend; activation requires a later action:ads/update_adset with status=ACTIVE.\n- Reversible via action:ads/remove_adset (archives; can un-archive to PAUSED).",
       "input_params": [
         {
           "name": "platform",
