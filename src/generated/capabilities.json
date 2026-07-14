@@ -11731,6 +11731,355 @@
       "output_shape": "{\"property\": {\"property_id\": \"123456789\", \"data_freshness\": \"ISO\"}, \"dimensions\": [\"date\"], \"metrics\": [\"sessions\"], \"rows\": [{\"date\": \"20260501\", \"sessions\": 42}], \"columns\": {\"date\": [\"20260501\"], \"sessions\": [42]}, \"row_count\": 1, \"truncated\": false, \"limit\": 100, \"offset\": 0}"
     },
     {
+      "id": "action:gsc/get_daily_trend",
+      "namespace": "gsc",
+      "action": "get_daily_trend",
+      "description": "Daily Google Search organic time series for a property; returns one row per day (ascending) with clicks, impressions, CTR, and position.",
+      "mode": "read",
+      "platforms": [
+        "gsc"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:gsc/list_sites",
+        "action:gsc/query_search_analytics",
+        "action:ga4/get_daily_trend"
+      ],
+      "long_description": "Primary use:\nConvenience wrapper over searchAnalytics.query with dimensions=[date] — per-day organic performance for charting and anomaly detection.\n\nUse when:\n- The user asks for an organic traffic trend, a daily chart, or week-over-week organic comparison.\n\nDo not use when:\n- You need per-query or per-page daily breakdowns: use query_search_analytics with dimensions=['date', ...].\n- You need on-site daily sessions/users: use ga4.get_daily_trend.\n\nWorkflow:\n1. Call list_sites if site_url is unknown.\n2. Call this action with site_url, start_date, end_date.\n\nOutput semantics:\n- rows[].date is ISO YYYY-MM-DD; rows are returned in ascending date order.\n- Days with zero organic activity are absent, not zero-filled.\n- The most recent ~2 days may be missing or partial (Search Console data lag).\n- site_url must match a property EXACTLY as Search Console knows it: a URL-prefix property is a full origin like 'https://example.com/' (trailing slash included), while a site verified as a DOMAIN property is addressed as 'sc-domain:example.com' — never as a URL-prefix. When a call fails with gsc_permission_denied or gsc_site_not_found, re-check the exact site_url against gsc.list_sites before retrying.",
+      "input_params": [
+        {
+          "name": "site_url",
+          "type": "string",
+          "required": true,
+          "description": "Property identifier from gsc.list_sites.rows[].site_url — a URL-prefix ('https://example.com/') or a domain property ('sc-domain:example.com').",
+          "example": "sc-domain:example.com",
+          "source": "upstream:action:gsc/list_sites"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive start date in YYYY-MM-DD format. Search analytics data lags ~2 days behind real time.",
+          "example": "2026-06-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive end date in YYYY-MM-DD format.",
+          "example": "2026-06-30"
+        }
+      ],
+      "output_shape": "{\"site\": {\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\"}, \"rows\": [{\"date\": \"2026-06-01\", \"clicks\": N, \"impressions\": N, \"ctr\": 0..1, \"position\": N}]}"
+    },
+    {
+      "id": "action:gsc/inspect_url",
+      "namespace": "gsc",
+      "action": "inspect_url",
+      "description": "Inspect one URL's Google index status via the URL Inspection API; returns index verdict, coverage state, canonical, mobile usability, and rich results.",
+      "mode": "read",
+      "platforms": [
+        "gsc"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:gsc/list_sites",
+        "action:gsc/list_sitemaps",
+        "action:gsc/list_top_pages"
+      ],
+      "long_description": "Primary use:\nPer-URL diagnosis of how Google sees a page: indexed or not, why, which canonical Google chose, last crawl time, mobile usability, and rich result validation.\n\nUse when:\n- The user asks whether a specific page is indexed, why it is not ranking, or what Google's canonical for it is.\n\nDo not use when:\n- You need aggregate coverage across many URLs: inspect one URL at a time and mind the quota (below); for bulk health prefer list_sitemaps plus query_search_analytics with dimensions=['page'].\n- You want to request (re)indexing: this integration is read-only and the Indexing API is out of scope.\n\nQuota (hard, per Google):\n- ~2000 inspections per DAY per property and ~600 per MINUTE. Exhaustion surfaces as gsc_quota_exceeded (HTTP 429); budget calls accordingly and never loop this action over large URL lists.\n\nConstraints:\n- inspection_url must belong to the property identified by site_url (same URL-prefix scope or under the sc-domain).\n- site_url must match a property EXACTLY as Search Console knows it: a URL-prefix property is a full origin like 'https://example.com/' (trailing slash included), while a site verified as a DOMAIN property is addressed as 'sc-domain:example.com' — never as a URL-prefix. When a call fails with gsc_permission_denied or gsc_site_not_found, re-check the exact site_url against gsc.list_sites before retrying.\n\nOutput semantics:\n- inspection_result.indexStatusResult.verdict is PASS / FAIL / NEUTRAL; coverageState is the human-readable index coverage (e.g. 'Submitted and indexed').\n- googleCanonical vs userCanonical mismatch indicates a canonicalization issue.\n- inspection_result.inspectionResultLink opens the same report in the Search Console UI.",
+      "input_params": [
+        {
+          "name": "site_url",
+          "type": "string",
+          "required": true,
+          "description": "Property identifier from gsc.list_sites.rows[].site_url — a URL-prefix ('https://example.com/') or a domain property ('sc-domain:example.com').",
+          "example": "sc-domain:example.com",
+          "source": "upstream:action:gsc/list_sites"
+        },
+        {
+          "name": "inspection_url",
+          "type": "string",
+          "required": true,
+          "description": "Fully-qualified URL to inspect. Must be inside the site_url property's scope.",
+          "example": "https://example.com/products/widget"
+        }
+      ],
+      "output_shape": "{\"site\": {\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\"}, \"inspection_url\": \"https://example.com/products/widget\", \"inspection_result\": {\"indexStatusResult\": {\"verdict\": \"PASS\", \"coverageState\": \"Submitted and indexed\", \"lastCrawlTime\": \"ISO\", \"googleCanonical\": \"...\", \"userCanonical\": \"...\", \"robotsTxtState\": \"ALLOWED\"}, \"inspectionResultLink\": \"https://search.google.com/...\"}}"
+    },
+    {
+      "id": "action:gsc/list_sitemaps",
+      "namespace": "gsc",
+      "action": "list_sitemaps",
+      "description": "List sitemaps submitted for a Search Console property; returns per-sitemap status, submitted/indexed counts, warnings, and errors.",
+      "mode": "read",
+      "platforms": [
+        "gsc"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:gsc/list_sites",
+        "action:gsc/inspect_url"
+      ],
+      "long_description": "Primary use:\nSitemap inventory and health for one property (sitemaps.list).\n\nUse when:\n- The user asks which sitemaps are submitted, whether a sitemap has errors/warnings, or how many URLs were submitted vs indexed.\n\nDo not use when:\n- You need per-URL index status: use inspect_url.\n- You want to submit or delete a sitemap: this integration is read-only.\n\nWorkflow:\n1. Call list_sites if site_url is unknown.\n2. Call this action with site_url.\n\nOutput semantics:\n- rows[].path is the sitemap URL; rows[].is_pending means Google has not processed it yet; rows[].contents breaks submitted/indexed counts down by content type (web, image, video, ...).\n- site_url must match a property EXACTLY as Search Console knows it: a URL-prefix property is a full origin like 'https://example.com/' (trailing slash included), while a site verified as a DOMAIN property is addressed as 'sc-domain:example.com' — never as a URL-prefix. When a call fails with gsc_permission_denied or gsc_site_not_found, re-check the exact site_url against gsc.list_sites before retrying.",
+      "input_params": [
+        {
+          "name": "site_url",
+          "type": "string",
+          "required": true,
+          "description": "Property identifier from gsc.list_sites.rows[].site_url — a URL-prefix ('https://example.com/') or a domain property ('sc-domain:example.com').",
+          "example": "sc-domain:example.com",
+          "source": "upstream:action:gsc/list_sites"
+        }
+      ],
+      "output_shape": "{\"site\": {\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\"}, \"rows\": [{\"path\": \"https://example.com/sitemap.xml\", \"last_submitted\": \"ISO\", \"last_downloaded\": \"ISO\", \"is_pending\": false, \"is_sitemaps_index\": false, \"type\": \"sitemap\", \"warnings\": N, \"errors\": N, \"contents\": [{\"type\": \"web\", \"submitted\": N, \"indexed\": N}]}]}"
+    },
+    {
+      "id": "action:gsc/list_sites",
+      "namespace": "gsc",
+      "action": "list_sites",
+      "description": "Discover brand-granted Search Console properties; returns site_url values required by every other gsc.* action.",
+      "mode": "read",
+      "platforms": [
+        "gsc"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:gsc/query_search_analytics",
+        "action:gsc/list_top_queries",
+        "action:gsc/get_daily_trend"
+      ],
+      "long_description": "Primary use:\nProperty discovery for the current brand scope. Use the returned site_url values as the only valid site_url inputs for later gsc.* calls. Only properties granted to the caller's brand are returned.\n\nUse when:\n- The user did not provide a site_url.\n- The user asks which Search Console properties are available.\n- A gsc.* call failed with gsc_site_not_found or gsc_permission_denied and you need to re-check the exact property address.\n\nDo not use when:\n- You already have a site_url from this response in the same workflow.\n- You need GA4 properties (ga4.list_properties) or ad accounts (ads.list_ad_accounts).\n\nOutput semantics:\n- rows[].site_url is the exact property identifier Search Console expects: a URL-prefix property ('https://example.com/') or a domain property ('sc-domain:example.com'). Pass it verbatim — do not normalize slashes or strip the sc-domain: prefix.\n- rows[].permission_level is the connected Google account's access level on the property (siteOwner, siteFullUser, siteRestrictedUser, or siteUnverifiedUser). siteUnverifiedUser rows will fail data reads with gsc_permission_denied.\n\nConstraints:\n- Rows are scoped to the caller's organization and active brand grants; a property absent from this response is not queryable by other gsc actions.",
+      "input_params": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Max rows. Default 100, hard cap 500."
+        }
+      ],
+      "output_shape": "{\"rows\": [{\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\", \"status\": \"active\"}]}"
+    },
+    {
+      "id": "action:gsc/list_top_pages",
+      "namespace": "gsc",
+      "action": "list_top_pages",
+      "description": "Top pages by Google Search organic performance for a property over a date range; returns page rows with clicks, impressions, CTR, and position.",
+      "mode": "read",
+      "platforms": [
+        "gsc"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:gsc/list_sites",
+        "action:gsc/list_top_queries",
+        "action:gsc/query_search_analytics",
+        "action:ga4/list_top_pages"
+      ],
+      "long_description": "Primary use:\nConvenience wrapper over searchAnalytics.query with dimensions=[page] — which URLs earned organic impressions and clicks.\n\nUse when:\n- The user asks which pages perform best in Google Search, top landing pages from organic, or per-URL organic metrics.\n\nDo not use when:\n- You need page x query combinations: use query_search_analytics.\n- You need on-site engagement per page (views, bounce): use ga4.list_top_pages.\n\nWorkflow:\n1. Call list_sites if site_url is unknown.\n2. Call this action with site_url, start_date, end_date, optional limit.\n\nOutput semantics:\n- rows[].page is the full canonical URL; rows are sorted by clicks descending.\n- site_url must match a property EXACTLY as Search Console knows it: a URL-prefix property is a full origin like 'https://example.com/' (trailing slash included), while a site verified as a DOMAIN property is addressed as 'sc-domain:example.com' — never as a URL-prefix. When a call fails with gsc_permission_denied or gsc_site_not_found, re-check the exact site_url against gsc.list_sites before retrying.",
+      "input_params": [
+        {
+          "name": "site_url",
+          "type": "string",
+          "required": true,
+          "description": "Property identifier from gsc.list_sites.rows[].site_url — a URL-prefix ('https://example.com/') or a domain property ('sc-domain:example.com').",
+          "example": "sc-domain:example.com",
+          "source": "upstream:action:gsc/list_sites"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive start date in YYYY-MM-DD format. Search analytics data lags ~2 days behind real time.",
+          "example": "2026-06-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive end date in YYYY-MM-DD format.",
+          "example": "2026-06-30"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Row cap. Default 100, hard cap 25000."
+        }
+      ],
+      "output_shape": "{\"site\": {\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\"}, \"rows\": [{\"page\": \"https://example.com/products\", \"clicks\": N, \"impressions\": N, \"ctr\": 0..1, \"position\": N}]}"
+    },
+    {
+      "id": "action:gsc/list_top_queries",
+      "namespace": "gsc",
+      "action": "list_top_queries",
+      "description": "Top Google Search queries for a property over a date range; returns query rows with clicks, impressions, CTR, and average position.",
+      "mode": "read",
+      "platforms": [
+        "gsc"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:gsc/list_sites",
+        "action:gsc/list_top_pages",
+        "action:gsc/query_search_analytics"
+      ],
+      "long_description": "Primary use:\nConvenience wrapper over searchAnalytics.query with dimensions=[query] — which search terms drove organic impressions and clicks.\n\nUse when:\n- The user asks what people searched to find the site, top keywords, or organic query performance.\n\nDo not use when:\n- You need query x page or query x country breakdowns: use query_search_analytics with multiple dimensions.\n- You need paid keyword data: use ads.* actions.\n\nWorkflow:\n1. Call list_sites if site_url is unknown.\n2. Call this action with site_url, start_date, end_date, optional limit.\n\nOutput semantics:\n- Rows are sorted by clicks descending; ctr is a 0-1 ratio; position is the average result position (lower is better).\n- site_url must match a property EXACTLY as Search Console knows it: a URL-prefix property is a full origin like 'https://example.com/' (trailing slash included), while a site verified as a DOMAIN property is addressed as 'sc-domain:example.com' — never as a URL-prefix. When a call fails with gsc_permission_denied or gsc_site_not_found, re-check the exact site_url against gsc.list_sites before retrying.",
+      "input_params": [
+        {
+          "name": "site_url",
+          "type": "string",
+          "required": true,
+          "description": "Property identifier from gsc.list_sites.rows[].site_url — a URL-prefix ('https://example.com/') or a domain property ('sc-domain:example.com').",
+          "example": "sc-domain:example.com",
+          "source": "upstream:action:gsc/list_sites"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive start date in YYYY-MM-DD format. Search analytics data lags ~2 days behind real time.",
+          "example": "2026-06-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive end date in YYYY-MM-DD format.",
+          "example": "2026-06-30"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Row cap. Default 100, hard cap 25000."
+        }
+      ],
+      "output_shape": "{\"site\": {\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\"}, \"rows\": [{\"query\": \"example shoes\", \"clicks\": N, \"impressions\": N, \"ctr\": 0..1, \"position\": N}]}"
+    },
+    {
+      "id": "action:gsc/query_search_analytics",
+      "namespace": "gsc",
+      "action": "query_search_analytics",
+      "description": "Generic Search Console searchAnalytics.query for one property; returns clicks, impressions, CTR, and position grouped by any dimension combination.",
+      "mode": "read",
+      "platforms": [
+        "gsc"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:gsc/list_sites",
+        "action:gsc/list_top_queries",
+        "action:gsc/list_top_pages",
+        "action:gsc/get_daily_trend"
+      ],
+      "long_description": "Primary use:\nFull-control Google Search organic performance query — the generic pass-through to searchAnalytics.query. Prefer the convenience actions (list_top_queries, list_top_pages, get_daily_trend) for single-dimension questions; use this one for multi-dimension grouping, filters, or non-web search types.\n\nUse when:\n- You need multiple dimensions at once (e.g. query x page, date x device).\n- You need dimension_filter_groups (e.g. only queries containing a brand term, only one country) or a non-default search_type / data_state / aggregation_type.\n\nDo not use when:\n- A convenience action answers the question with fewer knobs.\n- You need paid-search data (ads.*) or on-site analytics (ga4.*): Search Console covers Google ORGANIC search only.\n\nConstraints:\n- Valid dimensions: country, device, page, query, searchAppearance, date.\n- Valid search_type values: web, image, video, news, discover, googleNews (default web).\n- data_state 'all' includes fresh (still-consolidating) data; 'final' (default upstream) returns only finalized data.\n- row_limit defaults to 100 and is hard-capped at 25000 (the API maximum per request); page beyond that with start_row.\n- Requests run through a proxy that cuts a single call at ~30s. Large result sets must be paginated by the caller: keep row_limit bounded and walk pages with start_row instead of asking for everything at once.\n- site_url must match a property EXACTLY as Search Console knows it: a URL-prefix property is a full origin like 'https://example.com/' (trailing slash included), while a site verified as a DOMAIN property is addressed as 'sc-domain:example.com' — never as a URL-prefix. When a call fails with gsc_permission_denied or gsc_site_not_found, re-check the exact site_url against gsc.list_sites before retrying.\n\nOutput semantics:\n- rows[].keys aligns positionally with the requested dimensions.\n- ctr is a 0-1 ratio; position is the average result position (lower is better).\n- Rows are sorted by clicks descending (API default). Empty rows means no organic data for the range/filters, not an error.",
+      "input_params": [
+        {
+          "name": "site_url",
+          "type": "string",
+          "required": true,
+          "description": "Property identifier from gsc.list_sites.rows[].site_url — a URL-prefix ('https://example.com/') or a domain property ('sc-domain:example.com').",
+          "example": "sc-domain:example.com",
+          "source": "upstream:action:gsc/list_sites"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive start date in YYYY-MM-DD format. Search analytics data lags ~2 days behind real time.",
+          "example": "2026-06-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive end date in YYYY-MM-DD format.",
+          "example": "2026-06-30"
+        },
+        {
+          "name": "dimensions",
+          "type": "list",
+          "required": false,
+          "description": "Dimensions to group by, in order. Valid values: country, device, page, query, searchAppearance, date. Omit for property-level totals.",
+          "example": [
+            "query",
+            "page"
+          ]
+        },
+        {
+          "name": "search_type",
+          "type": "string",
+          "required": false,
+          "description": "Search surface to report on. Default web.",
+          "enum": [
+            "web",
+            "image",
+            "video",
+            "news",
+            "discover",
+            "googleNews"
+          ]
+        },
+        {
+          "name": "row_limit",
+          "type": "integer",
+          "required": false,
+          "description": "Rows per page. Default 100, hard cap 25000 (API maximum)."
+        },
+        {
+          "name": "start_row",
+          "type": "integer",
+          "required": false,
+          "description": "Zero-based row offset for pagination. Default 0."
+        },
+        {
+          "name": "data_state",
+          "type": "string",
+          "required": false,
+          "description": "'all' includes fresh (not yet finalized) data; 'final' returns only finalized data (upstream default).",
+          "enum": [
+            "all",
+            "final"
+          ]
+        },
+        {
+          "name": "dimension_filter_groups",
+          "type": "object|list",
+          "required": false,
+          "description": "searchAnalytics.query dimensionFilterGroups passed through verbatim: a group object (or list of groups) with filters of {dimension, operator, expression}. Operators: equals, notEquals, contains, notContains, includingRegex, excludingRegex.",
+          "example": {
+            "filters": [
+              {
+                "dimension": "country",
+                "operator": "equals",
+                "expression": "usa"
+              }
+            ]
+          }
+        },
+        {
+          "name": "aggregation_type",
+          "type": "string",
+          "required": false,
+          "description": "How metrics aggregate: auto (default), byProperty, or byPage. byProperty is unavailable for page/searchAppearance dimensions.",
+          "enum": [
+            "auto",
+            "byProperty",
+            "byPage"
+          ]
+        }
+      ],
+      "output_shape": "{\"site\": {\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\"}, \"rows\": [{\"keys\": [\"query text\", \"https://example.com/page\"], \"clicks\": N, \"impressions\": N, \"ctr\": 0..1, \"position\": N}], \"response_aggregation_type\": \"byProperty\", \"row_limit\": 100, \"start_row\": 0}"
+    },
+    {
       "id": "action:integration/byo_mcp_read_tool",
       "namespace": "integration",
       "action": "byo_mcp_read_tool",
