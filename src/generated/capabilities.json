@@ -11242,7 +11242,7 @@
           "name": "endpoint",
           "type": "string",
           "required": true,
-          "description": "Relative path (e.g. /gmail/v1/users/me/profile) ONLY for endpoints on the toolkit's primary host — Composio pins relative paths to that one host. For an endpoint on any other official host of the toolkit (see api_hosts from list_accounts), pass an absolute https URL — e.g. listing Google Docs/Sheets files is a Drive API call: https://www.googleapis.com/drive/v3/files?q=...",
+          "description": "Relative path (e.g. /gmail/v1/users/me/profile) ONLY for endpoints on the toolkit's primary host — Composio pins relative paths to that one host. For an endpoint on any other official host of the toolkit (see api_hosts from list_accounts), pass an absolute https URL — e.g. listing Google Docs/Sheets files is a Drive API call: https://www.googleapis.com/drive/v3/files?q=... (exception: slack — always pass an absolute https://slack.com/api/... URL; slack's registered base URL already ends in /api, so a docs-style relative /api/... path double-prefixes and 404s).",
           "example": "https://gmail.googleapis.com/gmail/v1/users/me/profile"
         },
         {
