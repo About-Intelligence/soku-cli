@@ -1216,7 +1216,8 @@
       "description": "Bulk-create Meta ads in one review-gated request; executes items sequentially.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -1242,7 +1243,8 @@
           "description": "Meta ad account id.",
           "example": "act_123456789",
           "platform": [
-            "meta"
+            "meta",
+            "tiktok"
           ]
         },
         {
@@ -1257,7 +1259,18 @@
             }
           ],
           "platform": [
-            "meta"
+            "meta",
+            "tiktok"
+          ]
+        },
+        {
+          "name": "concurrency",
+          "type": "string",
+          "required": false,
+          "description": "TikTok concurrency.",
+          "example": "value",
+          "platform": [
+            "tiktok"
           ]
         }
       ],
@@ -1270,7 +1283,8 @@
       "description": "Bulk-create Meta ad sets in one review-gated request; executes items sequentially.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -1296,7 +1310,8 @@
           "description": "Meta ad account id.",
           "example": "act_123456789",
           "platform": [
-            "meta"
+            "meta",
+            "tiktok"
           ]
         },
         {
@@ -1311,7 +1326,18 @@
             }
           ],
           "platform": [
-            "meta"
+            "meta",
+            "tiktok"
+          ]
+        },
+        {
+          "name": "concurrency",
+          "type": "string",
+          "required": false,
+          "description": "TikTok concurrency.",
+          "example": "value",
+          "platform": [
+            "tiktok"
           ]
         }
       ],
@@ -1324,7 +1350,8 @@
       "description": "Bulk-create Meta campaigns in one review-gated request; executes items sequentially.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -1350,7 +1377,8 @@
           "description": "Meta ad account id.",
           "example": "act_123456789",
           "platform": [
-            "meta"
+            "meta",
+            "tiktok"
           ]
         },
         {
@@ -1365,7 +1393,18 @@
             }
           ],
           "platform": [
-            "meta"
+            "meta",
+            "tiktok"
+          ]
+        },
+        {
+          "name": "concurrency",
+          "type": "string",
+          "required": false,
+          "description": "TikTok concurrency.",
+          "example": "value",
+          "platform": [
+            "tiktok"
           ]
         }
       ],
@@ -1432,7 +1471,8 @@
       "mode": "write",
       "platforms": [
         "google",
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -1605,6 +1645,22 @@
           "required": false,
           "description": "Meta only: ignored at create time. The handler always force-sets status=PAUSED so newly created ads are review-gated and never spend until explicitly activated via update_ad. Source: constant (always PAUSED at create).",
           "example": "PAUSED"
+        },
+        {
+          "name": "creatives",
+          "type": "list",
+          "required": true,
+          "description": "TikTok only: required — up to 20 creative objects for one ad group. Each needs identity_type + identity_id (bind via ads.get_account_pages/identity), ad_format, material ids (video_id/image_ids), ad_text, call_to_action, landing_page_url. TikTok has no standalone creative object.",
+          "example": [
+            {
+              "identity_type": "CUSTOMIZED_USER",
+              "identity_id": "id1",
+              "ad_format": "SINGLE_VIDEO"
+            }
+          ],
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Responsive Search Ad created successfully\", \"resource_id\": \"123\", \"results\": [{\"adGroupAdResult\": {\"resourceName\": \"customers/X/adGroupAds/AG~AD\"}}]}  // Meta: {\"id\": \"23...\"}"
@@ -2015,10 +2071,11 @@
       "id": "action:ads/create_ad_rule",
       "namespace": "ads",
       "action": "create_ad_rule",
-      "description": "Create a Meta automated ad rule (PAUSE / CHANGE_BUDGET / NOTIFY); review-gated.",
+      "description": "Create a Meta or TikTok automated ad rule; review-gated.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -2028,13 +2085,13 @@
         "action:ads/remove_ad_rule",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nCreate a scheduled automated rule that evaluates conditions against scoped objects and runs an execution (PAUSE, CHANGE_BUDGET, NOTIFY).\n\nUse when:\n- The user wants to automate pausing ads above a spend threshold.\n- A workflow needs scheduled budget adjustments based on metrics.\n\nDo not use when:\n- The platform is Google. Google has automated rules but they are not exposed here.\n- The user wants one-off mutations. Use the matching action:ads/update_* directly.\n\nWorkflow:\n1. Build evaluation_spec (e.g. {evaluation_type, filters: [{field, operator, value}]}).\n2. Build execution_spec (e.g. {execution_type: PAUSE, execution_options: [...]}).\n3. Optionally build schedule_spec.\n4. Submit via action:_batch/submit for HITL review.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new rule_id.\n\nSide effects:\n- POSTs {account_id}/adrules_library; the rule begins running on its schedule.\n- The rule can pause ads or change budgets automatically once scheduled — review carefully.\n- Reversible only via the Meta UI.",
+      "long_description": "Primary use:\nCreate a scheduled automated rule that evaluates conditions against scoped objects and runs an execution (PAUSE, CHANGE_BUDGET, NOTIFY).\n\nUse when:\n- The user wants to automate pausing ads above a spend threshold.\n- A workflow needs scheduled budget adjustments based on metrics.\n\nDo not use when:\n- The platform is Google. Google has automated rules but they are not exposed here.\n- The user wants one-off mutations. Use the matching action:ads/update_* directly.\n\nWorkflow:\n1. Build evaluation_spec (e.g. {evaluation_type, filters: [{field, operator, value}]}).\n2. Build execution_spec (e.g. {execution_type: PAUSE, execution_options: [...]}).\n3. Optionally build schedule_spec.\n4. Submit via action:_batch/submit for HITL review.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new rule_id.\n\nSide effects:\n- Meta POSTs {account_id}/adrules_library; TikTok POSTs /optimizer/rule/create/. The rule begins running on its schedule.\n- The rule can pause ads or change budgets automatically once scheduled — review carefully.\n- Reversible only via the Meta UI.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
+          "description": "meta or tiktok.",
           "example": "meta"
         },
         {
@@ -2100,6 +2157,22 @@
           "required": false,
           "description": "Meta only: ad rule lifecycle status. Valid values are ENABLED, DISABLED, DELETED, HAS_ISSUES (the ad-rule enum, NOT the generic ACTIVE/PAUSED). Omit to default to ENABLED. Use DISABLED for an off/paused rule. Source: constant enum chosen by the agent.",
           "example": "ENABLED"
+        },
+        {
+          "name": "rules",
+          "type": "array<object>",
+          "required": true,
+          "description": "TikTok only and required there: non-empty official rules array. Each rule includes name, apply_objects, conditions, actions, notification, and rule_exec_info."
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "required": false,
+          "description": "TikTok lang.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"rule_id\"}"
@@ -2212,7 +2285,8 @@
       "description": "Create a Meta ad set in PAUSED state; review-gated, reversible via remove_adset.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -2380,6 +2454,214 @@
           "type": "string",
           "required": false,
           "description": "ISO-8601 ad set end time."
+        },
+        {
+          "name": "adgroup_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: ad group name (falls back to `name`).",
+          "example": "AG 1",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "pacing",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: delivery pacing mode.",
+          "example": "PACING_MODE_SMOOTH",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok only: SCHEDULE_FROM_NOW or SCHEDULE_START_END.",
+          "example": "SCHEDULE_FROM_NOW",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_start_time",
+          "type": "string",
+          "required": true,
+          "description": "TikTok only: start time (YYYY-MM-DD HH:MM:SS).",
+          "example": "2026-07-10 00:00:00",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_end_time",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: end time; required for SCHEDULE_START_END.",
+          "example": "2026-07-20 00:00:00",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_mode",
+          "type": "string",
+          "required": true,
+          "description": "TikTok only: budget mode.",
+          "example": "BUDGET_MODE_DAY",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": true,
+          "description": "TikTok only: budget as a float in the account currency (NOT micros).",
+          "example": 20.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operation_status",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: ENABLE or DISABLE; defaults to DISABLE.",
+          "example": "DISABLE",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "location_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target location ids.",
+          "example": [
+            "6252001"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "age_groups",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target age group enums.",
+          "example": [
+            "AGE_25_34"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Target gender.",
+          "example": "GENDER_UNLIMITED",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "languages",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target language codes.",
+          "example": [
+            "en"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_category_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Interest category ids.",
+          "example": [
+            "100"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_keyword_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Interest keyword ids.",
+          "example": [
+            "200"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Included custom-audience ids.",
+          "example": [
+            "300"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "excluded_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Excluded custom-audience ids.",
+          "example": [
+            "400"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operating_systems",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target operating systems.",
+          "example": [
+            "ANDROID"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placement_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Placement selection mode.",
+          "example": "PLACEMENT_TYPE_AUTOMATIC",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placements",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Explicit placements when placement_type is normal.",
+          "example": [
+            "PLACEMENT_TIKTOK"
+          ],
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"23...\"}"
@@ -2453,11 +2735,12 @@
       "id": "action:ads/create_campaign",
       "namespace": "ads",
       "action": "create_campaign",
-      "description": "Create a campaign on Google, Meta, or ChatGPT Ads in PAUSED state; review-gated.",
+      "description": "Create a campaign on Google, Meta, TikTok, or ChatGPT Ads in PAUSED state; review-gated.",
       "mode": "write",
       "platforms": [
         "google",
         "meta",
+        "tiktok",
         "chatgpt_ads"
       ],
       "requires_review": true,
@@ -2470,17 +2753,18 @@
         "action:ads/create_ad_unit",
         "action:ads/query_single_dimension"
       ],
-      "long_description": "Primary use:\nCreate a new advertising campaign shell. Google, Meta, and ChatGPT Ads creation paths force the campaign into a paused/non-active state so the agent can finish setup and review before spend begins.\n\nUse when:\n- The user asks to launch a new campaign with a chosen objective and budget.\n- A workflow needs a fresh campaign to host ad groups, ad sets, or ChatGPT Ads ad units.\n\nDo not use when:\n- The user wants to enable spend immediately. Create paused first, then use action:ads/update_campaign only after explicit activation approval.\n- The user wants a Google Performance Max campaign. Use action:ads/create_pmax_campaign.\n- The campaign already exists. Use action:ads/update_campaign instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. For Google choose campaign_type and budget_daily_micros; for Meta choose objective; for ChatGPT Ads create ad units first and pass landing_page, campaign_objective, budget, and a non-empty ad_unit_ids list.\n3. Submit via action:_batch/submit for HITL review.\n4. After approval, call action:ads/list_campaigns or action:ads/get_campaign to confirm the paused/non-active state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new campaign's numeric id. Meta raw.id is the new campaign id. ChatGPT Ads raw.campaign_id or raw.id is surfaced as resource_id.\n\nSide effects:\n- Creates a Campaign on the platform; Google also creates a dedicated CampaignBudget named 'Budget for {name}' in the same atomic mutate.\n- Status is force-paused/non-active regardless of any status the caller supplies.\n- ChatGPT Ads create rejects upstream-removed fields like keywords, network_type, and network_config before calling the dashboard API.\n- No immediate spend; spend begins only after a later explicit activation update.\n- remove_campaign is available only for Google and Meta. ChatGPT Ads campaign archive is not exposed because the ChatGPT Ads endpoint is a toggle.",
+      "long_description": "Primary use:\nCreate a new advertising campaign shell. Google, Meta, TikTok, and ChatGPT Ads creation paths force the campaign into a paused/non-active state so the agent can finish setup and review before spend begins.\n\nUse when:\n- The user asks to launch a new campaign with a chosen objective and budget.\n- A workflow needs a fresh campaign to host ad groups, ad sets, or ChatGPT Ads ad units.\n\nDo not use when:\n- The user wants to enable spend immediately. Create paused first, then use action:ads/update_campaign only after explicit activation approval.\n- The user wants a Google Performance Max campaign. Use action:ads/create_pmax_campaign.\n- The campaign already exists. Use action:ads/update_campaign instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. For Google choose campaign_type and budget_daily_micros; for Meta choose objective; for ChatGPT Ads create ad units first and pass landing_page, campaign_objective, budget, and a non-empty ad_unit_ids list.\n3. Submit via action:_batch/submit for HITL review.\n4. After approval, call action:ads/list_campaigns or action:ads/get_campaign to confirm the paused/non-active state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new campaign's numeric id. Meta raw.id is the new campaign id. ChatGPT Ads raw.campaign_id or raw.id is surfaced as resource_id.\n\nSide effects:\n- Creates a Campaign on the platform; Google also creates a dedicated CampaignBudget named 'Budget for {name}' in the same atomic mutate.\n- Status is force-paused/non-active regardless of any status the caller supplies.\n- ChatGPT Ads create rejects upstream-removed fields like keywords, network_type, and network_config before calling the dashboard API.\n- No immediate spend; spend begins only after a later explicit activation update.\n- remove_campaign is available for Google, Meta, and TikTok. ChatGPT Ads campaign archive is not exposed because the ChatGPT Ads endpoint is a toggle.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "google, meta, or chatgpt_ads",
+          "description": "google, meta, tiktok, or chatgpt_ads",
           "example": "chatgpt_ads",
           "enum": [
             "google",
             "meta",
+            "tiktok",
             "chatgpt_ads"
           ]
         },
@@ -2682,6 +2966,78 @@
           "description": "Meta only: ISO-8601 scheduled stop time."
         },
         {
+          "name": "objective_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok only: required — campaign objective (e.g. TRAFFIC, REACH, VIDEO_VIEWS, PRODUCT_SALES).",
+          "example": "TRAFFIC",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: budget mode (BUDGET_MODE_DAY / BUDGET_MODE_TOTAL / BUDGET_MODE_INFINITE).",
+          "example": "BUDGET_MODE_DAY",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: budget as a float in the account currency (NOT micros).",
+          "example": 50.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_optimize_on",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok only: enable campaign budget optimization (CBO).",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "special_industries",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: regulated-industry declarations where required.",
+          "example": [
+            "HOUSING"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operation_status",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: ENABLE or DISABLE; defaults to DISABLE (created paused).",
+          "example": "DISABLE",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "request_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: idempotency key (10s dedup window) for safe retries.",
+          "example": "req-abc123",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "landing_page",
           "type": "string",
           "required": false,
@@ -2855,6 +3211,57 @@
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Campaign created successfully\", \"resource_id\": \"123\", \"resource_name\": \"customers/X/campaigns/123\", \"results\": [{\"campaignBudgetResult\": {\"resourceName\": \"...\"}}, {\"campaignResult\": {\"resourceName\": \"...\"}}]}  // Meta: {\"id\": \"23...\"}"
+    },
+    {
+      "id": "action:ads/create_change_history_task",
+      "namespace": "ads",
+      "action": "create_change_history_task",
+      "description": "Create a TikTok asynchronous change-log export task.",
+      "mode": "write",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nCreate a TikTok asynchronous change-log export task.\n\nUse when:\nYou need an exportable audit log of TikTok account changes over a time window.\n\nDo not use when:\nYou want live campaign metrics or current entity state — use the reporting / read actions.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nEnqueues an asynchronous export job on TikTok's side; poll get_change_history_task and fetch with download_change_history. No advertiser entities are modified.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "required": true,
+          "description": "TikTok start time.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "required": true,
+          "description": "TikTok end time.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
     },
     {
       "id": "action:ads/create_conversion_action",
@@ -3046,7 +3453,8 @@
       "description": "Create a Meta custom audience; review-gated, reversible via Meta UI.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -3273,9 +3681,190 @@
           "required": false,
           "description": "Meta only: id of an offline/CAPI dataset to bind a rule-based audience to. Source: id of an offline event set / CAPI dataset from Events Manager.",
           "example": "112233445566"
+        },
+        {
+          "name": "audience_enhancement",
+          "type": "string",
+          "required": false,
+          "description": "TikTok audience enhancement.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "audience_sub_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok audience sub type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "calculate_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok calculate type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "file_paths",
+          "type": "string",
+          "required": true,
+          "description": "TikTok file paths.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "retention_in_days",
+          "type": "string",
+          "required": false,
+          "description": "TikTok retention in days.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"audience_id\", \"name\": \"...\"}"
+    },
+    {
+      "id": "action:ads/create_gmv_max_campaign",
+      "namespace": "ads",
+      "action": "create_gmv_max_campaign",
+      "description": "Create a TikTok Shop GMV Max campaign.",
+      "mode": "risk",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [],
+      "long_description": "Primary use:\nCreate a TikTok Shop GMV Max campaign.\n\nUse when:\nLaunching a TikTok Shop GMV Max campaign for a store that passed the availability check.\n\nDo not use when:\nBefore confirming eligibility with get_gmv_max_availability, or for non-Shop campaigns.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nCreates a live GMV Max campaign bound to a Shop / store; spend can begin per schedule. Requires shop_exclusivity_acknowledged.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok store id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "store_authorized_bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok store authorized bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "campaign_name",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "deep_bid_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok deep bid type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "optimization_goal",
+          "type": "string",
+          "required": true,
+          "description": "TikTok optimization goal.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "request_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok request id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_start_time",
+          "type": "string",
+          "required": true,
+          "description": "TikTok schedule start time.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok schedule type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "shopping_ads_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok shopping ads type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "shop_exclusivity_acknowledged",
+          "type": "boolean",
+          "required": true,
+          "description": "Explicit acknowledgement required before this side effect.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
     },
     {
       "id": "action:ads/create_label",
@@ -3431,7 +4020,8 @@
       "description": "Create a Meta lookalike audience from a source audience; review-gated, populates asynchronously.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -3492,8 +4082,18 @@
         {
           "name": "lookalike_spec",
           "type": "object",
-          "required": false,
+          "required": true,
           "description": "Optional explicit lookalike_spec; otherwise built from country + ratio + origin."
+        },
+        {
+          "name": "context_info",
+          "type": "string",
+          "required": false,
+          "description": "TikTok context info.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"lookalike_audience_id\"}"
@@ -3502,10 +4102,11 @@
       "id": "action:ads/create_pixel",
       "namespace": "ads",
       "action": "create_pixel",
-      "description": "Create a Meta Pixel (ads pixel) on an ad account; review-gated, reversible via UI.",
+      "description": "Create a Meta or TikTok Pixel (ads pixel) on an ad account; review-gated, reversible via UI.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -3515,13 +4116,13 @@
         "action:ads/send_conversion_event",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nRegister a new Meta Pixel for browser event tracking on an ad account. Meta restricts each account to a small number of pixels.\n\nUse when:\n- The user wants to add a new pixel for conversion tracking on a new website.\n\nDo not use when:\n- A pixel already exists. Call action:ads/list_pixels first and reuse the existing pixel_id.\n- The platform is Google. Use action:ads/create_conversion_action.\n\nWorkflow:\n1. Verify no existing pixel via action:ads/list_pixels.\n2. Submit via action:_batch/submit for HITL review.\n3. Install the returned pixel base code on the website.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new pixel_id.\n\nSide effects:\n- POSTs to {account_id}/adspixels; Meta enforces a small per-account pixel cap.\n- Renameable via action:ads/update_pixel; the Graph API has no pixel delete, so creation cannot be undone via this surface.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: account_id requiredness is enforced only implicitly. Capability docs mark account_id required, but registry.required_common omits it; the executor's auto-injection from resolved credentials silently picks an account when account_id is absent. If the agent omits account_id expecting an error, it will instead create the pixel under whatever account credential resolution selects, with no warning. Low risk because docs say required, but the validation/registry/doc layers disagree on enforcement. Also note: Docs do not state name length/uniqueness rules or that name is the ONLY settable field at creation. An agent might attempt to pass code, domain, or matching settings; these are silently dropped (no error), which could mislead the agent into believing configuration was applied. Capability gap: No first-class way to set pixel configuration at/after creation. Official AdsPixel POST (on an existing {pixel_id}) supports data_use_setting (enum), enable_automatic_matching (bool), automatic_matching_fields (list<enum>), first_party_cookie_status (enum), and server_events_business_ids[/_add/_remove] (list<string>). None of these are exposed by any layer (update_pixel forwards only name, and create_pixel's _EXTRAS_ALLOWLIST is empty). This is expected for a pure creation action but means pixel data-sharing/automatic-matching/CAPI business-linking settings are unreachable through ads_ops. Severity-wise this is a capability gap, not a break of create_pixel.",
+      "long_description": "Primary use:\nCreate a Meta or TikTok Pixel on the resolved ad account.\n\nUse when:\nStanding up conversion tracking for an advertiser that has no suitable existing pixel.\n\nDo not use when:\nA pixel already exists — reuse it via list_pixels; never reuse a pixel id across providers.\n\nWorkflow:\n1. Resolve the advertiser account (meta or tiktok).\n2. Submit through the review queue.\n3. Read the new pixel id from the provider response.\n\nOutput semantics:\nReturns the provider-native pixel resource (Meta Graph adspixels / TikTok Marketing API /pixel/*); responses are not coerced into fake cross-provider parity.\n\nSide effects:\nCreates a new tracking pixel on the ad account; it begins accepting events once installed. Reversible via the provider UI.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
+          "description": "Advertising platform: meta or tiktok.",
           "example": "meta"
         },
         {
@@ -3672,7 +4273,8 @@
       "description": "Create a Meta product catalog under the account business; review-gated platform write.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
@@ -3715,6 +4317,46 @@
           "type": "object",
           "required": false,
           "description": "Optional Meta destination catalog settings payload."
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "catalog_conf",
+          "type": "string",
+          "required": true,
+          "description": "TikTok catalog conf.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "catalog_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok catalog type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "creative_asset_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok creative asset type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"catalog_id\"}"
@@ -3726,7 +4368,8 @@
       "description": "Create a Meta product feed in an owned catalog; review-gated platform write.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
@@ -3848,9 +4491,181 @@
           "required": false,
           "description": "Meta only: how quoted CSV fields are handled. Enum: AUTODETECT, OFF, ON. Source: constant enum.",
           "example": "AUTODETECT"
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "feed_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok feed name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_param",
+          "type": "string",
+          "required": false,
+          "description": "TikTok schedule param.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "update_mode",
+          "type": "string",
+          "required": true,
+          "description": "TikTok update mode.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"product_feed_id\"}"
+    },
+    {
+      "id": "action:ads/create_rule_custom_audience",
+      "namespace": "ads",
+      "action": "create_rule_custom_audience",
+      "description": "Create a TikTok rule-based custom audience.",
+      "mode": "write",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [],
+      "long_description": "Primary use:\nCreate a TikTok rule-based custom audience.\n\nUse when:\nBuilding a TikTok audience from engagement / web / app rules rather than an uploaded customer file.\n\nDo not use when:\nYou already hold a customer file to upload — use upload_custom_audience_file.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nCreates a new TikTok rule-based custom audience that immediately becomes available for ad-group targeting.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "TikTok name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "audience_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok audience type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "rule_spec",
+          "type": "string",
+          "required": true,
+          "description": "TikTok rule spec.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
+      "id": "action:ads/create_smart_plus_campaign",
+      "namespace": "ads",
+      "action": "create_smart_plus_campaign",
+      "description": "Create a TikTok Smart+ campaign.",
+      "mode": "write",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [],
+      "long_description": "Primary use:\nCreate a TikTok Smart+ campaign.\n\nUse when:\nLaunching a TikTok Smart+ (automated) campaign where TikTok manages targeting and creative optimization.\n\nDo not use when:\nYou want a manually managed campaign — use create_campaign.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nCreates a live TikTok Smart+ campaign; spend can begin once ad groups / ads are added and the campaign is enabled. Requires explicit smart_plus_acknowledged.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "campaign_name",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "objective_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok objective type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "request_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok request id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "smart_plus_acknowledged",
+          "type": "boolean",
+          "required": true,
+          "description": "Explicit acknowledgement required before this side effect.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
     },
     {
       "id": "action:ads/create_text_asset",
@@ -3861,7 +4676,7 @@
       "platforms": [
         "google"
       ],
-      "requires_review": false,
+      "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/upload_image_asset",
@@ -3985,7 +4800,7 @@
       "platforms": [
         "google"
       ],
-      "requires_review": false,
+      "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/upload_image_asset",
@@ -4216,13 +5031,55 @@
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"total\": 50, \"succeeded\": 50, \"failed\": 0, \"ambiguous\": 0, \"items\": [{\"index\": 0, \"client_ref\": \"asset-001\", \"creative_id\": \"23...\", \"ad_id\": \"23...\", \"stage\": \"ad\", \"success\": true}]}"
     },
     {
+      "id": "action:ads/download_change_history",
+      "namespace": "ads",
+      "action": "download_change_history",
+      "description": "Download a completed TikTok change-log export.",
+      "mode": "write",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nDownload a completed TikTok change-log export.\n\nUse when:\nA change-history export task has completed and you need its file / rows.\n\nDo not use when:\nThe task is still running — poll get_change_history_task first.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nFetches the completed export payload; no advertiser-side mutation. Gated with the export flow.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "task_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok task id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/estimate_audience_size",
       "namespace": "ads",
       "action": "estimate_audience_size",
       "description": "Read Meta delivery estimate for a targeting spec; returns reach bounds and DAU/MAU.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -4278,6 +5135,16 @@
             "pixel_id": "1234567890",
             "custom_event_type": "PURCHASE"
           }
+        },
+        {
+          "name": "adgroup_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok adgroup id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"estimate_ready\": true, \"users_lower_bound\": N, \"users_upper_bound\": N, \"estimate_dau\": N, \"estimate_mau\": N, \"bid_estimate\": {...}, \"daily_outcomes_curve\": [{\"spend\": 100.0, \"reach\": 1234.0}]}]}"
@@ -4371,7 +5238,8 @@
       "description": "Read a Meta ad preview HTML iframe for a creative + ad_format; read-only.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -4423,6 +5291,48 @@
             "RIGHT_COLUMN_STANDARD"
           ],
           "source": "constant"
+        },
+        {
+          "name": "adgroup_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: ad group id for a material-combination preview.",
+          "example": "17840000000000000",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "identity_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: identity type for the preview.",
+          "example": "CUSTOMIZED_USER",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "identity_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: identity id for the preview.",
+          "example": "id1",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "creative",
+          "type": "object",
+          "required": false,
+          "description": "TikTok only: creative material combination to preview.",
+          "example": {
+            "ad_format": "SINGLE_VIDEO"
+          },
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"body\": \"<iframe ...></iframe>\"}]}"
@@ -4490,7 +5400,8 @@
       "description": "Read Meta ad account info; returns account status, currency, timezone, amount_spent, balance, spend_cap, disable_reason, min_daily_budget.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -4525,7 +5436,8 @@
       "description": "Read Meta Pages promotable from this ad account; returns data[] with page id, name, category, tasks.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -4560,7 +5472,8 @@
       "description": "Read one Meta ad by id; returns realtime platform status, effective status, creative, tracking specs, and timestamps.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -4691,7 +5604,8 @@
       "description": "Read one Meta ad set by id; returns realtime platform status, targeting, budget, bidding, and delivery-detail fields.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -4771,11 +5685,12 @@
       "id": "action:ads/get_campaign",
       "namespace": "ads",
       "action": "get_campaign",
-      "description": "Read one Google, Meta, or ChatGPT Ads campaign by id; returns realtime platform state.",
+      "description": "Read one Google, Meta, TikTok, or ChatGPT Ads campaign by id; returns realtime platform state.",
       "mode": "read",
       "platforms": [
         "google",
         "meta",
+        "tiktok",
         "chatgpt_ads"
       ],
       "requires_review": false,
@@ -4785,17 +5700,18 @@
         "action:ads/create_campaign",
         "action:ads/update_campaign"
       ],
-      "long_description": "Primary use:\nRealtime read-back for a known Google, Meta, or ChatGPT Ads campaign id, especially after a create/update approval returns a campaign_id.\n\nUse when:\n- You already know a campaign_id and need the current platform state.\n- You need to confirm status after a write.\n- You need one campaign's budget, bidding targets, targeting, landing page, objective, or timestamps without paging through list_campaigns.\n\nDo not use when:\n- The campaign id is unknown. Use action:ads/list_campaigns first.\n- You need cached analytics or KPI data. Use action:ads/query_single_dimension.\nWorkflow:\n1. Obtain account_id from list_ad_accounts and campaign_id from a create result, review result, or list_campaigns.\n2. Call this action with platform, account_id, and campaign_id.\n3. Read raw.campaign for Google, or the platform-native delivery fields for Meta and ChatGPT Ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaign includes status, budget, flight dates, bidding strategy and targets, network settings, language ids, and geo target ids.\n- Meta and ChatGPT Ads raw values are their platform-native campaign objects.",
+      "long_description": "Primary use:\nRealtime read-back for a known Google, Meta, or ChatGPT Ads campaign id, or a TikTok campaign id, especially after a create/update approval returns a campaign_id.\n\nUse when:\n- You already know a campaign_id and need the current platform state.\n- You need to confirm status after a write.\n- You need one campaign's budget, bidding targets, targeting, landing page, objective, or timestamps without paging through list_campaigns.\n\nDo not use when:\n- The campaign id is unknown. Use action:ads/list_campaigns first.\n- You need cached analytics or KPI data. Use action:ads/query_single_dimension.\nWorkflow:\n1. Obtain account_id from list_ad_accounts and campaign_id from a create result, review result, or list_campaigns.\n2. Call this action with platform, account_id, and campaign_id.\n3. Read raw.campaign for Google, or the platform-native delivery fields for Meta and ChatGPT Ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaign includes status, budget, flight dates, bidding strategy and targets, network settings, language ids, and geo target ids.\n- Meta, TikTok, and ChatGPT Ads raw values are their platform-native campaign objects.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "google, meta, or chatgpt_ads",
+          "description": "google, meta, tiktok, or chatgpt_ads",
           "example": "google",
           "enum": [
             "google",
             "meta",
+            "tiktok",
             "chatgpt_ads"
           ]
         },
@@ -4984,6 +5900,47 @@
       "output_shape": "{\"success\": true, \"platform\": \"google|meta\", \"raw\": {\"changes\": [{\"changeEvent\": {\"changeDateTime\": \"ISO\", \"userEmail\": \"...\", \"changedFields\": \"field1,field2\"}}, {\"event_time\": \"...\", \"translated_event_type\": \"...\", \"actor_name\": \"...\", \"extra_data\": \"...\"}]}}"
     },
     {
+      "id": "action:ads/get_change_history_task",
+      "namespace": "ads",
+      "action": "get_change_history_task",
+      "description": "Check a TikTok change-log export task.",
+      "mode": "write",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nCheck a TikTok change-log export task.\n\nUse when:\nPolling the status of a change-history export task created earlier.\n\nDo not use when:\nBefore create_change_history_task has returned a task_id.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nRead-only status poll of an async export task; no advertiser-side mutation. Gated with the export flow rather than exposed as an immediate read.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "task_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok task id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/get_connected_instagram_accounts",
       "namespace": "ads",
       "action": "get_connected_instagram_accounts",
@@ -5162,6 +6119,159 @@
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"event_stats\": {...}, \"match_rate_approx\": \"...\"}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}  // Omitting both pixel_id and dataset_id triggers the list-all path (pass 'after' back to page). Supplying an unowned/nonexistent pixel_id returns {success:false, error:\"Dataset not found\", error_code:\"not_found\"}; match_rate_approx is approximate and may be null for low-volume or recently-created datasets."
     },
     {
+      "id": "action:ads/get_gmv_max_availability",
+      "namespace": "ads",
+      "action": "get_gmv_max_availability",
+      "description": "Check TikTok Shop GMV Max availability and prerequisites.",
+      "mode": "read",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nCheck TikTok Shop GMV Max availability and prerequisites.\n\nUse when:\nChecking whether a TikTok Shop account / store is eligible for GMV Max before creating a campaign.\n\nDo not use when:\nEligibility is already confirmed and you are ready to create — use create_gmv_max_campaign.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Call this read directly (no review needed).\n3. Use the returned ids / metrics in the next step.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
+      "id": "action:ads/get_gmv_max_campaign",
+      "namespace": "ads",
+      "action": "get_gmv_max_campaign",
+      "description": "Read a TikTok Shop GMV Max campaign.",
+      "mode": "read",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nRead a TikTok Shop GMV Max campaign.\n\nUse when:\nReading back a known GMV Max campaign's configuration and state.\n\nDo not use when:\nYou want performance metrics — use get_gmv_max_report.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Call this read directly (no review needed).\n3. Use the returned ids / metrics in the next step.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
+      "id": "action:ads/get_gmv_max_report",
+      "namespace": "ads",
+      "action": "get_gmv_max_report",
+      "description": "Read TikTok Shop GMV Max reporting.",
+      "mode": "read",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nRead TikTok Shop GMV Max reporting.\n\nUse when:\nPulling GMV Max performance by store / dimension / metric over a date range.\n\nDo not use when:\nYou want campaign configuration — use get_gmv_max_campaign.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Call this read directly (no review needed).\n3. Use the returned ids / metrics in the next step.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "store_ids",
+          "type": "string",
+          "required": true,
+          "description": "TikTok store ids.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "dimensions",
+          "type": "string",
+          "required": true,
+          "description": "TikTok dimensions.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "metrics",
+          "type": "string",
+          "required": true,
+          "description": "TikTok metrics.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "TikTok start date.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "TikTok end date.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/get_google_ads_report",
       "namespace": "ads",
       "action": "get_google_ads_report",
@@ -5235,7 +6345,8 @@
       "description": "Live Meta Insights for an account/campaign/adset/ad; returns data[] with actions and metrics by breakdown.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -5382,6 +6493,108 @@
           "required": false,
           "description": "Meta only: pagination cursor to fetch the next page beyond `limit`. Pass the value from the previous response's raw.paging.cursors.after to continue a multi-page pull. Source: output of a prior get_insights call: raw.paging.cursors.after.",
           "example": "MAZDZD"
+        },
+        {
+          "name": "report_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: report type (BASIC / AUDIENCE / ...).",
+          "example": "BASIC",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "data_level",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: aggregation level (AUCTION_CAMPAIGN / AUCTION_ADGROUP / AUCTION_AD).",
+          "example": "AUCTION_CAMPAIGN",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "dimensions",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: report dimensions.",
+          "example": [
+            "campaign_id"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: report metrics.",
+          "example": [
+            "spend",
+            "impressions",
+            "clicks"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: start date (YYYY-MM-DD).",
+          "example": "2026-07-01",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: end date (YYYY-MM-DD).",
+          "example": "2026-07-07",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "filtering",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: report filters.",
+          "example": [
+            {
+              "field_name": "campaign_ids",
+              "filter_type": "IN",
+              "filter_value": "[\"1\"]"
+            }
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page number (1-based).",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page size (max 100).",
+          "example": 100,
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"campaign_id\": \"...\", \"campaign_name\": \"...\", \"impressions\": \"...\", \"clicks\": \"...\", \"spend\": \"...\", \"actions\": [{\"action_type\": \"link_click\", \"value\": \"...\"}], \"action_values\": [{\"action_type\": \"offsite_conversion.fb_pixel_purchase\", \"value\": \"...\"}]}], \"paging\": {...}}"
@@ -5393,7 +6606,8 @@
       "description": "Read Meta leads collected by a lead form or ad; returns data[] with field_data. Smart ad-id fallback.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -5436,6 +6650,66 @@
           "type": "string",
           "required": false,
           "description": "Pagination cursor."
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "required": false,
+          "description": "TikTok end time.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "form_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok form id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "required": false,
+          "description": "TikTok start time.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"lead_id\", \"created_time\": \"ISO\", \"field_data\": [{\"name\": \"email\", \"values\": [\"user@example.com\"]}], \"ad_id\": \"...\", \"form_id\": \"...\", \"platform\": \"...\"}], \"paging\": {...}}"
@@ -5569,7 +6843,8 @@
       "description": "Get live details for one owned Meta product catalog.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
@@ -5597,6 +6872,16 @@
           "type": "string",
           "required": true,
           "description": "Owned Meta product catalog id."
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"...\", \"name\": \"...\", \"vertical\": \"...\", \"business\": {\"id\": \"...\"}}"
@@ -5608,7 +6893,8 @@
       "description": "Get live details for a Meta product feed in an owned catalog.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
@@ -5643,6 +6929,26 @@
           "type": "string",
           "required": true,
           "description": "Meta product feed id."
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "feed_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok feed id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"...\", \"name\": \"...\", \"latest_upload\": {...}, \"schedule\": {...}}"
@@ -5855,6 +7161,118 @@
         }
       ],
       "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"resource\": \"ad_group\", \"fields\": [{\"name\": \"...\", \"category\": \"ATTRIBUTE\", \"selectable\": true, \"filterable\": true, \"sortable\": true, \"data_type\": \"STRING\"}]}"
+    },
+    {
+      "id": "action:ads/get_smart_plus_campaign",
+      "namespace": "ads",
+      "action": "get_smart_plus_campaign",
+      "description": "Read a TikTok Smart+ campaign.",
+      "mode": "read",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nRead a TikTok Smart+ campaign.\n\nUse when:\nReading back a known Smart+ campaign's configuration and state.\n\nDo not use when:\nYou want performance metrics — use get_smart_plus_material_report.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Call this read directly (no review needed).\n3. Use the returned ids / metrics in the next step.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
+      "id": "action:ads/get_smart_plus_material_report",
+      "namespace": "ads",
+      "action": "get_smart_plus_material_report",
+      "description": "Read TikTok Smart+ material overview or breakdown reporting.",
+      "mode": "read",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Primary use:\nRead TikTok Smart+ material overview or breakdown reporting.\n\nUse when:\nPulling Smart+ overview or per-material breakdown performance.\n\nDo not use when:\nYou want campaign configuration — use get_smart_plus_campaign.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Call this read directly (no review needed).\n3. Use the returned ids / metrics in the next step.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "dimensions",
+          "type": "string",
+          "required": true,
+          "description": "TikTok dimensions.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "TikTok start date.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "TikTok end date.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
     },
     {
       "id": "action:ads/get_tree_structure",
@@ -6106,10 +7524,11 @@
       "id": "action:ads/list_ad_rules",
       "namespace": "ads",
       "action": "list_ad_rules",
-      "description": "Read Meta automated ad rules; returns data[] with id, name, evaluation_spec, execution_spec, status.",
+      "description": "Read Meta or TikTok automated ad rules and their provider-native rule specs.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -6124,8 +7543,8 @@
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
-          "example": "meta"
+          "description": "meta or tiktok.",
+          "example": "tiktok"
         },
         {
           "name": "account_id",
@@ -6139,6 +7558,26 @@
           "type": "integer",
           "required": false,
           "description": "Page size; default 100."
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"evaluation_spec\": {...}, \"execution_spec\": {...}, \"schedule_spec\": {...}, \"status\": \"ENABLED|PAUSED|DELETED\"}], \"paging\": {...}}"
@@ -6151,7 +7590,8 @@
       "mode": "read",
       "platforms": [
         "google",
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -6263,6 +7703,38 @@
           "required": false,
           "description": "Meta only: Unix timestamp; only return ads updated after this time. Source: user-provided timestamp.",
           "example": 1717200000
+        },
+        {
+          "name": "ad_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: filter to these ad ids.",
+          "example": [
+            "17840000000000000"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page number (1-based).",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page size (max 100).",
+          "example": 100,
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"ads\": [{\"ad_id\": 123, \"ad_name\": \"...\", \"ad_type\": \"RESPONSIVE_SEARCH_AD\", \"status\": \"ENABLED|PAUSED|REMOVED\", \"final_urls\": [\"...\"], \"headlines\": [\"...\"], \"descriptions\": [\"...\"], \"ad_resource_name\": \"...\", \"ad_group_ad_resource_name\": \"customers/X/adGroupAds/AG~AD\", \"ad_group_id\": 456, \"ad_group_name\": \"...\", \"campaign_id\": 789, \"campaign_name\": \"...\"}]}  // Meta: {\"data\": [{\"id\": \"23...\", \"name\": \"...\", \"adset_id\": \"...\", \"campaign_id\": \"...\", \"status\": \"...\", \"effective_status\": \"...\", \"creative\": {\"id\": \"...\", \"title\": \"...\", \"body\": \"...\", \"image_url\": \"...\", \"thumbnail_url\": \"...\"}, \"created_time\": \"ISO\", \"updated_time\": \"ISO\"}], \"paging\": {...}}"
@@ -6274,7 +7746,8 @@
       "description": "Read Meta ad sets; returns data[] with id, name, campaign_id, status, daily_budget, targeting.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -6327,6 +7800,38 @@
           "description": "Meta only: filter ad sets by effective status. Values: ACTIVE, PAUSED, DELETED, CAMPAIGN_PAUSED, ARCHIVED, IN_PROCESS, WITH_ISSUES (per AdSet.EffectiveStatus). Use [\"ARCHIVED\"] to retrieve archived ad sets hidden from the default listing. Source: constant enum list chosen by the agent based on what the user wants to see.",
           "example": [
             "ARCHIVED"
+          ]
+        },
+        {
+          "name": "adgroup_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: filter to these ad group ids.",
+          "example": [
+            "17840000000000000"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page number (1-based).",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page size (max 100).",
+          "example": 100,
+          "platform": [
+            "tiktok"
           ]
         }
       ],
@@ -6460,11 +7965,12 @@
       "id": "action:ads/list_campaigns",
       "namespace": "ads",
       "action": "list_campaigns",
-      "description": "Read campaigns from Google, Meta, or ChatGPT Ads; returns platform-native campaign rows.",
+      "description": "Read campaigns from Google, Meta, TikTok, or ChatGPT Ads; returns platform-native campaign rows.",
       "mode": "read",
       "platforms": [
         "google",
         "meta",
+        "tiktok",
         "chatgpt_ads"
       ],
       "requires_review": false,
@@ -6481,11 +7987,12 @@
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "google, meta, or chatgpt_ads",
+          "description": "google, meta, tiktok, or chatgpt_ads",
           "example": "chatgpt_ads",
           "enum": [
             "google",
             "meta",
+            "tiktok",
             "chatgpt_ads"
           ]
         },
@@ -6527,6 +8034,58 @@
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor returned in paging.cursors.after."
+        },
+        {
+          "name": "campaign_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: filter to these campaign ids.",
+          "example": [
+            "17840000000000000"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "objective_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: filter by objective.",
+          "example": "TRAFFIC",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "primary_status",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: filter by primary status.",
+          "example": "STATUS_ALL",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page number (1-based).",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: page size (max 100).",
+          "example": 100,
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"campaigns\": [{\"campaign_id\": 123, \"name\": \"...\", \"status\": \"ENABLED|PAUSED|REMOVED\", \"channel_type\": \"SEARCH|DISPLAY|...\", \"bidding_strategy_type\": \"...\", \"budget_amount_micros\": 50000000, \"budget_name\": \"...\", \"start_date\": \"YYYY-MM-DD\", \"end_date\": \"YYYY-MM-DD\", \"resource_name\": \"customers/X/campaigns/Y\"}]}  // Meta: {\"data\": [{\"id\": \"23...\", \"name\": \"...\", \"objective\": \"...\", \"status\": \"ACTIVE|PAUSED|ARCHIVED\", \"effective_status\": \"...\", \"daily_budget\": \"5000\", \"lifetime_budget\": \"...\", \"bid_strategy\": \"...\", \"buying_type\": \"AUCTION\", \"created_time\": \"ISO\", \"updated_time\": \"ISO\"}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}"
@@ -6688,7 +8247,8 @@
       "description": "Read Meta custom audiences; returns data[] with id, name, subtype, delivery_status.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -6726,6 +8286,36 @@
           "type": "string",
           "required": false,
           "description": "Pagination cursor."
+        },
+        {
+          "name": "custom_audience_ids",
+          "type": "string",
+          "required": false,
+          "description": "TikTok custom audience ids.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"subtype\": \"CUSTOM|WEBSITE|...\", \"description\": \"...\", \"delivery_status\": {\"code\": 200, \"description\": \"...\"}}], \"paging\": {...}}"
@@ -6850,7 +8440,8 @@
       "description": "Read Meta lead forms on a Page; returns data[] with id, name, status, questions.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -6893,6 +8484,26 @@
           "type": "string",
           "required": false,
           "description": "Pagination cursor."
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"lead_form_id\", \"name\": \"...\", \"status\": \"ACTIVE|ARCHIVED\", \"questions\": [...], \"privacy_policy_url\": \"...\", \"created_time\": \"ISO\"}], \"paging\": {...}}"
@@ -6960,10 +8571,11 @@
       "id": "action:ads/list_pixels",
       "namespace": "ads",
       "action": "list_pixels",
-      "description": "Read Meta Pixels on an ad account; returns data[] with id, name, code, last_fired_time.",
+      "description": "Read Meta or TikTok Pixels on an ad account; returns data[] with id, name, code, last_fired_time.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -6972,13 +8584,13 @@
         "action:ads/update_pixel",
         "action:ads/send_conversion_event"
       ],
-      "long_description": "Primary use:\nInventory of Meta Pixels installed on an ad account. Use this to discover pixel_id values and inspect last_fired_time for health checks.\n\nUse when:\n- You need a pixel_id for action:ads/send_conversion_event or action:ads/create_custom_audience subtype=WEBSITE.\n- The user asks which pixels exist on the account.\n\nDo not use when:\n- The user wants Google conversion actions. Use action:ads/list_conversion_actions.\n\nWorkflow:\n1. Call this action.\n2. Pick the pixel_id with the most recent last_fired_time.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[].code is the Pixel base code snippet (JavaScript).",
+      "long_description": "Primary use:\nList the Meta or TikTok pixels on the resolved ad account.\n\nUse when:\nDiscovering an existing pixel id before create_pixel / update_pixel or send_conversion_event.\n\nDo not use when:\nYou already hold the pixel id.\n\nWorkflow:\n1. Resolve the advertiser account (meta or tiktok).\n2. Call this read directly (no review needed).\n3. Pick a pixel id for the next step.\n\nOutput semantics:\nReturns provider-native pixel records; no cross-provider field coercion.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
+          "description": "Advertising platform: meta or tiktok.",
           "example": "meta"
         },
         {
@@ -6993,6 +8605,26 @@
           "type": "integer",
           "required": false,
           "description": "Page size; default 100."
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"pixel_id\", \"name\": \"...\", \"code\": \"<script>fbq(...)</script>\", \"last_fired_time\": \"ISO\"}], \"paging\": {...}}"
@@ -7004,7 +8636,8 @@
       "description": "List Meta product catalogs owned by the account business.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
@@ -7039,6 +8672,36 @@
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
           "source": "upstream:action:ads/list_product_catalogs"
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"business\": {\"id\": \"...\"}}], \"paging\": {...}}"
@@ -7050,7 +8713,8 @@
       "description": "List products included in a Meta product set.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
@@ -7098,6 +8762,36 @@
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
           "source": "upstream:action:ads/list_product_set_products"
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"retailer_id\": \"...\", \"name\": \"...\"}], \"paging\": {...}}"
@@ -7109,7 +8803,8 @@
       "description": "List product sets configured in an owned Meta product catalog.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
@@ -7150,6 +8845,36 @@
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
           "source": "upstream:action:ads/list_product_sets"
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"filter\": {...}, \"product_count\": 123}], \"paging\": {...}}"
@@ -7161,7 +8886,8 @@
       "description": "List products in an owned Meta catalog, or inspect one product by product_id.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
@@ -7208,6 +8934,36 @@
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
           "source": "upstream:action:ads/list_products"
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"retailer_id\": \"...\", \"name\": \"...\", \"availability\": \"...\"}], \"paging\": {...}}"
@@ -7219,7 +8975,8 @@
       "description": "Read Meta saved audiences (saved targeting specs); returns data[] with id, name, targeting.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -7254,6 +9011,26 @@
           "type": "string",
           "required": false,
           "description": "Pagination cursor."
+        },
+        {
+          "name": "page",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "string",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"targeting\": {...}, \"description\": \"...\"}], \"paging\": {...}}"
@@ -7479,11 +9256,12 @@
       "id": "action:ads/remove_ad",
       "namespace": "ads",
       "action": "remove_ad",
-      "description": "Remove an ad on Google (terminal) or archive on Meta; review-gated.",
+      "description": "Remove an ad on Google (terminal) or archive on Meta; review-gated. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "mode": "risk",
       "platforms": [
         "google",
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -7492,7 +9270,7 @@
         "action:ads/update_ad",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nTerminate or archive an ad. On Google this is a terminal mutate (status=REMOVED); on Meta it sets status=ARCHIVED.\n\nUse when:\n- The user wants to retire a specific ad without touching the rest of the ad group / ad set.\n\nDo not use when:\n- The user wants to retire the whole ad group / ad set. Use action:ads/remove_ad_group or action:ads/remove_adset.\n- The user wants to pause temporarily. Use action:ads/update_ad with status=PAUSED.\n\nWorkflow:\n1. Call action:ads/list_ads to confirm ad_id (Google also needs ad_group_ad_resource_name which the dispatcher auto-synthesizes from customer_id, ad_group_id, ad_id).\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed ad_group_ad resource path.\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: terminal mutate(remove); not reversible.\n- Meta: POSTs status=ARCHIVED; can be un-archived to PAUSED via update_ad.\n- Stops spend immediately for that ad.",
+      "long_description": "Primary use:\nTerminate or archive an ad. On Google this is a terminal mutate (status=REMOVED); on Meta it sets status=ARCHIVED.\n\nUse when:\n- The user wants to retire a specific ad without touching the rest of the ad group / ad set.\n\nDo not use when:\n- The user wants to retire the whole ad group / ad set. Use action:ads/remove_ad_group or action:ads/remove_adset.\n- The user wants to pause temporarily. Use action:ads/update_ad with status=PAUSED.\n\nWorkflow:\n1. Call action:ads/list_ads to confirm ad_id (Google also needs ad_group_ad_resource_name which the dispatcher auto-synthesizes from customer_id, ad_group_id, ad_id).\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed ad_group_ad resource path.\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: terminal mutate(remove); not reversible.\n- Meta: POSTs status=ARCHIVED; can be un-archived to PAUSED via update_ad.\n- Stops spend immediately for that ad. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "input_params": [
         {
           "name": "platform",
@@ -7709,10 +9487,11 @@
       "id": "action:ads/remove_ad_rule",
       "namespace": "ads",
       "action": "remove_ad_rule",
-      "description": "Hard-delete a Meta automated ad rule; review-gated, IRREVERSIBLE (true Graph DELETE, not an archive).",
+      "description": "Hard-delete a Meta or TikTok automated ad rule; review-gated and IRREVERSIBLE.",
       "mode": "risk",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -7722,14 +9501,14 @@
         "action:ads/update_ad_rule",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nPermanently delete an automated rule that is no longer wanted, e.g. an obsolete spend-guard or a rule superseded by a new one.\n\nUse when:\n- The user explicitly wants the rule gone for good.\n\nDo not use when:\n- The user only wants to stop the rule from running. Use action:ads/update_ad_rule with status=DISABLED (reversible) instead.\n- The user wants to change what the rule does. Use action:ads/update_ad_rule.\n- The platform is Google.\n\nWorkflow:\n1. Confirm rule_id via action:ads/list_ad_rules.\n2. Prefer disabling first (action:ads/update_ad_rule status=DISABLED) unless permanent deletion is explicitly requested.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ad_rules (rule gone).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body: {success: true}.\n- Returns success=false with error_code=not_found when the rule does not exist OR belongs to a different ad account than the resolved one (ownership pre-check).\n\nSide effects:\n- Sends DELETE {rule_id} — a TRUE hard delete. Unlike action:ads/remove_campaign / remove_adset / remove_ad, which archive and are reversible, this cannot be undone; the rule stops evaluating immediately and its id becomes unusable.\n- Ownership is verified against the active account before deletion: the handler reads the rule's account_id and rejects mismatches as not_found, so rules of other workspaces cannot be deleted.",
+      "long_description": "Primary use:\nPermanently delete an automated rule that is no longer wanted, e.g. an obsolete spend-guard or a rule superseded by a new one.\n\nUse when:\n- The user explicitly wants the rule gone for good.\n\nDo not use when:\n- The user only wants to stop the rule from running. Use action:ads/update_ad_rule with status=DISABLED (reversible) instead.\n- The user wants to change what the rule does. Use action:ads/update_ad_rule.\n- The platform is Google.\n\nWorkflow:\n1. Confirm rule_id via action:ads/list_ad_rules.\n2. Prefer disabling first (action:ads/update_ad_rule status=DISABLED) unless permanent deletion is explicitly requested.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ad_rules (rule gone).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body: {success: true}.\n- Returns success=false with error_code=not_found when the rule does not exist OR belongs to a different ad account than the resolved one (ownership pre-check).\n\nSide effects:\n- Meta sends DELETE {rule_id}; TikTok sends operate_type=DELETE to /optimizer/rule/update/status/. Unlike action:ads/remove_campaign / remove_adset / remove_ad, which archive and are reversible, this cannot be undone; the rule stops evaluating immediately and its id becomes unusable.\n- Ownership is verified against the active account before deletion: the handler reads the rule's account_id and rejects mismatches as not_found, so rules of other workspaces cannot be deleted.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
-          "example": "meta"
+          "description": "meta or tiktok.",
+          "example": "tiktok"
         },
         {
           "name": "account_id",
@@ -7752,10 +9531,11 @@
       "id": "action:ads/remove_adset",
       "namespace": "ads",
       "action": "remove_adset",
-      "description": "Archive a Meta ad set; review-gated, reversible by un-archiving to PAUSED.",
+      "description": "Archive a Meta ad set; review-gated, reversible by un-archiving to PAUSED. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "mode": "risk",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -7764,7 +9544,7 @@
         "action:ads/update_adset",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nArchive a Meta ad set so it stops spending and disappears from default listings. Reversible by un-archiving to PAUSED.\n\nUse when:\n- The user wants to retire a Meta ad set but keep the option to restore.\n\nDo not use when:\n- The user wants a temporary pause. Use action:ads/update_adset with status=PAUSED.\n- The platform is Google. Use action:ads/remove_ad_group.\n\nWorkflow:\n1. Call action:ads/list_adsets to confirm adset_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via list_adsets (ARCHIVED status hidden from default listings).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body: {success: true}.\n\nSide effects:\n- POSTs status=ARCHIVED to {adset_id}; not a true delete.\n- Stops spend immediately for ads under the ad set.\n- Reversible: update_adset with status=PAUSED (to re-enter the funnel), then update_adset with status=ACTIVE to resume.",
+      "long_description": "Primary use:\nArchive a Meta ad set so it stops spending and disappears from default listings. Reversible by un-archiving to PAUSED.\n\nUse when:\n- The user wants to retire a Meta ad set but keep the option to restore.\n\nDo not use when:\n- The user wants a temporary pause. Use action:ads/update_adset with status=PAUSED.\n- The platform is Google. Use action:ads/remove_ad_group.\n\nWorkflow:\n1. Call action:ads/list_adsets to confirm adset_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via list_adsets (ARCHIVED status hidden from default listings).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body: {success: true}.\n\nSide effects:\n- POSTs status=ARCHIVED to {adset_id}; not a true delete.\n- Stops spend immediately for ads under the ad set.\n- Reversible: update_adset with status=PAUSED (to re-enter the funnel), then update_adset with status=ACTIVE to resume. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "input_params": [
         {
           "name": "platform",
@@ -7879,11 +9659,12 @@
       "id": "action:ads/remove_campaign",
       "namespace": "ads",
       "action": "remove_campaign",
-      "description": "Remove a campaign on Google (terminal REMOVED) or archive on Meta; review-gated, stops spend immediately.",
+      "description": "Remove a campaign on Google (terminal REMOVED) or archive on Meta; review-gated, stops spend immediately. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "mode": "risk",
       "platforms": [
         "google",
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -7893,7 +9674,7 @@
         "action:_batch/submit",
         "action:ads/list_operation_records"
       ],
-      "long_description": "Primary use:\nTerminate a campaign so it stops spending and disappears from default listings. On Google this is irreversible; on Meta it is archive-style and can be un-archived to PAUSED.\n\nUse when:\n- The user wants to permanently retire a Google campaign.\n- The user wants to archive a Meta campaign and possibly restore later.\n\nDo not use when:\n- The user wants to temporarily pause spend. Use action:ads/update_campaign with status=PAUSED instead.\n- The user wants to delete only an ad or ad group. Use action:ads/remove_ad or action:ads/remove_ad_group / remove_adset.\n\nWorkflow:\n1. Call action:ads/list_campaigns to confirm the target campaign_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify removal via action:ads/list_campaigns with status_filter.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed campaign resource name.\n- Meta raw is {success: true}; the campaign moves to ARCHIVED status.\n\nSide effects:\n- Google: terminal — sets status=REMOVED via mutate(remove=resource_name); not reversible.\n- Meta: not a true delete — POSTs status=ARCHIVED. The campaign disappears from default listings; it can be un-archived to PAUSED (not ACTIVE) via action:ads/update_campaign.\n- Stops spend immediately on both platforms.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Capability docs do not state the customer_id is derived from account_id; harmless but the input_params omit customer_id while the handler reads it — an agent reading only handler source could be confused about which key to send. Also note: Docs say Google removal is 'terminal/irreversible' (correct) but do not warn that re-removing an already-REMOVED campaign returns a raw API error rather than an idempotent success; agent may retry and surface a confusing error. Capability gap: validate_only / partial_failure (Google Ads mutate options) are not exposed at this layer; a remove cannot be dry-run via the agent contract (acceptable for a destructive op but worth noting).\n- meta: Guidance: capability docs declare account_id required:True for remove_campaign, but for Meta it is not needed (handler ignores it; archive targets the campaign-id node). This forces the agent to fetch/pass an account_id that has no effect on Meta and risks confusing it about what is load-bearing. Also note: Docs say Meta archive 'can be un-archived to PAUSED (not ACTIVE) via update_campaign' but do not warn about the 50,000 ARCHIVED-objects-per-type-per-account ceiling that can make the operation fail; the agent cannot anticipate this failure mode. Capability gap: No way to perform a TRUE delete (status=DELETED) on Meta via remove_campaign. The handler is hard-coded to ARCHIVED, so the agent cannot evacuate archived objects when an account hits the 50,000-archived-per-type limit, and cannot satisfy a user request to permanently delete a Meta campaign. capability docs even claim Meta is 'archive-style  can be un-archived', acknowledging this gap as intentional.",
+      "long_description": "Primary use:\nTerminate a campaign so it stops spending and disappears from default listings. On Google this is irreversible; on Meta it is archive-style and can be un-archived to PAUSED.\n\nUse when:\n- The user wants to permanently retire a Google campaign.\n- The user wants to archive a Meta campaign and possibly restore later.\n\nDo not use when:\n- The user wants to temporarily pause spend. Use action:ads/update_campaign with status=PAUSED instead.\n- The user wants to delete only an ad or ad group. Use action:ads/remove_ad or action:ads/remove_ad_group / remove_adset.\n\nWorkflow:\n1. Call action:ads/list_campaigns to confirm the target campaign_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify removal via action:ads/list_campaigns with status_filter.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed campaign resource name.\n- Meta raw is {success: true}; the campaign moves to ARCHIVED status.\n\nSide effects:\n- Google: terminal — sets status=REMOVED via mutate(remove=resource_name); not reversible.\n- Meta: not a true delete — POSTs status=ARCHIVED. The campaign disappears from default listings; it can be un-archived to PAUSED (not ACTIVE) via action:ads/update_campaign.\n- Stops spend immediately on both platforms.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Capability docs do not state the customer_id is derived from account_id; harmless but the input_params omit customer_id while the handler reads it — an agent reading only handler source could be confused about which key to send. Also note: Docs say Google removal is 'terminal/irreversible' (correct) but do not warn that re-removing an already-REMOVED campaign returns a raw API error rather than an idempotent success; agent may retry and surface a confusing error. Capability gap: validate_only / partial_failure (Google Ads mutate options) are not exposed at this layer; a remove cannot be dry-run via the agent contract (acceptable for a destructive op but worth noting).\n- meta: Guidance: capability docs declare account_id required:True for remove_campaign, but for Meta it is not needed (handler ignores it; archive targets the campaign-id node). This forces the agent to fetch/pass an account_id that has no effect on Meta and risks confusing it about what is load-bearing. Also note: Docs say Meta archive 'can be un-archived to PAUSED (not ACTIVE) via update_campaign' but do not warn about the 50,000 ARCHIVED-objects-per-type-per-account ceiling that can make the operation fail; the agent cannot anticipate this failure mode. Capability gap: No way to perform a TRUE delete (status=DELETED) on Meta via remove_campaign. The handler is hard-coded to ARCHIVED, so the agent cannot evacuate archived objects when an account hits the 50,000-archived-per-type limit, and cannot satisfy a user request to permanently delete a Meta campaign. capability docs even claim Meta is 'archive-style  can be un-archived', acknowledging this gap as intentional. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "input_params": [
         {
           "name": "platform",
@@ -8221,7 +10002,8 @@
       "description": "Hard-delete a Meta custom audience; review-gated, IRREVERSIBLE (true Graph DELETE, not an archive).",
       "mode": "risk",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -8358,7 +10140,8 @@
       "description": "Hard-delete an owned Meta product catalog; review-gated, IRREVERSIBLE (true Graph DELETE, not an archive).",
       "mode": "risk",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
@@ -8389,6 +10172,16 @@
           "type": "string",
           "required": true,
           "description": "Owned Meta product catalog id to delete."
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true}"
@@ -8400,7 +10193,8 @@
       "description": "Hard-delete a Meta product feed from an owned catalog; review-gated, IRREVERSIBLE (true Graph DELETE, not an archive).",
       "mode": "risk",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
@@ -8437,6 +10231,26 @@
           "type": "string",
           "required": true,
           "description": "Meta product feed id to delete."
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "feed_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok feed id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true}"
@@ -8544,7 +10358,8 @@
       "description": "Search Meta ad geo location keys; returns data[] with location key, name, type.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -8594,6 +10409,46 @@
           "type": "integer",
           "required": false,
           "description": "Row cap; default 25."
+        },
+        {
+          "name": "objective_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok objective type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placements",
+          "type": "string",
+          "required": true,
+          "description": "TikTok placements.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "region_codes",
+          "type": "string",
+          "required": false,
+          "description": "TikTok region codes.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "search_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok search type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"key\": \"location_key\", \"name\": \"...\", \"type\": \"country|region|city|...\", \"country_code\": \"US\", \"country_name\": \"United States\", \"region\": \"...\", \"supports_region\": true, \"supports_city\": true}]}"
@@ -8605,7 +10460,8 @@
       "description": "Search Meta ad interest taxonomy; returns data[] with interest_id, name, audience size bounds.",
       "mode": "read",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -8649,6 +10505,16 @@
           "required": false,
           "description": "Meta only: locale code (e.g. en_US, ja_JP) to localize the returned interest taxonomy names/IDs. Omit for default locale. Source: constant enum of Meta locale codes (retrievable via Targeting Search type=adlocale); typically derived from the advertiser's market/language.",
           "example": "en_US"
+        },
+        {
+          "name": "language",
+          "type": "string",
+          "required": false,
+          "description": "TikTok language.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"interest_id\", \"name\": \"...\", \"audience_size_lower_bound\": N, \"audience_size_upper_bound\": N, \"topic\": \"...\", \"path\": [\"...\"]}]}"
@@ -8657,10 +10523,11 @@
       "id": "action:ads/send_conversion_event",
       "namespace": "ads",
       "action": "send_conversion_event",
-      "description": "Send a Meta Conversions API server-side event; review-gated and requires SHA-256 hashed PII fields.",
+      "description": "Send a review-gated server-side conversion to Meta CAPI or TikTok Events API 2.0.",
       "mode": "risk",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -8669,14 +10536,14 @@
         "action:ads/create_pixel",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nPOST a server-to-server conversion event to Meta's Conversions API. Event is attributed immediately by Meta's attribution windows and cannot be retracted.\n\nUse when:\n- The user wants to send a server-side event (purchase, lead, signup) for attribution.\n- A workflow needs to backfill or dedupe events with browser-side Pixel via event_id.\n\nDo not use when:\n- The user has not hashed PII fields. Email, phone, name, gender, DOB, city, state, ZIP, country, external_id MUST be SHA-256 lowercase hex (64 chars). The handler rejects unhashed values BEFORE calling Meta.\n- The platform is Google. Use the Google Ads conversion upload outside this surface.\n\nWorkflow:\n1. Pick pixel_id via action:ads/list_pixels.\n2. Hash all PII fields in user_data per Meta's spec.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify delivery via raw.events_received and fbtrace_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.events_received is the count Meta accepted.\n- raw.messages may carry warnings or validation hints.\n- raw.fbtrace_id is the trace id for debugging.\n- Returns success=false with 'user_data.<field> must be SHA-256 hashed...' before calling Meta if any PII field is unhashed.\n\nSide effects:\n- POSTs {pixel_id}/events with data=[<event_obj>].\n- Event is attributed immediately by Meta's attribution windows.\n- NOT REVERSIBLE — there is no API to retract an event once sent.\n- No ad spend triggered, but reported metrics will reflect the event.",
+      "long_description": "Primary use:\nSend a server-side conversion to Meta CAPI or TikTok Events API 2.0.\n\nUse when:\nReporting an offline / server conversion for measurement and optimization.\n\nDo not use when:\nThe event can be captured by the browser / app pixel, or PII in user_data is not yet hashed.\n\nWorkflow:\n1. Resolve the advertiser + pixel binding.\n2. For Meta, supply action_source, event_time, Meta user_data and optional custom_data; for TikTok, set event_id for deduplication and use the Events API properties / page / context schema. Hash PII in user_data first.\n3. Submit through the review queue, then verify the provider response before retrying.\n\nOutput semantics:\nReturns the provider-native event response; no cross-provider field coercion.\n\nSide effects:\nSends an irreversible server-side event to the provider that feeds attribution and Smart Bidding / optimization. TikTok's separate Events API token is configured and encrypted on the server for the advertiser+pixel binding; it must never be placed in the Agent payload.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
-          "example": "meta"
+          "description": "Advertising platform: meta or tiktok.",
+          "example": "tiktok"
         },
         {
           "name": "account_id",
@@ -8721,13 +10588,16 @@
             "system_generated",
             "website"
           ],
-          "source": "constant"
+          "source": "constant",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "user_data",
           "type": "object",
           "required": false,
-          "description": "Meta only: user identity payload. MUST contain at least one identifier so Meta can match the event (em, ph, external_id, or client_ip_address + client_user_agent). PII fields (em, ph, fn, ln, ge, db, ct, st, zp, country, external_id) MUST be SHA-256 lowercase hex (64 chars); the handler rejects unhashed values. Non-PII fields (client_ip_address, client_user_agent, fbc, fbp, subscription_id) pass through unchanged. For action_source='website', client_user_agent is REQUIRED here. Source: user-provided / collected at the conversion point; PII pre-hashed by the caller per Meta's spec; client_user_agent and client_ip_address captured from the originating browser request.",
+          "description": "Provider-native identity object. Hash all PII as SHA-256 lowercase hex; Meta and TikTok accept different key names, so follow the selected provider schema.",
           "example": {
             "em": [
               "<sha256-email>"
@@ -8743,20 +10613,26 @@
           "example": {
             "value": 1.0,
             "currency": "USD"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "event_source_url",
           "type": "string",
           "required": false,
           "description": "Meta only: URL of the page where the event occurred. REQUIRED when action_source='website'. Validated as a public https URL. Source: user-provided page URL where the conversion happened.",
-          "example": "https://example.com/checkout"
+          "example": "https://example.com/checkout",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "event_id",
           "type": "string",
-          "required": false,
-          "description": "Deduplication key paired with Pixel browser-side events."
+          "required": true,
+          "description": "Deduplication key; required for TikTok and recommended for Meta browser/CAPI dedupe."
         },
         {
           "name": "app_data",
@@ -8784,14 +10660,20 @@
               "",
               ""
             ]
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "opt_out",
           "type": "boolean",
           "required": false,
           "description": "Meta only: per-event flag; when true the event is used for attribution but excluded from ads optimization. Source: user-provided privacy preference.",
-          "example": false
+          "example": false,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "data_processing_options",
@@ -8800,6 +10682,9 @@
           "description": "Meta only: Limited Data Use / privacy controls. Pass [\"LDU\"] to enable Limited Data Use, or [] to disable. Source: constant enum chosen for US-privacy compliance.",
           "example": [
             "LDU"
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -8807,14 +10692,20 @@
           "type": "integer",
           "required": false,
           "description": "Meta only: country for Limited Data Use (0 = let Meta geolocate, 1 = United States). Used with data_processing_options. Source: constant enum.",
-          "example": 1
+          "example": 1,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "data_processing_options_state",
           "type": "integer",
           "required": false,
           "description": "Meta only: state for Limited Data Use (0 = let Meta geolocate, 1000 = California). Used with data_processing_options. Source: constant enum.",
-          "example": 1000
+          "example": 1000,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "attribution_data",
@@ -8823,7 +10714,10 @@
           "description": "Meta only: optional CAPI attribution optimization payload (e.g. attribution_share) forwarded verbatim. Source: user-provided / advanced attribution config per Meta docs.",
           "example": {
             "attribution_share": "0.5"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "original_event_data",
@@ -8833,10 +10727,43 @@
           "example": {
             "event_name": "Purchase",
             "event_time": 1716000000
-          }
+          },
+          "platform": [
+            "meta"
+          ]
+        },
+        {
+          "name": "context",
+          "type": "object",
+          "required": false,
+          "description": "TikTok Events API context object.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "object",
+          "required": false,
+          "description": "TikTok Events API page object.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "properties",
+          "type": "object",
+          "required": false,
+          "description": "TikTok Events API properties object.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
-      "output_shape": "{\"events_received\": 1, \"messages\": [\"...\"], \"fbtrace_id\": \"...\"}"
+      "output_shape": "{\"success\":true,\"raw\":{\"provider_response\":\"...\"}}"
     },
     {
       "id": "action:ads/set_ad_schedule",
@@ -9385,7 +11312,8 @@
       "mode": "risk",
       "platforms": [
         "google",
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -9512,6 +11440,31 @@
           "required": false,
           "description": "Meta only: new name for the ad (renames the Ad node). Google only: not applicable. Source: user-provided ad name.",
           "example": "Summer sale - v2"
+        },
+        {
+          "name": "creatives",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: creative objects (each carrying its ad_id) submitted as a full ad-group-scoped array.",
+          "example": [
+            {
+              "ad_id": "178",
+              "ad_text": "New copy"
+            }
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "adgroup_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: ad group id (falls back to adset_id).",
+          "example": "17840000000000000",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Ad updated: status, final_urls\", \"results\": [...], \"warnings\": [\"Headlines and descriptions cannot be updated on an existing RSA...\"]}  // Meta: {\"success\": true}"
@@ -9588,10 +11541,11 @@
       "id": "action:ads/update_ad_rule",
       "namespace": "ads",
       "action": "update_ad_rule",
-      "description": "Update a Meta automated ad rule (name / specs / status); review-gated, reversible by writing back the previous values.",
+      "description": "Update a Meta or TikTok automated ad rule (spec or status); review-gated, reversible by writing back the previous values.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -9601,14 +11555,14 @@
         "action:ads/remove_ad_rule",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nModify an existing automated rule in place: rename it, replace its evaluation/execution/schedule specs, or turn it on/off via status.\n\nUse when:\n- The user wants to pause (disable) or re-enable an automated rule. Pausing a rule = status=DISABLED.\n- Thresholds, filters, or the executed action of a rule need changing.\n- A rule's schedule cadence needs adjusting.\n\nDo not use when:\n- The user wants the rule permanently gone. Use action:ads/remove_ad_rule.\n- The user wants a new rule alongside the old one. Use action:ads/create_ad_rule.\n- The platform is Google.\n\nWorkflow:\n1. Confirm rule_id via action:ads/list_ad_rules.\n2. Provide only the fields to change among name / evaluation_spec / execution_spec / schedule_spec / status (at least one). Spec objects REPLACE the stored spec wholesale — send the complete new spec, not a partial patch.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ad_rules.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body: {success: true}.\n- Returns success=false with error_code=not_found when the rule does not exist OR belongs to a different ad account than the resolved one (ownership pre-check).\n- Returns success=false with error_code=invalid_param when no updatable field is provided.\n\nSide effects:\n- POSTs only the provided fields among {name, evaluation_spec, execution_spec, schedule_spec, status} to {rule_id}.\n- STATUS ENUM WARNING: the status enum here is the AdRule enum ENABLED/DISABLED (plus HAS_ISSUES), NOT the generic ACTIVE/PAUSED lifecycle enum — the platform maps generic values (ENABLED/ACTIVE->ENABLED, PAUSED->DISABLED) before the write. status=DELETED is rejected with error_code=invalid_param: deleting a rule is irreversible and goes through action:ads/remove_ad_rule.\n- Ownership is verified against the active account before the write.\n- Reversible: write the previous name/specs/status back.",
+      "long_description": "Primary use:\nModify an existing automated rule in place: rename it, replace its evaluation/execution/schedule specs, or turn it on/off via status.\n\nUse when:\n- The user wants to pause (disable) or re-enable an automated rule. Pausing a rule = status=DISABLED.\n- Thresholds, filters, or the executed action of a rule need changing.\n- A rule's schedule cadence needs adjusting.\n\nDo not use when:\n- The user wants the rule permanently gone. Use action:ads/remove_ad_rule.\n- The user wants a new rule alongside the old one. Use action:ads/create_ad_rule.\n- The platform is Google.\n\nWorkflow:\n1. Confirm rule_id via action:ads/list_ad_rules.\n2. Provide only the fields to change among name / evaluation_spec / execution_spec / schedule_spec / status (at least one). Spec objects REPLACE the stored spec wholesale — send the complete new spec, not a partial patch.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ad_rules.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body: {success: true}.\n- Returns success=false with error_code=not_found when the rule does not exist OR belongs to a different ad account than the resolved one (ownership pre-check).\n- Returns success=false with error_code=invalid_param when no updatable field is provided.\n\nSide effects:\n- Meta POSTs provided fields to {rule_id}. TikTok replaces the official rules[] spec through /optimizer/rule/update/ or maps ACTIVE/ENABLED and PAUSED/DISABLED to /optimizer/rule/update/status/.\n- STATUS ENUM WARNING: the status enum here is the AdRule enum ENABLED/DISABLED (plus HAS_ISSUES), NOT the generic ACTIVE/PAUSED lifecycle enum — the platform maps generic values (ENABLED/ACTIVE->ENABLED, PAUSED->DISABLED) before the write. status=DELETED is rejected with error_code=invalid_param: deleting a rule is irreversible and goes through action:ads/remove_ad_rule.\n- Ownership is verified against the active account before the write.\n- Reversible: write the previous name/specs/status back.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
-          "example": "meta"
+          "description": "meta or tiktok.",
+          "example": "tiktok"
         },
         {
           "name": "account_id",
@@ -9678,8 +11632,24 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Meta only: new rule status. WARNING — the enum here is the AdRule enum ENABLED / DISABLED (plus HAS_ISSUES), NOT the generic ACTIVE/PAUSED lifecycle enum; the platform maps generic values (PAUSED->DISABLED, ACTIVE->ENABLED). Pausing a rule = status=DISABLED. DELETED is rejected (invalid_param) — deletion is irreversible and goes through action:ads/remove_ad_rule. Source: constant enum chosen by the agent.",
+          "description": "New rule status. For Meta the enum is the AdRule enum ENABLED / DISABLED (plus HAS_ISSUES), NOT the generic ACTIVE/PAUSED lifecycle enum; the platform maps generic values (PAUSED->DISABLED, ACTIVE->ENABLED). Pausing a rule = status=DISABLED. DELETED is rejected (invalid_param) — deletion is irreversible and goes through action:ads/remove_ad_rule. For TikTok, ENABLED/ACTIVE maps to TURN_ON and DISABLED/PAUSED maps to TURN_OFF. Source: constant enum chosen by the agent.",
           "example": "DISABLED"
+        },
+        {
+          "name": "rules",
+          "type": "array<object>",
+          "required": false,
+          "description": "TikTok only: complete replacement rules array. Each rule_id must match the top-level rule_id. Omit when only changing status."
+        },
+        {
+          "name": "lang",
+          "type": "string",
+          "required": false,
+          "description": "TikTok lang.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true}"
@@ -9691,7 +11661,8 @@
       "description": "Update Meta ad set fields; review-gated, setting status=ACTIVE resumes spend immediately.",
       "mode": "risk",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -9851,6 +11822,164 @@
           "required": false,
           "description": "Meta only: EU DSA payer name (required alongside dsa_beneficiary for EU-regulated targeting). Source: user-provided payer name.",
           "example": "Acme Inc"
+        },
+        {
+          "name": "adgroup_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: new ad group name.",
+          "example": "AG 1 v2",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: new budget as a float in the account currency.",
+          "example": 25.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: new budget mode.",
+          "example": "BUDGET_MODE_DAY",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "location_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target location ids.",
+          "example": [
+            "6252001"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "age_groups",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target age group enums.",
+          "example": [
+            "AGE_25_34"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Target gender.",
+          "example": "GENDER_UNLIMITED",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "languages",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target language codes.",
+          "example": [
+            "en"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_category_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Interest category ids.",
+          "example": [
+            "100"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_keyword_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Interest keyword ids.",
+          "example": [
+            "200"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Included custom-audience ids.",
+          "example": [
+            "300"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "excluded_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Excluded custom-audience ids.",
+          "example": [
+            "400"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operating_systems",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target operating systems.",
+          "example": [
+            "ANDROID"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placement_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Placement selection mode.",
+          "example": "PLACEMENT_TYPE_AUTOMATIC",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placements",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Explicit placements when placement_type is normal.",
+          "example": [
+            "PLACEMENT_TIKTOK"
+          ],
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true}"
@@ -9936,6 +12065,7 @@
       "platforms": [
         "google",
         "meta",
+        "tiktok",
         "chatgpt_ads"
       ],
       "requires_review": true,
@@ -9953,11 +12083,12 @@
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "google, meta, or chatgpt_ads",
+          "description": "google, meta, tiktok, or chatgpt_ads",
           "example": "chatgpt_ads",
           "enum": [
             "google",
             "meta",
+            "tiktok",
             "chatgpt_ads"
           ]
         },
@@ -10128,6 +12259,26 @@
           "type": "string",
           "required": false,
           "description": "Meta only: ISO-8601 stop time."
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: new budget as a float in the account currency (NOT micros).",
+          "example": 80.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: new budget mode.",
+          "example": "BUDGET_MODE_DAY",
+          "platform": [
+            "tiktok"
+          ]
         },
         {
           "name": "daily_budget",
@@ -10391,7 +12542,8 @@
       "description": "Update a Meta custom audience's name/description metadata; review-gated, reversible by writing back the previous values.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -10438,6 +12590,57 @@
         }
       ],
       "output_shape": "{\"success\": true}"
+    },
+    {
+      "id": "action:ads/update_gmv_max_campaign",
+      "namespace": "ads",
+      "action": "update_gmv_max_campaign",
+      "description": "Update a TikTok Shop GMV Max campaign.",
+      "mode": "risk",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [],
+      "long_description": "Primary use:\nUpdate a TikTok Shop GMV Max campaign.\n\nUse when:\nChanging settings on an existing GMV Max campaign.\n\nDo not use when:\nYou only need eligibility checks or reporting.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nMutates a live GMV Max campaign; changes apply on TikTok immediately. Requires shop_exclusivity_acknowledged.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "shop_exclusivity_acknowledged",
+          "type": "boolean",
+          "required": true,
+          "description": "Explicit acknowledgement required before this side effect.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
     },
     {
       "id": "action:ads/update_keyword",
@@ -10512,10 +12715,11 @@
       "id": "action:ads/update_pixel",
       "namespace": "ads",
       "action": "update_pixel",
-      "description": "Rename a Meta Pixel; review-gated, reversible by writing the previous name back.",
+      "description": "Rename a Meta or TikTok Pixel; review-gated, reversible by writing the previous name back.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -10525,13 +12729,13 @@
         "action:ads/send_conversion_event",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nRename a Meta Pixel without touching its tracking configuration, base code, or collected event history.\n\nUse when:\n- The user wants to fix a typo in a pixel name or align naming conventions across accounts.\n\nDo not use when:\n- The user wants to delete a pixel. The Graph API has no pixel delete; renaming is the only lifecycle write on this surface.\n- The user wants to change pixel configuration (data_use_setting, automatic matching, first-party cookie settings). Not exposed by this surface; use Meta Events Manager.\n- The user wants to send events. Use action:ads/send_conversion_event.\n- The platform is Google.\n\nWorkflow:\n1. Confirm pixel_id via action:ads/list_pixels.\n2. Provide the new name.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_pixels.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body: {success: true}.\n- Returns success=false with error_code=not_found when the pixel does not exist OR belongs to a different ad account than the resolved one (ownership pre-check).\n- Returns success=false with error_code=invalid_param when name is not provided.\n\nSide effects:\n- POSTs only name to {pixel_id}; tracking, event history, and the installed base code are unchanged.\n- Ownership is verified against the active account before the write: the handler reads the pixel's owner_ad_account and rejects mismatches as not_found, so pixels of other workspaces cannot be renamed.\n- Reversible: write the previous name back.",
+      "long_description": "Primary use:\nUpdate a Meta or TikTok pixel on the resolved ad account.\n\nUse when:\nRenaming or reconfiguring an existing pixel.\n\nDo not use when:\nNo pixel exists yet — create one with create_pixel; never reuse a pixel id across providers.\n\nWorkflow:\n1. Resolve the advertiser account and pixel id.\n2. Submit through the review queue.\n3. Read back the updated pixel.\n\nOutput semantics:\nReturns the provider-native pixel resource; no fake cross-provider parity.\n\nSide effects:\nMutates an existing pixel's configuration; changes apply on the provider immediately. Reversible via the provider UI.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "meta (Meta-only action).",
+          "description": "Advertising platform: meta or tiktok.",
           "example": "meta"
         },
         {
@@ -10545,7 +12749,7 @@
           "name": "pixel_id",
           "type": "string",
           "required": true,
-          "description": "Meta pixel id from action:ads/list_pixels or action:ads/create_pixel (raw.id)."
+          "description": "provider pixel id from action:ads/list_pixels or action:ads/create_pixel (raw.id)."
         },
         {
           "name": "name",
@@ -10563,7 +12767,8 @@
       "description": "Rename an owned Meta product catalog; review-gated platform write.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
@@ -10600,6 +12805,16 @@
           "type": "string",
           "required": true,
           "description": "New catalog display name. The only updatable field on this surface — vertical is create-only on the Graph API — and the handler rejects the call with error_code=invalid_param when it is missing."
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true}"
@@ -10611,7 +12826,8 @@
       "description": "Update a Meta product feed's name or fetch schedule; review-gated platform write.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
       "requires_review": true,
       "freshness_kind": "realtime",
@@ -10665,9 +12881,171 @@
             "url": "https://example.com/feed.tsv",
             "hour": 22
           }
+        },
+        {
+          "name": "bc_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok bc id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "feed_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok feed id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "feed_name",
+          "type": "string",
+          "required": true,
+          "description": "TikTok feed name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_param",
+          "type": "string",
+          "required": false,
+          "description": "TikTok schedule param.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "update_mode",
+          "type": "string",
+          "required": true,
+          "description": "TikTok update mode.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true}"
+    },
+    {
+      "id": "action:ads/update_smart_plus_campaign",
+      "namespace": "ads",
+      "action": "update_smart_plus_campaign",
+      "description": "Update a TikTok Smart+ campaign.",
+      "mode": "write",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [],
+      "long_description": "Primary use:\nUpdate a TikTok Smart+ campaign.\n\nUse when:\nChanging budget / name / settings on an existing Smart+ campaign.\n\nDo not use when:\nYou only want to pause or resume delivery — use update_smart_plus_campaign_status.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nMutates a live Smart+ campaign; changes take effect on TikTok immediately. Requires smart_plus_acknowledged.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "smart_plus_acknowledged",
+          "type": "boolean",
+          "required": true,
+          "description": "Explicit acknowledgement required before this side effect.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
+      "id": "action:ads/update_smart_plus_campaign_status",
+      "namespace": "ads",
+      "action": "update_smart_plus_campaign_status",
+      "description": "Update TikTok Smart+ campaign delivery status.",
+      "mode": "risk",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [],
+      "long_description": "Primary use:\nUpdate TikTok Smart+ campaign delivery status.\n\nUse when:\nEnabling, pausing, or deleting delivery of a Smart+ campaign.\n\nDo not use when:\nYou want budget / setting edits — use update_smart_plus_campaign.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nChanges live delivery status (starts / stops spend) on TikTok. Requires smart_plus_acknowledged.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok campaign id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operation_status",
+          "type": "string",
+          "required": true,
+          "description": "TikTok operation status.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "smart_plus_acknowledged",
+          "type": "boolean",
+          "required": true,
+          "description": "Explicit acknowledgement required before this side effect.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
     },
     {
       "id": "action:ads/update_user_list",
@@ -10733,15 +13111,77 @@
       "output_shape": "{\"success\": true, \"message\": \"User list updated: name, membership_lifespan_days\", \"results\": [{\"userListResult\": {\"resourceName\": \"customers/X/userLists/Y\"}}]}"
     },
     {
+      "id": "action:ads/upload_custom_audience_file",
+      "namespace": "ads",
+      "action": "upload_custom_audience_file",
+      "description": "Upload a base64-encoded TikTok custom-audience data file.",
+      "mode": "write",
+      "platforms": [
+        "tiktok"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [],
+      "long_description": "Primary use:\nUpload a base64-encoded TikTok custom-audience data file.\n\nUse when:\nYou have a hashed customer list (emails / phone / IDFA) to seed or refresh a TikTok custom audience.\n\nDo not use when:\nBuilding an audience from engagement or web/app rules instead of a file — use create_rule_custom_audience.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nCreates or refreshes a TikTok custom audience from the uploaded file; the audience becomes targetable subject to TikTok's minimum-size and match-rate rules. PII must be hashed before upload.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be tiktok.",
+          "example": "tiktok"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Resolved TikTok advertiser id.",
+          "example": "123456789"
+        },
+        {
+          "name": "file_name",
+          "type": "string",
+          "required": true,
+          "description": "TikTok file name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "file_base64",
+          "type": "string",
+          "required": true,
+          "description": "TikTok file base64.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "calculate_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok calculate type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\":true,\"raw\":{}}"
+    },
+    {
       "id": "action:ads/upload_image",
       "namespace": "ads",
       "action": "upload_image",
       "description": "Upload an image to a Meta ad account from a public URL; executes immediately and returns image_hash for creative wiring.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
-      "requires_review": false,
+      "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/upload_images",
@@ -10776,6 +13216,26 @@
           "type": "string",
           "required": false,
           "description": "Optional file name. Default \"upload.jpg\"."
+        },
+        {
+          "name": "upload_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: UPLOAD_BY_URL or UPLOAD_BY_FILE.",
+          "example": "UPLOAD_BY_URL",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "file_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: optional file name label.",
+          "example": "hero.jpg",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"image_hash\": \"hex_md5\", \"images\": [{\"hash\": \"...\", \"url\": \"...\", \"width\": 1200, \"height\": 628, \"name\": \"...\"}]}"
@@ -10789,7 +13249,7 @@
       "platforms": [
         "google"
       ],
-      "requires_review": false,
+      "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/create_text_asset",
@@ -10836,9 +13296,10 @@
       "description": "Upload multiple images to a Meta ad account from direct base64 bytes or public URLs with bounded concurrency; executes immediately and returns per-item image_hash values.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
-      "requires_review": false,
+      "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/upload_image",
@@ -10896,9 +13357,10 @@
       "description": "Upload a video to a Meta ad account from a public URL; executes immediately and returns video_id for async encoding.",
       "mode": "write",
       "platforms": [
-        "meta"
+        "meta",
+        "tiktok"
       ],
-      "requires_review": false,
+      "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
         "action:ads/upload_image",
@@ -10945,6 +13407,36 @@
           "required": false,
           "description": "Meta only: optional asset name for the uploaded video in the ad account media library. Distinct from title/description (which annotate the video). Free-form, agent- or user-provided. Source: agent-provided or user-provided label (e.g. a campaign/asset naming convention).",
           "example": "summer-sale-hero-15s"
+        },
+        {
+          "name": "video_url",
+          "type": "string",
+          "required": true,
+          "description": "TikTok only: required — public video URL (UPLOAD_BY_URL). Awaits transcoding.",
+          "example": "https://example.com/v.mp4",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "upload_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: UPLOAD_BY_URL or UPLOAD_BY_FILE.",
+          "example": "UPLOAD_BY_URL",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "file_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: optional file name label.",
+          "example": "promo.mp4",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"video_id\", \"success\": true}"
