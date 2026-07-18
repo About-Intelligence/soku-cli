@@ -37,13 +37,20 @@ function readData(value: string): Buffer {
   return Buffer.from(value)
 }
 
+// Long options we consume as `--flag value`; only these are worth un-gluing.
+// Restricting the split keeps us from mangling an unknown option's value into a
+// stray token (e.g. `--referer=https://x` would otherwise clobber the target
+// url) or from splitting a value that happens to look like `--foo=bar`.
+const GLUED_OPTS = new Set(['--request', '--header', '--data', '--data-raw', '--data-ascii', '--data-binary', '--url'])
+
 /** Expand glued long options (`--flag=value`) into `--flag`, `value` so both
- * curl forms parse the same. Splits on the first `=` only. Pure. */
+ * curl forms parse the same, but only for options we actually recognize.
+ * Splits on the first `=` only. Pure. */
 function expandLongFlags(tokens: string[]): string[] {
   const out: string[] = []
   for (const t of tokens) {
-    if (t.startsWith('--') && t.includes('=')) {
-      const eq = t.indexOf('=')
+    const eq = t.indexOf('=')
+    if (eq > 2 && t.startsWith('--') && GLUED_OPTS.has(t.slice(0, eq))) {
       out.push(t.slice(0, eq), t.slice(eq + 1))
     } else {
       out.push(t)

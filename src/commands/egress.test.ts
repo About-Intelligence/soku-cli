@@ -47,6 +47,16 @@ test('splits glued --header on the first = only', () => {
   assert.equal(r.headers['x-foo'], 'a=b')
 })
 
+test('does not expand glued unknown options over the real url', () => {
+  const r = parseCurl(['curl', 'https://api.example/real', '--referer=https://ref.example'])
+  assert.equal(r.url, 'https://api.example/real')
+})
+
+test('does not split a value that looks like a glued flag', () => {
+  const r = parseCurl(['curl', 'https://x.test/a', '--data', '--foo=bar'])
+  assert.equal(r.body?.toString(), '--foo=bar')
+})
+
 test('-G folds data into the query string', () => {
   const r = parseCurl(['curl', '-G', 'https://x.test/a', '-d', 'q=hello&n=2'])
   assert.equal(r.method, 'GET')
