@@ -34,6 +34,19 @@ test('accepts --url and is tolerant of unknown flags', () => {
   assert.equal(r.headers['x-key'], 'v')
 })
 
+test('parses glued --flag=value the same as the space form', () => {
+  const r = parseCurl(['curl', '--request=POST', '--url=https://x.test/a', '--header=X-Key: v', '--data={"a":1}'])
+  assert.equal(r.method, 'POST')
+  assert.equal(r.url, 'https://x.test/a')
+  assert.equal(r.headers['x-key'], 'v')
+  assert.equal(r.body?.toString(), '{"a":1}')
+})
+
+test('splits glued --header on the first = only', () => {
+  const r = parseCurl(['curl', '--url=https://x.test/a', '--header=X-Foo: a=b'])
+  assert.equal(r.headers['x-foo'], 'a=b')
+})
+
 test('-G folds data into the query string', () => {
   const r = parseCurl(['curl', '-G', 'https://x.test/a', '-d', 'q=hello&n=2'])
   assert.equal(r.method, 'GET')

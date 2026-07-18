@@ -37,8 +37,24 @@ function readData(value: string): Buffer {
   return Buffer.from(value)
 }
 
+/** Expand glued long options (`--flag=value`) into `--flag`, `value` so both
+ * curl forms parse the same. Splits on the first `=` only. Pure. */
+function expandLongFlags(tokens: string[]): string[] {
+  const out: string[] = []
+  for (const t of tokens) {
+    if (t.startsWith('--') && t.includes('=')) {
+      const eq = t.indexOf('=')
+      out.push(t.slice(0, eq), t.slice(eq + 1))
+    } else {
+      out.push(t)
+    }
+  }
+  return out
+}
+
 /** Extract method / url / headers / body from a curl-style token list. Pure. */
-export function parseCurl(tokens: string[]): ParsedCurl {
+export function parseCurl(input: string[]): ParsedCurl {
+  const tokens = expandLongFlags(input)
   const headers: Record<string, string> = {}
   let method: string | undefined
   let url: string | undefined
