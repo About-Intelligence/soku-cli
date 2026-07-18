@@ -76,9 +76,15 @@ export function parseCurl(tokens: string[]): ParsedCurl {
         }
         break
       }
+      case '--data-raw': {
+        // curl's --data-raw is the one data option that does NOT treat a
+        // leading `@` as a filename; the payload is sent verbatim.
+        const d = inline ?? tokens[++i]
+        if (d !== undefined) body = Buffer.from(d)
+        break
+      }
       case '-d':
       case '--data':
-      case '--data-raw':
       case '--data-ascii':
       case '--data-binary': {
         const d = inline ?? tokens[++i]

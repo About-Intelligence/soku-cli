@@ -64,6 +64,11 @@ test('keeps a --data value that itself looks like a recognized glued option', ()
   assert.equal(r.body?.toString(), '--url=https://payload.invalid')
 })
 
+test('--data-raw keeps a literal @ payload instead of reading a file', () => {
+  const r = parseCurl(['curl', 'https://x.test/a', '--data-raw=@/no/such/soku-egress-test'])
+  assert.equal(r.body?.toString(), '@/no/such/soku-egress-test')
+})
+
 test('-G folds data into the query string', () => {
   const r = parseCurl(['curl', '-G', 'https://x.test/a', '-d', 'q=hello&n=2'])
   assert.equal(r.method, 'GET')
