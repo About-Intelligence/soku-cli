@@ -57,6 +57,13 @@ test('does not split a value that looks like a glued flag', () => {
   assert.equal(r.body?.toString(), '--foo=bar')
 })
 
+test('keeps a --data value that itself looks like a recognized glued option', () => {
+  const r = parseCurl(['curl', '--data', '--url=https://payload.invalid', 'https://target.invalid'])
+  assert.equal(r.method, 'POST')
+  assert.equal(r.url, 'https://target.invalid')
+  assert.equal(r.body?.toString(), '--url=https://payload.invalid')
+})
+
 test('-G folds data into the query string', () => {
   const r = parseCurl(['curl', '-G', 'https://x.test/a', '-d', 'q=hello&n=2'])
   assert.equal(r.method, 'GET')
