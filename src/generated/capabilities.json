@@ -1279,7 +1279,7 @@
       "see_also": [
         "action:ads/create_ad"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta ads as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta ads with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_ad instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_ad either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta ads in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEach merged item requires client_ref, adset_id, and creatives. Shared top-level defaults may supply adset_id/creatives unless an item overrides them. Items cannot override the top-level advertiser account. Missing per-item fields fail locally without a TikTok request; valid items continue and preserve input order.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta ads as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta ads with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_ad instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_ad either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta ads in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
       "input_params": [
         {
           "name": "platform",
@@ -1322,10 +1322,25 @@
         },
         {
           "name": "concurrency",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: parallel item limit; defaults to 4 and is clamped to 1–8.",
+          "example": 4,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "status",
           "type": "string",
           "required": false,
-          "description": "TikTok concurrency.",
-          "example": "value",
+          "description": "TikTok only: optional shared create state. Omit or PAUSED to create disabled; ENABLED requires explicit HITL approval. Items may override with the same two-value contract.",
+          "example": "PAUSED",
+          "enum": [
+            "PAUSED",
+            "ENABLED"
+          ],
+          "source": "constant",
           "platform": [
             "tiktok"
           ]
@@ -1348,7 +1363,7 @@
       "see_also": [
         "action:ads/create_adset"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta ad sets as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta ad sets with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_adset instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_adset either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta ad sets in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEach merged item requires client_ref, campaign_id, name, optimization_goal, budget_mode, budget, schedule_type, and schedule_start_time. promotion_type is conditional on the parent campaign objective. Each item also requires location_ids or zipcode_ids. Shared top-level defaults may supply these fields unless an item overrides them. Items cannot override the top-level advertiser account. Missing per-item fields fail locally without a TikTok request; valid items continue and preserve input order.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta ad sets as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta ad sets with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_adset instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_adset either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta ad sets in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
       "input_params": [
         {
           "name": "platform",
@@ -1391,10 +1406,25 @@
         },
         {
           "name": "concurrency",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: parallel item limit; defaults to 4 and is clamped to 1–8.",
+          "example": 4,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "status",
           "type": "string",
           "required": false,
-          "description": "TikTok concurrency.",
-          "example": "value",
+          "description": "TikTok only: optional shared create state. Omit or PAUSED to create disabled; ENABLED requires explicit HITL approval. Items may override with the same two-value contract.",
+          "example": "PAUSED",
+          "enum": [
+            "PAUSED",
+            "ENABLED"
+          ],
+          "source": "constant",
           "platform": [
             "tiktok"
           ]
@@ -1417,7 +1447,7 @@
       "see_also": [
         "action:ads/create_campaign"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta campaigns as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta campaigns with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_campaign instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_campaign either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta campaigns in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEach merged item requires client_ref, name, and objective_type. Shared top-level defaults may supply name/objective_type unless an item overrides them. Items cannot override the top-level advertiser account. Missing per-item fields fail locally without a TikTok request; valid items continue and preserve input order.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta campaigns as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta campaigns with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_campaign instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_campaign either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta campaigns in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
       "input_params": [
         {
           "name": "platform",
@@ -1460,10 +1490,25 @@
         },
         {
           "name": "concurrency",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: parallel item limit; defaults to 4 and is clamped to 1–8.",
+          "example": 4,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "status",
           "type": "string",
           "required": false,
-          "description": "TikTok concurrency.",
-          "example": "value",
+          "description": "TikTok only: optional shared create state. Omit or PAUSED to create disabled; ENABLED requires explicit HITL approval. Items may override with the same two-value contract.",
+          "example": "PAUSED",
+          "enum": [
+            "PAUSED",
+            "ENABLED"
+          ],
+          "source": "constant",
           "platform": [
             "tiktok"
           ]
@@ -1544,7 +1589,7 @@
         "action:ads/create_ad_creative",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
+      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEvery inline creative is created with operation_status=DISABLE by default. Only an explicitly approved top-level status=ENABLED applies ENABLE to every creative; a per-creative operation_status value cannot bypass the reviewed status.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
       "input_params": [
         {
           "name": "platform",
@@ -1633,28 +1678,44 @@
           "type": "string",
           "required": false,
           "description": "Google only: first display-URL path segment shown after the domain (max 15 chars). Pure cosmetic display URL, independent of final_urls. Source: user-provided / agent-composed short keyword string.",
-          "example": "shoes"
+          "example": "shoes",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "path2",
           "type": "string",
           "required": false,
           "description": "Google only: second display-URL path segment (max 15 chars). Requires path1 to be set; rejected otherwise. Source: user-provided / agent-composed short keyword string.",
-          "example": "running"
+          "example": "running",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "tracking_url_template",
           "type": "string",
           "required": false,
           "description": "Google only: ad-level click-tracking URL template (ValueTrack/{lpurl} macros). Attaches tracking without changing final_urls. Source: user-provided tracking template, often from an ad-tech/analytics vendor.",
-          "example": "{lpurl}?utm_source=google"
+          "example": "{lpurl}?utm_source=google",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "final_url_suffix",
           "type": "string",
           "required": false,
           "description": "Google only: query-string suffix appended to the final URL after redirects (ValueTrack params). Source: user-provided URL suffix string.",
-          "example": "utm_campaign=spring&utm_medium=cpc"
+          "example": "utm_campaign=spring&utm_medium=cpc",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "creative_id",
@@ -1663,7 +1724,11 @@
           "description": "Meta only: ID of a pre-created AdCreative to attach to this ad. Required UNLESS you pass an inline 'creative' spec instead. One of creative_id or creative must be provided. Source: output of create_ad_creative (the returned creative id).",
           "example": "23847900000000123",
           "one_of_group": "creative_ref",
-          "source": "upstream:action:ads/create_ad_creative"
+          "source": "upstream:action:ads/create_ad_creative",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "creative",
@@ -1681,7 +1746,11 @@
             }
           },
           "one_of_group": "creative_ref",
-          "source": "user"
+          "source": "user",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "tracking_specs",
@@ -1697,6 +1766,10 @@
                 "1234567890"
               ]
             }
+          ],
+          "platform": [
+            "google",
+            "meta"
           ]
         },
         {
@@ -1704,14 +1777,22 @@
           "type": "integer",
           "required": false,
           "description": "Meta only: ad-level bid override in the account currency's minor units (cents). Usually managed at the ad-set level; only set when an ad-specific bid cap is required. Source: user-provided bid cap (minor units).",
-          "example": 150
+          "example": 150,
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Meta only: ignored at create time. The handler always force-sets status=PAUSED so newly created ads are review-gated and never spend until explicitly activated via update_ad. Source: constant (always PAUSED at create).",
-          "example": "PAUSED"
+          "description": "Meta and Google create ads paused. TikTok sets every inline creative to operation_status=DISABLE when status is omitted; an explicitly approved top-level status=ENABLED sets every creative to ENABLE. Per-creative operation_status cannot bypass this review payload.",
+          "example": "PAUSED",
+          "enum": [
+            "PAUSED",
+            "ENABLED"
+          ]
         },
         {
           "name": "creatives",
@@ -2215,7 +2296,10 @@
                 "value": "LAST_7_DAYS"
               }
             ]
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "execution_spec",
@@ -2224,7 +2308,10 @@
           "description": "Meta only: execution spec. Shape {execution_type: PAUSE|UNPAUSE|CHANGE_BUDGET|NOTIFICATION|PING_ENDPOINT, execution_options: [...]}. NOTE the enum value is NOTIFICATION (not NOTIFY). execution_options carries the action params: for NOTIFICATION a user_ids list; for CHANGE_BUDGET a change_spec {amount, unit, limit}; optionally an action_frequency. Source: agent-constructed from user intent (which action + its options).",
           "example": {
             "execution_type": "PAUSE"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "schedule_spec",
@@ -2233,7 +2320,10 @@
           "description": "Meta only: schedule spec; REQUIRED when evaluation_spec.evaluation_type=SCHEDULE, otherwise optional. Shape {schedule_type: DAILY|HOURLY|SEMI_HOURLY|CUSTOM, schedule: [...]} where CUSTOM needs explicit time windows. Source: agent-constructed from user cadence.",
           "example": {
             "schedule_type": "DAILY"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "status",
@@ -2422,22 +2512,24 @@
         {
           "name": "billing_event",
           "type": "string",
-          "required": true,
-          "description": "One of IMPRESSIONS, LINK_CLICKS, APP_INSTALLS, OFFER_CLAIMS, PAGE_LIKES, POST_ENGAGEMENT, THRUPLAY, VIDEO_VIEWS.",
-          "example": "IMPRESSIONS"
+          "required": false,
+          "description": "Meta: required; use a Meta billing event such as IMPRESSIONS or LINK_CLICKS. TikTok: optional; when omitted, the handler derives the required CPC/CPM/OCPM/CPV value from optimization_goal."
         },
         {
           "name": "optimization_goal",
           "type": "string",
           "required": true,
-          "description": "One of REACH, IMPRESSIONS, LINK_CLICKS, OFFSITE_CONVERSIONS, LEAD_GENERATION, LANDING_PAGE_VIEWS, VALUE, APP_INSTALLS, THRUPLAY, POST_ENGAGEMENT.",
-          "example": "LINK_CLICKS"
+          "description": "Provider-native optimization goal. Meta examples include REACH, IMPRESSIONS, LINK_CLICKS, OFFSITE_CONVERSIONS, and LEAD_GENERATION. TikTok examples include CLICK, PAGE_VISIT, CONVERT, INSTALL, REACH, ENGAGED_VIEW, and LEAD_GENERATION.",
+          "example": "REACH"
         },
         {
           "name": "targeting",
           "type": "object",
           "required": true,
-          "description": "Meta targeting spec object. Typical fields: geo_locations, age_min, age_max, interests, behaviors, flexible_spec, publisher_platforms, facebook_positions. For Instagram placements, explore_home requires explore; the handler auto-adds explore when missing. For ON_AD lead generation ad sets, targeting_automation.advantage_audience defaults to 0 if omitted."
+          "description": "Meta targeting spec object. Typical fields: geo_locations, age_min, age_max, interests, behaviors, flexible_spec, publisher_platforms, facebook_positions. For Instagram placements, explore_home requires explore; the handler auto-adds explore when missing. For ON_AD lead generation ad sets, targeting_automation.advantage_audience defaults to 0 if omitted.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "budget_daily_micros",
@@ -2452,7 +2544,10 @@
           "type": "integer",
           "required": false,
           "description": "Lifetime budget in cents (Meta native unit). Alternative to budget_daily_micros.",
-          "one_of_group": "adset_budget"
+          "one_of_group": "adset_budget",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bid_strategy",
@@ -2466,42 +2561,60 @@
             "LOWEST_COST_WITH_BID_CAP",
             "LOWEST_COST_WITH_MIN_ROAS"
           ],
-          "source": "constant"
+          "source": "constant",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "is_cbo_adset",
           "type": "boolean",
           "required": false,
           "description": "Meta only: handler control flag (not a Graph field). Set true when the parent campaign uses Campaign Budget Optimization (Advantage Campaign Budget); the ad-set budget is then omitted and budget stays on the campaign. Source: derived from the parent campaign's budget setting (list_campaigns shows daily_budget/lifetime_budget on the campaign => CBO). For lead-gen ON_AD ad sets under a CBO campaign, keep this true and do not try to move budget to the ad set.",
-          "example": true
+          "example": true,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "dsa_beneficiary",
           "type": "string",
           "required": false,
           "description": "Meta only: EU DSA beneficiary -- the brand/person/org that benefits from the ad. Mandatory for ad sets targeting EU-regulated countries, else the ad cannot be published. Source: user-provided beneficiary name (the advertising brand).",
-          "example": "Acme Inc"
+          "example": "Acme Inc",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "dsa_payor",
           "type": "string",
           "required": false,
           "description": "Meta only: EU DSA payer -- who pays for the ad. Required alongside dsa_beneficiary for EU-regulated targeting. Source: user-provided payer name.",
-          "example": "Acme Inc"
+          "example": "Acme Inc",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "destination_type",
           "type": "string",
           "required": false,
           "description": "Meta only: conversion destination. Common values WEBSITE, MESSENGER, WHATSAPP, INSTAGRAM_DIRECT, APP, ON_AD. Needed for messaging/lead/app destinations. Source: constant enum chosen from the campaign objective / user intent.",
-          "example": "WEBSITE"
+          "example": "WEBSITE",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "is_dynamic_creative",
           "type": "boolean",
           "required": false,
           "description": "Meta only: enable Dynamic Creative on the ad set (required for Advantage+/dynamic-creative ad sets). Source: user intent (dynamic creative on/off).",
-          "example": true
+          "example": true,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "pacing_type",
@@ -2510,6 +2623,9 @@
           "description": "Meta only: pacing control, e.g. [\"standard\"] (default) or [\"no_pacing\"]. List of strings. Source: constant enum chosen by the agent.",
           "example": [
             "standard"
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -2522,31 +2638,46 @@
               "event_type": "CLICK_THROUGH",
               "window_days": 7
             }
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
           "name": "bid_amount",
           "type": "integer",
           "required": false,
-          "description": "Bid in cents (when optimization requires a manual bid)."
+          "description": "Bid in cents (when optimization requires a manual bid).",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "promoted_object",
           "type": "object",
           "required": false,
-          "description": "Promoted object spec, e.g. {pixel_id, custom_event_type} for conversion optimization, or {page_id} for engagement campaigns."
+          "description": "Promoted object spec, e.g. {pixel_id, custom_event_type} for conversion optimization, or {page_id} for engagement campaigns.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "start_time",
           "type": "string",
           "required": false,
-          "description": "ISO-8601 ad set start time."
+          "description": "ISO-8601 ad set start time.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "end_time",
           "type": "string",
           "required": false,
-          "description": "ISO-8601 ad set end time."
+          "description": "ISO-8601 ad set end time.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "adgroup_name",
@@ -2554,6 +2685,26 @@
           "required": false,
           "description": "TikTok only: ad group name (falls back to `name`).",
           "example": "AG 1",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "promotion_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: conditional promotion destination type, for example WEBSITE. TikTok requires it for some campaign objectives and permits omission for REACH, VIDEO_VIEWS, and ENGAGEMENT.",
+          "example": "WEBSITE",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: App ID from /app/list/; required for APP_ANDROID and APP_IOS promotion types.",
+          "example": "1234567890123456789",
           "platform": [
             "tiktok"
           ]
@@ -2572,7 +2723,7 @@
           "name": "schedule_type",
           "type": "string",
           "required": true,
-          "description": "TikTok only: SCHEDULE_FROM_NOW or SCHEDULE_START_END.",
+          "description": "TikTok only: SCHEDULE_FROM_NOW or SCHEDULE_START_END; lifetime budgets require START_END.",
           "example": "SCHEDULE_FROM_NOW",
           "platform": [
             "tiktok"
@@ -2592,7 +2743,7 @@
           "name": "schedule_end_time",
           "type": "string",
           "required": false,
-          "description": "TikTok only: end time; required for SCHEDULE_START_END.",
+          "description": "TikTok only: end time; required for SCHEDULE_START_END and BUDGET_MODE_TOTAL.",
           "example": "2026-07-20 00:00:00",
           "platform": [
             "tiktok"
@@ -2602,7 +2753,7 @@
           "name": "budget_mode",
           "type": "string",
           "required": true,
-          "description": "TikTok only: budget mode.",
+          "description": "TikTok only: budget mode; BUDGET_MODE_TOTAL requires SCHEDULE_START_END and schedule_end_time.",
           "example": "BUDGET_MODE_DAY",
           "platform": [
             "tiktok"
@@ -2619,11 +2770,15 @@
           ]
         },
         {
-          "name": "operation_status",
+          "name": "status",
           "type": "string",
           "required": false,
-          "description": "TikTok only: ENABLE or DISABLE; defaults to DISABLE.",
-          "example": "DISABLE",
+          "description": "TikTok only: optional reviewed create state; omit/PAUSED creates disabled, ENABLED creates enabled.",
+          "example": "PAUSED",
+          "enum": [
+            "PAUSED",
+            "ENABLED"
+          ],
           "platform": [
             "tiktok"
           ]
@@ -2632,10 +2787,24 @@
           "name": "location_ids",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Target location ids.",
+          "description": "TikTok only: Target location ids; provide this or zipcode_ids when creating an ad group.",
           "example": [
             "6252001"
           ],
+          "one_of_group": "tiktok_adgroup_geography",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "zipcode_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target ZIP/postal code ids; provide this or location_ids when creating an ad group. ZIP targeting requires PLACEMENT_TYPE_NORMAL and PLACEMENT_TIKTOK.",
+          "example": [
+            "123456789"
+          ],
+          "one_of_group": "tiktok_adgroup_geography",
           "platform": [
             "tiktok"
           ]
@@ -2738,8 +2907,12 @@
           "name": "placement_type",
           "type": "string",
           "required": false,
-          "description": "TikTok only: Placement selection mode.",
+          "description": "TikTok only: Create-only placement mode; defaults to PLACEMENT_TYPE_AUTOMATIC.",
           "example": "PLACEMENT_TYPE_AUTOMATIC",
+          "enum": [
+            "PLACEMENT_TYPE_AUTOMATIC",
+            "PLACEMENT_TYPE_NORMAL"
+          ],
           "platform": [
             "tiktok"
           ]
@@ -2748,7 +2921,7 @@
           "name": "placements",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Explicit placements when placement_type is normal.",
+          "description": "TikTok only: Create-only placements; required when placement_type is PLACEMENT_TYPE_NORMAL.",
           "example": [
             "PLACEMENT_TIKTOK"
           ],
@@ -2832,7 +3005,7 @@
       "id": "action:ads/create_campaign",
       "namespace": "ads",
       "action": "create_campaign",
-      "description": "Create a campaign on Google, Meta, TikTok, or ChatGPT Ads in PAUSED state; review-gated.",
+      "description": "Create a review-gated campaign on Google, Meta, TikTok, or ChatGPT Ads. Creation defaults to PAUSED; TikTok preserves an explicitly approved ENABLED status.",
       "mode": "write",
       "platforms": [
         "google",
@@ -2850,7 +3023,7 @@
         "action:ads/create_ad_unit",
         "action:ads/query_single_dimension"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a new advertising campaign shell. Google, Meta, TikTok, and ChatGPT Ads creation paths force the campaign into a paused/non-active state so the agent can finish setup and review before spend begins.\n\nUse when:\n- The user asks to launch a new campaign with a chosen objective and budget.\n- A workflow needs a fresh campaign to host ad groups, ad sets, or ChatGPT Ads ad units.\n\nDo not use when:\n- The user wants to enable spend immediately. Create paused first, then use action:ads/update_campaign only after explicit activation approval.\n- The user wants a Google Performance Max campaign. Use action:ads/create_pmax_campaign.\n- The campaign already exists. Use action:ads/update_campaign instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. For Google choose campaign_type and budget_daily_micros; for Meta choose objective; for ChatGPT Ads create ad units first and pass landing_page, campaign_objective, budget, and a non-empty ad_unit_ids list.\n3. Submit via action:_batch/submit for HITL review.\n4. After approval, call action:ads/list_campaigns or action:ads/get_campaign to confirm the paused/non-active state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new campaign's numeric id. Meta raw.id is the new campaign id. ChatGPT Ads raw.campaign_id or raw.id is surfaced as resource_id.\n\nSide effects:\n- Creates a Campaign on the platform; Google also creates a dedicated CampaignBudget named 'Budget for {name}' in the same atomic mutate.\n- Status is force-paused/non-active regardless of any status the caller supplies.\n- ChatGPT Ads create rejects upstream-removed fields like keywords, network_type, and network_config before calling the dashboard API.\n- No immediate spend; spend begins only after a later explicit activation update.\n- remove_campaign is available for Google, Meta, and TikTok. ChatGPT Ads campaign archive is not exposed because the ChatGPT Ads endpoint is a toggle.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a new advertising campaign shell. Google, Meta, and ChatGPT Ads force creation into a paused/non-active state. TikTok defaults to operation_status=DISABLE when status is omitted, but an explicitly approved status=ENABLED is sent as ENABLE.\n\nUse when:\n- The user asks to launch a new campaign with a chosen objective and budget.\n- A workflow needs a fresh campaign to host ad groups, ad sets, or ChatGPT Ads ad units.\n\nDo not use when:\n- The user wants to enable spend immediately on Google, Meta, or ChatGPT Ads. Create paused first, then use action:ads/update_campaign after explicit activation approval. For TikTok, an explicitly approved status=ENABLED may be supplied to this action.\n- The user wants a Google Performance Max campaign. Use action:ads/create_pmax_campaign.\n- The campaign already exists. Use action:ads/update_campaign instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. For Google choose campaign_type and budget_daily_micros; for Meta choose objective; for ChatGPT Ads create ad units first and pass landing_page, campaign_objective, budget, and a non-empty ad_unit_ids list.\n3. Submit via action:_batch/submit for HITL review.\n4. After approval, call action:ads/list_campaigns or action:ads/get_campaign to confirm the requested state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new campaign's numeric id. Meta raw.id is the new campaign id. ChatGPT Ads raw.campaign_id or raw.id is surfaced as resource_id.\n\nSide effects:\n- Creates a Campaign on the platform; Google also creates a dedicated CampaignBudget named 'Budget for {name}' in the same atomic mutate.\n- Google, Meta, and ChatGPT Ads are force-paused/non-active. TikTok defaults to DISABLE and preserves an explicitly approved ENABLED status.\n- ChatGPT Ads create rejects upstream-removed fields like keywords, network_type, and network_config before calling the dashboard API.\n- No immediate spend by default. An explicitly approved TikTok ENABLED create can begin delivery when the provider accepts it.\n- remove_campaign is available for Google, Meta, and TikTok. ChatGPT Ads campaign archive is not exposed because the ChatGPT Ads endpoint is a toggle.",
       "input_params": [
         {
           "name": "platform",
@@ -2909,35 +3082,60 @@
           "type": "integer",
           "required": false,
           "description": "Google only: target cost-per-action in micros (1 USD = 1_000_000). Required companion when bidding_strategy=TARGET_CPA (the handler errors without it). Optional target when bidding_strategy=MAXIMIZE_CONVERSIONS — Google's standard tCPA form since standalone TargetCpa strategies were deprecated. Any other strategy rejects it with a clear error. Source: user-provided target CPA converted to micros.",
-          "example": 20000000
+          "example": 20000000,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "target_roas",
           "type": "number",
           "required": false,
           "description": "Google only: target return on ad spend as a ratio (e.g. 4.0 = 400%). Required companion when bidding_strategy=TARGET_ROAS (the handler errors without it). Optional target when bidding_strategy=MAXIMIZE_CONVERSION_VALUE — Google's standard tROAS form since standalone TargetRoas strategies were deprecated. Any other strategy rejects it with a clear error. Source: user-provided target ROAS ratio.",
-          "example": 4.0
+          "example": 4.0,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "start_date",
           "type": "string",
           "required": false,
           "description": "Google only: campaign start date in YYYY-MM-DD. Defaults to start-today when omitted. Source: user-provided date.",
-          "example": "2026-07-01"
+          "example": "2026-07-01",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "end_date",
           "type": "string",
           "required": false,
           "description": "Google only: campaign end date in YYYY-MM-DD. Defaults to no-end when omitted. Source: user-provided date.",
-          "example": "2026-07-31"
+          "example": "2026-07-31",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "network_settings",
           "type": "object",
           "required": false,
           "description": "Google only: object controlling serving networks. Keys (booleans): target_google_search, target_search_network, target_content_network, target_partner_search_network. Omitted keys keep platform defaults. Source: user/agent-provided serving preferences (constant booleans).",
-          "example": "{\"target_google_search\": true, \"target_search_network\": false, \"target_content_network\": false}"
+          "example": "{\"target_google_search\": true, \"target_search_network\": false, \"target_content_network\": false}",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "bidding_strategy",
@@ -2954,13 +3152,23 @@
             "TARGET_ROAS",
             "TARGET_SPEND"
           ],
-          "source": "constant"
+          "source": "constant",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "max_cpc_bid_micros",
           "type": "integer",
           "required": false,
-          "description": "Google only: max CPC bid in micros; applies only to MAXIMIZE_CLICKS and TARGET_SPEND. Ignored for other strategies (warning emitted)."
+          "description": "Google only: max CPC bid in micros; applies only to MAXIMIZE_CLICKS and TARGET_SPEND. Ignored for other strategies (warning emitted).",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "objective",
@@ -2985,7 +3193,12 @@
           "name": "special_ad_categories",
           "type": "list",
           "required": false,
-          "description": "Meta only: special category list. Defaults to []. Values include EMPLOYMENT, HOUSING, CREDIT, ISSUES_ELECTIONS_POLITICS, ONLINE_GAMBLING_AND_GAMING."
+          "description": "Meta only: special category list. Defaults to []. Values include EMPLOYMENT, HOUSING, CREDIT, ISSUES_ELECTIONS_POLITICS, ONLINE_GAMBLING_AND_GAMING.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "buying_type",
@@ -2997,7 +3210,12 @@
             "AUCTION",
             "RESERVED"
           ],
-          "source": "constant"
+          "source": "constant",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "bid_strategy",
@@ -3011,14 +3229,24 @@
             "LOWEST_COST_WITH_BID_CAP",
             "LOWEST_COST_WITH_MIN_ROAS"
           ],
-          "source": "constant"
+          "source": "constant",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "spend_cap",
           "type": "integer",
           "required": false,
           "description": "Meta only: lifetime account-level spend cap for the campaign in account-currency cents (NOT dollars, NOT micros). Source: user-provided cap converted to cents.",
-          "example": 100000
+          "example": 100000,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "special_ad_category_country",
@@ -3027,6 +3255,11 @@
           "description": "Meta only: list of ISO country codes; REQUIRED whenever special_ad_categories contains a regulated category (HOUSING, EMPLOYMENT, CREDIT, ISSUES_ELECTIONS_POLITICS, FINANCIAL_PRODUCTS_SERVICES). Omit for non-regulated campaigns. Source: user-provided target country/countries of the regulated campaign.",
           "example": [
             "US"
+          ],
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
           ]
         },
         {
@@ -3034,7 +3267,12 @@
           "type": "integer",
           "required": false,
           "description": "Meta only: campaign-level lifetime budget in account-currency cents (CBO/Advantage Campaign Budget). Mutually exclusive with the daily budget derived from budget_daily_micros. Use for fixed-duration/scheduled campaigns (pair with stop_time). Source: user-provided total spend cap converted to cents (1 USD = 100).",
-          "example": 50000
+          "example": 50000,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "is_adset_budget_sharing_enabled",
@@ -3042,26 +3280,46 @@
           "required": false,
           "description": "Meta only: when no campaign-level budget is set, Meta requires this flag to be explicit (each ad set keeps its own budget). The handler defaults it to false for budget-less campaigns; pass true to let ad sets share budget. Source: user-provided campaign-budget-optimization choice.",
           "example": false,
-          "source": "user"
+          "source": "user",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Meta/Google: force-set to PAUSED by create_campaign regardless of caller value; spend begins only after a later update_campaign sets ACTIVE (Meta) / ENABLED (Google). Source: constant; not effective on create (handler overrides to PAUSED).",
-          "example": "PAUSED"
+          "description": "TikTok only: omit to create with operation_status=DISABLE, or pass ENABLED after explicit HITL approval to send operation_status=ENABLE. Google, Meta, and ChatGPT Ads ignore the caller value and force a paused/non-active create.",
+          "example": "PAUSED",
+          "enum": [
+            "PAUSED",
+            "ENABLED"
+          ],
+          "source": "constant"
         },
         {
           "name": "start_time",
           "type": "string",
           "required": false,
-          "description": "Meta only: ISO-8601 scheduled start time."
+          "description": "Meta only: ISO-8601 scheduled start time.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "stop_time",
           "type": "string",
           "required": false,
-          "description": "Meta only: ISO-8601 scheduled stop time."
+          "description": "Meta only: ISO-8601 scheduled stop time.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "objective_type",
@@ -3116,16 +3374,6 @@
           ]
         },
         {
-          "name": "operation_status",
-          "type": "string",
-          "required": false,
-          "description": "TikTok only: ENABLE or DISABLE; defaults to DISABLE (created paused).",
-          "example": "DISABLE",
-          "platform": [
-            "tiktok"
-          ]
-        },
-        {
           "name": "request_id",
           "type": "string",
           "required": false,
@@ -3150,7 +3398,12 @@
           "type": "number",
           "required": false,
           "description": "ChatGPT Ads only (required): dashboard daily budget in dollars. Prefer budget_daily_micros for cross-platform payloads; either field satisfies the ChatGPT Ads required budget.",
-          "example": 300
+          "example": 300,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "is_active",
@@ -3604,13 +3857,19 @@
           "type": "string",
           "required": true,
           "description": "One of CUSTOM, WEBSITE, APP, OFFLINE_CONVERSION, CLAIM, PARTNER, MANAGED, VIDEO, LOOKALIKE, ENGAGEMENT, BAG_OF_ACCOUNTS, STUDY_RULE_AUDIENCE, FOX. Default CUSTOM.",
-          "example": "WEBSITE"
+          "example": "WEBSITE",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "description",
           "type": "string",
           "required": false,
-          "description": "Audience description."
+          "description": "Audience description.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "customer_file_source",
@@ -3623,13 +3882,19 @@
             "PARTNER_PROVIDED_ONLY",
             "USER_PROVIDED_ONLY"
           ],
-          "source": "constant"
+          "source": "constant",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "pixel_id",
           "type": "string",
           "required": false,
-          "description": "Pixel id for WEBSITE-subtype audiences."
+          "description": "Pixel id for WEBSITE-subtype audiences.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "rule",
@@ -3661,35 +3926,50 @@
                 }
               ]
             }
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "retention_days",
           "type": "integer",
           "required": false,
           "description": "Meta only: days a user stays in the audience. Non-purchase website/rule audiences cap at 180; purchase-event website/app audiences may go up to 730 (raised by Meta 2026-05). Exceeding the applicable cap is rejected by Meta. Source: user/agent decision within the cap above.",
-          "example": 180
+          "example": 180,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "is_value_based",
           "type": "boolean",
           "required": false,
           "description": "Meta only: whether this audience carries a per-user value, so it can later seed a value-based lookalike. Only meaningful for customer-file (CUSTOM) audiences whose uploaded list includes a value column. Source: user/agent decision; set true only when you intend to upload value-weighted user data and later build a value-based lookalike from this audience id.",
-          "example": true
+          "example": true,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "prefill",
           "type": "boolean",
           "required": false,
           "description": "Meta only: for rule-based (e.g. WEBSITE) audiences, backfill matching historical pixel/event data captured before the audience was created instead of only collecting from now on. Source: user/agent decision; true to include pre-existing pixel history, false (default) to start fresh.",
-          "example": true
+          "example": true,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "opt_out_link",
           "type": "string",
           "required": false,
           "description": "Meta only: URL where users can opt out of this customer-file audience (compliance field for CUSTOM audiences). Source: user-provided opt-out/privacy URL.",
-          "example": "https://example.com/opt-out"
+          "example": "https://example.com/opt-out",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "allowed_domains",
@@ -3698,6 +3978,9 @@
           "description": "Meta only: list of domain strings allowed to use/scope this audience. Source: user-provided list of domains the audience is scoped to.",
           "example": [
             "example.com"
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -3710,6 +3993,9 @@
               "id": "123456789",
               "type": "pixel"
             }
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -3717,7 +4003,10 @@
           "type": "string",
           "required": false,
           "description": "Meta only: id of an existing event source group (ESG) backing a rule-based audience, as an alternative to listing event_sources individually. Source: id of an existing event source group from Events Manager.",
-          "example": "987654321"
+          "example": "987654321",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "inclusions",
@@ -3747,7 +4036,10 @@
                 }
               }
             ]
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "exclusions",
@@ -3777,21 +4069,30 @@
                 }
               }
             ]
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "origin_audience_id",
           "type": "string",
           "required": false,
           "description": "Meta only: id of an existing custom audience to derive this new audience from (seed). For lookalikes use create_lookalike_audience instead; here it is for deriving a custom audience from another. Source: output id of a prior create_custom_audience or ads.list_custom_audiences rows[].id.",
-          "example": "23845000000000000"
+          "example": "23845000000000000",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "dataset_id",
           "type": "string",
           "required": false,
           "description": "Meta only: id of an offline/CAPI dataset to bind a rule-based audience to. Source: id of an offline event set / CAPI dataset from Events Manager.",
-          "example": "112233445566"
+          "example": "112233445566",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "audience_enhancement",
@@ -4192,20 +4493,29 @@
           "type": "string",
           "required": true,
           "description": "ISO-2 country code.",
-          "example": "US"
+          "example": "US",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "ratio",
           "type": "number",
           "required": true,
           "description": "Lookalike ratio (e.g. 0.01 = top 1%, 0.05 = top 5%).",
-          "example": 0.01
+          "example": 0.01,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "subtype",
           "type": "string",
           "required": false,
-          "description": "Forced to LOOKALIKE by the handler."
+          "description": "Forced to LOOKALIKE by the handler.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "lookalike_spec",
@@ -4452,13 +4762,19 @@
           "name": "vertical",
           "type": "string",
           "required": false,
-          "description": "Optional Meta catalog vertical, e.g. commerce."
+          "description": "Optional Meta catalog vertical, e.g. commerce.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "destination_catalog_settings",
           "type": "object",
           "required": false,
-          "description": "Optional Meta destination catalog settings payload."
+          "description": "Optional Meta destination catalog settings payload.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -4560,7 +4876,10 @@
           "type": "string",
           "required": false,
           "description": "Meta only: product feed file URL (http/https/ftp/sftp). The handler nests this into schedule.url and defaults schedule.interval to DAILY, so passing feed_url alone now schedules a real ingestion. To control the cadence, pass schedule instead. Source: user-provided public URL of the feed file (TSV/CSV/XML), not a website/Page URL.",
-          "example": "https://example.com/catalog/feed.tsv"
+          "example": "https://example.com/catalog/feed.tsv",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "schedule",
@@ -4571,7 +4890,10 @@
             "interval": "DAILY",
             "url": "https://example.com/feed.tsv",
             "hour": 22
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "update_schedule",
@@ -4581,63 +4903,90 @@
           "example": {
             "interval": "HOURLY",
             "url": "https://example.com/updates.tsv"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "default_currency",
           "type": "string",
           "required": false,
           "description": "Meta only: ISO-4217 catalog-wide fallback currency applied to feed items that omit a currency. Source: user-provided currency code constant.",
-          "example": "USD"
+          "example": "USD",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "override_type",
           "type": "string",
           "required": false,
           "description": "Meta only: marks this feed as a localized supplementary override feed. Enum: COUNTRY, LANGUAGE, LANGUAGE_AND_COUNTRY, LOCAL, VERSION (and others). Requires override_value. Source: constant enum chosen by the agent for localized/supplementary feeds.",
-          "example": "COUNTRY"
+          "example": "COUNTRY",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "override_value",
           "type": "string",
           "required": false,
           "description": "Meta only: the value for override_type (e.g. a country code when override_type=COUNTRY, a locale when override_type=LANGUAGE). Source: user-provided value paired with override_type.",
-          "example": "US"
+          "example": "US",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "country",
           "type": "string",
           "required": false,
           "description": "Meta only: ISO country code scoping the feed for localized feeds. Source: user-provided country code constant.",
-          "example": "US"
+          "example": "US",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "file_name",
           "type": "string",
           "required": false,
           "description": "Meta only: file name label for the feed (already accepted by the backend; documenting it). Source: user-provided file name.",
-          "example": "products.tsv"
+          "example": "products.tsv",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "delimiter",
           "type": "string",
           "required": false,
           "description": "Meta only: column delimiter for CSV/TSV feeds. Enum: AUTODETECT, BAR, COMMA, SEMICOLON, TAB, TILDE. Source: constant enum.",
-          "example": "TAB"
+          "example": "TAB",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "encoding",
           "type": "string",
           "required": false,
           "description": "Meta only: file character encoding. Enum: AUTODETECT, LATIN1, UTF8, UTF16BE, UTF16LE, UTF32BE, UTF32LE. Source: constant enum.",
-          "example": "UTF8"
+          "example": "UTF8",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "quoted_fields_mode",
           "type": "string",
           "required": false,
           "description": "Meta only: how quoted CSV fields are handled. Enum: AUTODETECT, OFF, ON. Source: constant enum.",
-          "example": "AUTODETECT"
+          "example": "AUTODETECT",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -4837,7 +5186,7 @@
         "action:ads/upload_image_asset",
         "action:ads/create_pmax_campaign"
       ],
-      "long_description": "Primary use:\nCreate an inline Google TextAsset via AssetService. Returns asset_id to reference in create_pmax_campaign's asset_group.\n\nUse when:\n- A Google PMax / asset-based campaign needs a text asset by id.\n\nDo not use when:\n- The platform is Meta (Meta copy is set inline on the creative).\n\nWorkflow:\n1. Provide the text string.\n2. Call directly (no HITL review).\n3. Feed asset_id into the asset_group.\n\nOutput semantics:\n- resource_id is the numeric asset id; raw.resource_name is the full path.\n\nSide effects:\n- Creates an account-level TextAsset; no ad spend.",
+      "long_description": "Primary use:\nCreate an inline Google TextAsset via AssetService. Returns asset_id to reference in create_pmax_campaign's asset_group.\n\nUse when:\n- A Google PMax / asset-based campaign needs a text asset by id.\n\nDo not use when:\n- The platform is Meta (Meta copy is set inline on the creative).\n\nWorkflow:\n1. Provide the text string.\n2. Submit this write through action:_batch/submit for HITL review.\n3. Feed asset_id into the asset_group.\n\nOutput semantics:\n- resource_id is the numeric asset id; raw.resource_name is the full path.\n\nSide effects:\n- Creates an account-level TextAsset; no ad spend.",
       "input_params": [
         {
           "name": "platform",
@@ -4969,7 +5318,7 @@
         "action:ads/upload_image_asset",
         "action:ads/create_pmax_campaign"
       ],
-      "long_description": "Primary use:\nCreate a Google YouTubeVideoAsset referencing a public YouTube video. Google does NOT host video bytes — the video must already be on YouTube; pass its 11-char youtube_video_id (not a URL). Returns asset_id.\n\nUse when:\n- A Google PMax / Video campaign needs a video asset already on YouTube.\n\nDo not use when:\n- You have raw video bytes / a non-YouTube URL — upload to YouTube first.\n- The platform is Meta. Use action:ads/upload_video (returns video_id).\n\nWorkflow:\n1. Get the 11-char youtube_video_id of a public YouTube video.\n2. Call directly (no HITL review).\n3. Feed asset_id into the asset_group / creative.\n\nOutput semantics:\n- resource_id is the numeric asset id; raw.resource_name is the full path.\n\nSide effects:\n- Creates an account-level YouTubeVideoAsset; no ad spend.",
+      "long_description": "Primary use:\nCreate a Google YouTubeVideoAsset referencing a public YouTube video. Google does NOT host video bytes — the video must already be on YouTube; pass its 11-char youtube_video_id (not a URL). Returns asset_id.\n\nUse when:\n- A Google PMax / Video campaign needs a video asset already on YouTube.\n\nDo not use when:\n- You have raw video bytes / a non-YouTube URL — upload to YouTube first.\n- The platform is Meta. Use action:ads/upload_video (returns video_id).\n\nWorkflow:\n1. Get the 11-char youtube_video_id of a public YouTube video.\n2. Submit this write through action:_batch/submit for HITL review.\n3. Feed asset_id into the asset_group / creative.\n\nOutput semantics:\n- resource_id is the numeric asset id; raw.resource_name is the full path.\n\nSide effects:\n- Creates an account-level YouTubeVideoAsset; no ad spend.",
       "input_params": [
         {
           "name": "platform",
@@ -5304,7 +5653,10 @@
           "type": "string",
           "required": false,
           "description": "Meta only: delivery optimization goal; default REACH. Non-REACH conversion/app/lead/DPA goals (OFFSITE_CONVERSIONS, VALUE, APP_INSTALLS, LEAD_GENERATION, PAGE_LIKES, CONVERSATIONS, PRODUCT_CATALOG_SALES) also require promoted_object. estimate_ready=false in the response is a valid low-confidence result, not an error. Source: constant enum from Meta OptimizationGoal (see create_adset for the full legal set).",
-          "example": "OFFSITE_CONVERSIONS"
+          "example": "OFFSITE_CONVERSIONS",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "promoted_object",
@@ -5314,7 +5666,10 @@
           "example": {
             "pixel_id": "1234567890",
             "custom_event_type": "PURCHASE"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "adgroup_id",
@@ -5452,7 +5807,10 @@
           "name": "creative_id",
           "type": "string",
           "required": true,
-          "description": "Creative id from action:ads/create_ad_creative."
+          "description": "Creative id from action:ads/create_ad_creative.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "ad_format",
@@ -5475,7 +5833,10 @@
             "MOBILE_INTERSTITIAL",
             "RIGHT_COLUMN_STANDARD"
           ],
-          "source": "constant"
+          "source": "constant",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "adgroup_id",
@@ -6638,59 +6999,86 @@
           "name": "object_id",
           "type": "string",
           "required": true,
-          "description": "Insights target: ad account id (act_...), campaign_id, adset_id, or ad_id."
+          "description": "Insights target: ad account id (act_...), campaign_id, adset_id, or ad_id.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "date_preset",
           "type": "string",
           "required": false,
           "description": "Meta only: relative window. One of today, yesterday, this_week_mon_today, this_week_sun_today, last_week_mon_sun, last_week_sun_sat, last_3d, this_month, last_month, this_quarter, last_quarter, this_year, last_year, last_7d, last_14d, last_28d, last_30d, last_90d, maximum. Mutually exclusive with time_range/time_ranges (if an explicit range is supplied, date_preset is ignored). Source: constant enum chosen by the agent.",
-          "example": "last_30d"
+          "example": "last_30d",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "time_range",
           "type": "object",
           "required": false,
-          "description": "Explicit {\"since\": \"YYYY-MM-DD\", \"until\": \"YYYY-MM-DD\"} object."
+          "description": "Explicit {\"since\": \"YYYY-MM-DD\", \"until\": \"YYYY-MM-DD\"} object.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "level",
           "type": "string",
           "required": false,
           "description": "One of account, campaign, adset, ad.",
-          "example": "campaign"
+          "example": "campaign",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "breakdown",
           "type": "string",
           "required": false,
           "description": "Meta only: DEPRECATED legacy singular form -- Graph never accepted a singular `breakdown` param. Prefer `breakdowns` (list). If supplied alone it is now auto-promoted into `breakdowns` so it still takes effect. Source: constant enum chosen by the agent (prefer breakdowns instead).",
-          "example": "publisher_platform"
+          "example": "publisher_platform",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "breakdowns",
           "type": "list",
           "required": false,
-          "description": "List of breakdown dimensions. Values include age, gender, country, region, dma, impression_device, publisher_platform, platform_position, placement, device_platform."
+          "description": "List of breakdown dimensions. Values include age, gender, country, region, dma, impression_device, publisher_platform, platform_position, placement, device_platform.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "fields",
           "type": "string",
           "required": false,
-          "description": "Comma-separated field list. Default 'campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values'."
+          "description": "Comma-separated field list. Default 'campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values'.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "time_increment",
           "type": "string",
           "required": false,
           "description": "Meta only: time-series bucketing. 'all_days' (single total, default), 'monthly', or an integer number of days as a string ('1' daily, '7' weekly). Without it you only get one aggregated total for the window. Hourly is not supported. Source: constant enum chosen by the agent based on the user's requested granularity (daily/weekly/monthly).",
-          "example": "7"
+          "example": "7",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "action_attribution_windows",
@@ -6700,6 +7088,9 @@
           "example": [
             "7d_click",
             "1d_view"
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -6710,6 +7101,9 @@
           "example": [
             "action_type",
             "action_destination"
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -6726,13 +7120,16 @@
               "since": "2026-06-01",
               "until": "2026-06-15"
             }
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
           "name": "filtering",
           "type": "list",
           "required": false,
-          "description": "Meta only: server-side row filter. List of {field, operator, value} objects; operator is one of EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL, IN_RANGE, NOT_IN_RANGE, CONTAIN, NOT_CONTAIN, IN, NOT_IN. Use to drop rows like spend=0. Source: agent-constructed from the user's threshold criteria.",
+          "description": "Meta only: server-side row filter. List of {field, operator, value} objects; operator is one of EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL, IN_RANGE, NOT_IN_RANGE, CONTAIN, NOT_CONTAIN, IN, NOT_IN. Use to drop rows like spend=0. Source: agent-constructed from the user's threshold criteria. TikTok only: report filters.",
           "example": [
             {
               "field": "spend",
@@ -6748,6 +7145,9 @@
           "description": "Meta only: server-side ordering for top-N queries. List of strings of the form '<field>_descending' or '<field>_ascending', e.g. 'spend_descending', 'impressions_descending'. Source: constant chosen by the agent from the requested ranking metric/direction.",
           "example": [
             "spend_descending"
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -6755,7 +7155,10 @@
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor to fetch the next page beyond `limit`. Pass the value from the previous response's raw.paging.cursors.after to continue a multi-page pull. Source: output of a prior get_insights call: raw.paging.cursors.after.",
-          "example": "MAZDZD"
+          "example": "MAZDZD",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "report_type",
@@ -6819,22 +7222,6 @@
           "required": false,
           "description": "TikTok only: end date (YYYY-MM-DD).",
           "example": "2026-07-07",
-          "platform": [
-            "tiktok"
-          ]
-        },
-        {
-          "name": "filtering",
-          "type": "list",
-          "required": false,
-          "description": "TikTok only: report filters.",
-          "example": [
-            {
-              "field_name": "campaign_ids",
-              "filter_type": "IN",
-              "filter_value": "[\"1\"]"
-            }
-          ],
           "platform": [
             "tiktok"
           ]
@@ -6905,19 +7292,28 @@
           "name": "object_id",
           "type": "string",
           "required": true,
-          "description": "Either a lead_form_id (from action:ads/list_lead_forms) or an ad_id (from action:ads/list_ads); handler falls back to resolving the form_id from the ad's creative on direct-call failure."
+          "description": "Either a lead_form_id (from action:ads/list_lead_forms) or an ad_id (from action:ads/list_ads); handler falls back to resolving the form_id from the ad's creative on direct-call failure.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
-          "description": "Pagination cursor."
+          "description": "Pagination cursor.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "end_time",
@@ -7884,7 +8280,10 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "page",
@@ -7973,14 +8372,22 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; Google default 100, Meta default 25."
+          "description": "Page size; Google default 100, Meta default 25.",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor for the next page. Pass the value of paging.cursors.after returned by the previous list_ads call to fetch the next page. Without it you only ever see the first page. Source: output of a prior list_ads response (paging.cursors.after).",
-          "example": "QVFIUjh...cursor"
+          "example": "QVFIUjh...cursor",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "effective_status",
@@ -7991,6 +8398,10 @@
             "ACTIVE",
             "PAUSED",
             "ARCHIVED"
+          ],
+          "platform": [
+            "google",
+            "meta"
           ]
         },
         {
@@ -8004,6 +8415,10 @@
               "operator": "CONTAIN",
               "value": "summer"
             }
+          ],
+          "platform": [
+            "google",
+            "meta"
           ]
         },
         {
@@ -8011,14 +8426,22 @@
           "type": "string",
           "required": false,
           "description": "Meta only: comma-separated Graph field selector to override the default ad fields (e.g. to also request creative{object_story_spec,asset_feed_spec} or tracking_specs). Source: constant field list chosen by the agent.",
-          "example": "id,name,status,effective_status,creative{id,object_story_spec}"
+          "example": "id,name,status,effective_status,creative{id,object_story_spec}",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "date_preset",
           "type": "string",
           "required": false,
           "description": "Meta only: relative time window for the listing (e.g. last_7d, last_30d). Source: constant enum.",
-          "example": "last_30d"
+          "example": "last_30d",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "time_range",
@@ -8028,14 +8451,22 @@
           "example": {
             "since": "2026-06-01",
             "until": "2026-06-16"
-          }
+          },
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "updated_since",
           "type": "integer",
           "required": false,
           "description": "Meta only: Unix timestamp; only return ads updated after this time. Source: user-provided timestamp.",
-          "example": 1717200000
+          "example": 1717200000,
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "ad_ids",
@@ -8122,14 +8553,20 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 25."
+          "description": "Page size; default 25.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor from a prior response's paging.cursors.after; pass it back to fetch the next page (now actually forwarded by the handler). Source: output of a prior list_adsets call: raw.paging.cursors.after.",
-          "example": "QVFIU..."
+          "example": "QVFIU...",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "effective_status",
@@ -8138,6 +8575,9 @@
           "description": "Meta only: filter ad sets by effective status. Values: ACTIVE, PAUSED, DELETED, CAMPAIGN_PAUSED, ARCHIVED, IN_PROCESS, WITH_ISSUES (per AdSet.EffectiveStatus). Use [\"ARCHIVED\"] to retrieve archived ad sets hidden from the default listing. Source: constant enum list chosen by the agent based on what the user wants to see.",
           "example": [
             "ARCHIVED"
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -8362,25 +8802,45 @@
           "type": "string",
           "required": false,
           "description": "Meta only: filter by objective such as OUTCOME_TRAFFIC or OUTCOME_SALES.",
-          "example": "OUTCOME_TRAFFIC"
+          "example": "OUTCOME_TRAFFIC",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "filtering",
           "type": "list",
           "required": false,
-          "description": "Meta only: raw Graph filtering list, e.g. [{field, operator, value}]."
+          "description": "Meta only: raw Graph filtering list, e.g. [{field, operator, value}].",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Meta only: page size; default 25."
+          "description": "Meta only: page size; default 25.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
-          "description": "Meta only: pagination cursor returned in paging.cursors.after."
+          "description": "Meta only: pagination cursor returned in paging.cursors.after.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "campaign_ids",
@@ -8635,13 +9095,19 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
-          "description": "Pagination cursor."
+          "description": "Pagination cursor.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "custom_audience_ids",
@@ -8840,19 +9306,28 @@
           "name": "page_id",
           "type": "string",
           "required": true,
-          "description": "Facebook Page id from action:ads/get_account_pages."
+          "description": "Facebook Page id from action:ads/get_account_pages.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
-          "description": "Pagination cursor."
+          "description": "Pagination cursor.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "page",
@@ -8978,7 +9453,10 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "page",
@@ -9403,13 +9881,19 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
-          "description": "Pagination cursor."
+          "description": "Pagination cursor.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "page",
@@ -10722,7 +11206,10 @@
           "name": "product_feed_id",
           "type": "string",
           "required": true,
-          "description": "Meta product feed id to delete."
+          "description": "Meta product feed id to delete.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -10893,20 +11380,29 @@
           "name": "location_types",
           "type": "list",
           "required": false,
-          "description": "Optional list of location types to include. One or more of country, region, city, zip, geo_market, electoral_district, neighborhood, country_group, subneighborhood."
+          "description": "Optional list of location types to include. One or more of country, region, city, zip, geo_market, electoral_district, neighborhood, country_group, subneighborhood.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "country_code",
           "type": "string",
           "required": false,
           "description": "ISO-2 country code to constrain the search.",
-          "example": "US"
+          "example": "US",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Row cap; default 25."
+          "description": "Row cap; default 25.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "objective_type",
@@ -11007,7 +11503,10 @@
           "type": "string",
           "required": false,
           "description": "Meta only: locale code (e.g. en_US, ja_JP) to localize the returned interest taxonomy names/IDs. Omit for default locale. Source: constant enum of Meta locale codes (retrievable via Targeting Search type=adlocale); typically derived from the advertiser's market/language.",
-          "example": "en_US"
+          "example": "en_US",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "language",
@@ -11888,14 +12387,19 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Google only: ENABLED | PAUSED | REMOVED (REMOVED is terminal). Invalid values now return a clear error instead of silently becoming PAUSED. Meta only: common status ENABLED->ACTIVE, PAUSED->PAUSED, REMOVED->ARCHIVED (REMOVED maps to ARCHIVED, not DELETED). Setting ACTIVE resumes spend immediately. Source: constant enum chosen by the agent.",
-          "example": "ENABLED"
+          "description": "Provider-specific lifecycle state (no global enum). TikTok and Google: ENABLED, PAUSED, or REMOVED; TikTok maps these to ENABLE, DISABLE, or DELETE. Meta: ACTIVE, PAUSED, or ARCHIVED; unified ENABLED/REMOVED map to ACTIVE/ARCHIVED.",
+          "example": "PAUSED",
+          "source": "constant"
         },
         {
           "name": "final_urls",
           "type": "list",
           "required": false,
-          "description": "Google only: list of final landing URLs (or a JSON string)."
+          "description": "Google only: list of final landing URLs (or a JSON string).",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "headlines",
@@ -11906,6 +12410,10 @@
             "New Headline A",
             "New Headline B",
             "New Headline C"
+          ],
+          "platform": [
+            "google",
+            "meta"
           ]
         },
         {
@@ -11916,6 +12424,10 @@
           "example": [
             "Updated description one.",
             "Updated description two."
+          ],
+          "platform": [
+            "google",
+            "meta"
           ]
         },
         {
@@ -11925,6 +12437,10 @@
           "description": "Google only: replacement set of mobile-specific landing URLs on the Ad resource. Replace-not-merge. Source: user-provided mobile landing URL(s).",
           "example": [
             "https://m.example.com/lp"
+          ],
+          "platform": [
+            "google",
+            "meta"
           ]
         },
         {
@@ -11932,13 +12448,21 @@
           "type": "string",
           "required": false,
           "description": "Google only: set/replace the ad-level click-tracking URL template. Pass an empty string to clear it. Source: user-provided tracking template.",
-          "example": "{lpurl}?utm_source=google"
+          "example": "{lpurl}?utm_source=google",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "creative_id",
           "type": "string",
           "required": false,
-          "description": "Meta only: swap to a different creative id."
+          "description": "Meta only: swap to a different creative id.",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "creative",
@@ -11947,7 +12471,11 @@
           "description": "Meta only: inline AdCreative spec OR {\"creative_id\": \"...\"} to swap the ad's creative. If creative_id is also supplied, creative_id wins and the inline object is ignored. Swapping a creative re-enters ad review. Source: constructed by the agent or output of create_ad_creative.",
           "example": {
             "creative_id": "23847900000000123"
-          }
+          },
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "tracking_specs",
@@ -11963,6 +12491,10 @@
                 "1234567890"
               ]
             }
+          ],
+          "platform": [
+            "google",
+            "meta"
           ]
         },
         {
@@ -11970,7 +12502,11 @@
           "type": "string",
           "required": false,
           "description": "Meta only: the attribution domain for a conversion/sales/leads ad (off-site optimization). Conditionally REQUIRED by Meta for those objectives; setting/repairing it is otherwise impossible. Must be a verified domain associated with the pixel event. Source: user-provided verified domain (must match Business Manager domain verification).",
-          "example": "example.com"
+          "example": "example.com",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "name",
@@ -12155,7 +12691,10 @@
                 "value": "LAST_7_DAYS"
               }
             ]
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "execution_spec",
@@ -12164,7 +12703,10 @@
           "description": "Meta only: replacement execution spec (same shape as action:ads/create_ad_rule; execution_type enum uses NOTIFICATION, not NOTIFY). REPLACES the stored spec wholesale.",
           "example": {
             "execution_type": "PAUSE"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "schedule_spec",
@@ -12173,7 +12715,10 @@
           "description": "Meta only: replacement schedule spec (same shape as action:ads/create_ad_rule). REPLACES the stored spec wholesale.",
           "example": {
             "schedule_type": "DAILY"
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "status",
@@ -12258,69 +12803,100 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "ACTIVE, PAUSED, or ARCHIVED (ENABLED is mapped to ACTIVE by the dispatcher).",
-          "example": "ACTIVE"
+          "description": "Provider-specific lifecycle state (no global enum). TikTok: ENABLED, PAUSED, or REMOVED, mapped to ENABLE, DISABLE, or DELETE. Meta: ACTIVE, PAUSED, or ARCHIVED; unified ENABLED/REMOVED map to ACTIVE/ARCHIVED.",
+          "example": "PAUSED",
+          "source": "constant"
         },
         {
           "name": "billing_event",
           "type": "string",
           "required": false,
-          "description": "See create_adset for legal values."
+          "description": "See create_adset for legal values.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "optimization_goal",
           "type": "string",
           "required": false,
-          "description": "See create_adset for legal values."
+          "description": "See create_adset for legal values.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "targeting",
           "type": "object",
           "required": false,
-          "description": "Meta targeting spec object (replaces the existing targeting)."
+          "description": "Meta targeting spec object (replaces the existing targeting).",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bid_amount",
           "type": "integer",
           "required": false,
-          "description": "Bid in cents."
+          "description": "Bid in cents.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "daily_budget",
           "type": "integer",
           "required": false,
-          "description": "Daily budget in cents."
+          "description": "Daily budget in cents.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "lifetime_budget",
           "type": "integer",
           "required": false,
-          "description": "Lifetime budget in cents."
+          "description": "Lifetime budget in cents.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "promoted_object",
           "type": "object",
           "required": false,
-          "description": "Promoted object spec."
+          "description": "Promoted object spec.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "start_time",
           "type": "string",
           "required": false,
-          "description": "ISO-8601 start time."
+          "description": "ISO-8601 start time.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "end_time",
           "type": "string",
           "required": false,
-          "description": "ISO-8601 end time."
+          "description": "ISO-8601 end time.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bid_strategy",
           "type": "string",
           "required": false,
           "description": "Meta only: change the ad-set bid strategy. One of LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP, COST_CAP, LOWEST_COST_WITH_MIN_ROAS. Cap strategies require bid_amount. Source: constant enum chosen by the agent from user intent.",
-          "example": "LOWEST_COST_WITH_BID_CAP"
+          "example": "LOWEST_COST_WITH_BID_CAP",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "frequency_control_specs",
@@ -12333,6 +12909,9 @@
               "interval_days": 7,
               "max_frequency": 2
             }
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -12340,7 +12919,10 @@
           "type": "boolean",
           "required": false,
           "description": "Meta only: toggle Dynamic Creative on the ad set. Source: user intent.",
-          "example": true
+          "example": true,
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "attribution_spec",
@@ -12352,6 +12934,9 @@
               "event_type": "CLICK_THROUGH",
               "window_days": 7
             }
+          ],
+          "platform": [
+            "meta"
           ]
         },
         {
@@ -12359,21 +12944,30 @@
           "type": "string",
           "required": false,
           "description": "Meta only: conversion destination, e.g. WEBSITE, MESSENGER, WHATSAPP, INSTAGRAM_DIRECT. Source: constant enum chosen from objective/user intent.",
-          "example": "WEBSITE"
+          "example": "WEBSITE",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "dsa_beneficiary",
           "type": "string",
           "required": false,
           "description": "Meta only: EU DSA beneficiary name (required for EU-regulated targeting). Source: user-provided beneficiary name.",
-          "example": "Acme Inc"
+          "example": "Acme Inc",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "dsa_payor",
           "type": "string",
           "required": false,
           "description": "Meta only: EU DSA payer name (required alongside dsa_beneficiary for EU-regulated targeting). Source: user-provided payer name.",
-          "example": "Acme Inc"
+          "example": "Acme Inc",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "adgroup_name",
@@ -12396,22 +12990,24 @@
           ]
         },
         {
-          "name": "budget_mode",
-          "type": "string",
+          "name": "location_ids",
+          "type": "list",
           "required": false,
-          "description": "TikTok only: new budget mode.",
-          "example": "BUDGET_MODE_DAY",
+          "description": "TikTok only: Target location ids; provide this or zipcode_ids when creating an ad group.",
+          "example": [
+            "6252001"
+          ],
           "platform": [
             "tiktok"
           ]
         },
         {
-          "name": "location_ids",
+          "name": "zipcode_ids",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Target location ids.",
+          "description": "TikTok only: Target ZIP/postal code ids; provide this or location_ids when creating an ad group. ZIP targeting requires PLACEMENT_TYPE_NORMAL and PLACEMENT_TIKTOK.",
           "example": [
-            "6252001"
+            "123456789"
           ],
           "platform": [
             "tiktok"
@@ -12506,28 +13102,6 @@
           "description": "TikTok only: Target operating systems.",
           "example": [
             "ANDROID"
-          ],
-          "platform": [
-            "tiktok"
-          ]
-        },
-        {
-          "name": "placement_type",
-          "type": "string",
-          "required": false,
-          "description": "TikTok only: Placement selection mode.",
-          "example": "PLACEMENT_TYPE_AUTOMATIC",
-          "platform": [
-            "tiktok"
-          ]
-        },
-        {
-          "name": "placements",
-          "type": "list",
-          "required": false,
-          "description": "TikTok only: Explicit placements when placement_type is normal.",
-          "example": [
-            "PLACEMENT_TIKTOK"
           ],
           "platform": [
             "tiktok"
@@ -12673,8 +13247,8 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Google/Meta use their native status contracts; for ChatGPT Ads, pass draft, active, or paused. active may fail with 402 if the advertiser account is not billing-ready; deployment skills should keep new campaigns paused unless the user explicitly approves activation.",
-          "example": "paused",
+          "description": "Provider-specific lifecycle state (no global enum because the shared action has different provider vocabularies). TikTok: ENABLED, PAUSED, or REMOVED, mapped to ENABLE, DISABLE, or DELETE. ChatGPT Ads: DRAFT, ACTIVE, or PAUSED. Google/Meta follow their provider contracts. REMOVED is allowed only for update where supported.",
+          "example": "PAUSED",
           "source": "constant"
         },
         {
@@ -12682,14 +13256,24 @@
           "type": "string",
           "required": false,
           "description": "Google only: new campaign start date in YYYY-MM-DD. Cannot be edited once the campaign has started. Source: user-provided date.",
-          "example": "2026-07-05"
+          "example": "2026-07-05",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "end_date",
           "type": "string",
           "required": false,
           "description": "Google only: new campaign end date in YYYY-MM-DD. Source: user-provided date.",
-          "example": "2026-08-31"
+          "example": "2026-08-31",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "budget_daily_micros",
@@ -12762,32 +13346,57 @@
           "name": "objective",
           "type": "string",
           "required": false,
-          "description": "Meta only: campaign objective (see create_campaign for legal values)."
+          "description": "Meta only: campaign objective (see create_campaign for legal values).",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "special_ad_categories",
           "type": "list",
           "required": false,
-          "description": "Meta only: special category list."
+          "description": "Meta only: special category list.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "buying_type",
           "type": "string",
           "required": false,
-          "description": "Meta only: AUCTION or RESERVED."
+          "description": "Meta only: AUCTION or RESERVED.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "bid_strategy",
           "type": "string",
           "required": false,
-          "description": "Meta only: bid strategy enum."
+          "description": "Meta only: bid strategy enum.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "spend_cap",
           "type": "integer",
           "required": false,
           "description": "Meta only: campaign lifetime spend cap in account-currency cents (NOT micros). budget_daily_micros is in micros and auto-converted; spend_cap is raw cents -- do not confuse the two units. Source: user-provided cap converted to cents.",
-          "example": 100000
+          "example": 100000,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "special_ad_category_country",
@@ -12796,6 +13405,11 @@
           "description": "Meta only: list of ISO country codes; required when special_ad_categories is updated to include a regulated category. Note: objective/buying_type/special_ad_categories are creation-time fields and Meta may reject changing them on an existing campaign. Source: user-provided target country/countries.",
           "example": [
             "US"
+          ],
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
           ]
         },
         {
@@ -12803,19 +13417,34 @@
           "type": "integer",
           "required": false,
           "description": "Meta only: campaign-level lifetime budget in account-currency cents (CBO). Mutually exclusive with the daily budget from budget_daily_micros. Only valid on Advantage Campaign Budget (CBO) campaigns; setting budget on an ad-set-budget campaign returns a Meta error. Source: user-provided total spend cap converted to cents.",
-          "example": 50000
+          "example": 50000,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "start_time",
           "type": "string",
           "required": false,
-          "description": "Meta only: ISO-8601 start time."
+          "description": "Meta only: ISO-8601 start time.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "stop_time",
           "type": "string",
           "required": false,
-          "description": "Meta only: ISO-8601 stop time."
+          "description": "Meta only: ISO-8601 stop time.",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "budget",
@@ -13452,7 +14081,10 @@
           "name": "product_feed_id",
           "type": "string",
           "required": true,
-          "description": "Meta product feed id to update."
+          "description": "Meta product feed id to update.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "name",
@@ -13469,7 +14101,10 @@
             "interval": "DAILY",
             "url": "https://example.com/feed.tsv",
             "hour": 22
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -13780,7 +14415,7 @@
       "id": "action:ads/upload_image",
       "namespace": "ads",
       "action": "upload_image",
-      "description": "Upload an image to a Meta ad account from a public URL; executes immediately and returns image_hash for creative wiring. Also supports TikTok through its provider-native contract.",
+      "description": "Upload an image to a Meta or TikTok ad account from a public URL after HITL review and return its provider-native asset ID.",
       "mode": "write",
       "platforms": [
         "meta",
@@ -13793,7 +14428,7 @@
         "action:ads/upload_video",
         "action:ads/create_ad_creative"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nDownload a public https image, validate it, and POST the bytes to Meta's {account_id}/adimages. Returns image_hash for action:ads/create_ad_creative.\n\nUse when:\n- The user wants to ingest a new image asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http (non-https), or an IP literal. The handler rejects such URLs before any upload.\n- The image is larger than 25 MB. The handler returns an error.\n- The platform is Google. Use action:ads/upload_image_asset (returns asset_id).\n\nWorkflow:\n1. Get a public https image URL <= 25 MB without redirects.\n2. Call this action directly (no HITL review; executes immediately).\n3. Use the returned image_hash in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.image_hash is the value to feed into create_ad_creative.image_hash.\n- Errors: 'Image exceeds 25 MB byte limit.' or 'Image URL returned a redirect.'\n\nSide effects:\n- Downloads the URL (rejects redirects, enforces 25 MB cap, validates public https).\n- Base64-encodes and POSTs to {account_id}/adimages; image is stored against the account.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs describe image_url as the input but do not state the internal mechanism is base64 'bytes' upload (not a Meta-fetched URL), nor that the 25MB cap is stricter than Meta's ~30MB native limit — an agent could wrongly assume a <30MB image will succeed. Also note: Docs do not mention image format constraints (Meta accepts JPG/PNG; GIF/WEBP/other may be rejected by Meta with code 100), so the agent cannot pre-validate format. Capability gap: copy_from: cross-account image reuse (clone an existing hash into another account) is unreachable in all three layers; agent must re-upload bytes per account.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nDownload a public https image, validate it, and POST the bytes to Meta's {account_id}/adimages. Returns image_hash for action:ads/create_ad_creative.\n\nUse when:\n- The user wants to ingest a new image asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http (non-https), or an IP literal. The handler rejects such URLs before any upload.\n- The image is larger than 25 MB. The handler returns an error.\n- The platform is Google. Use action:ads/upload_image_asset (returns asset_id).\n\nWorkflow:\n1. Get a public https image URL <= 25 MB without redirects.\n2. Submit this write through action:_batch/submit for HITL review.\n3. Use the returned image_hash in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.image_hash is the value to feed into create_ad_creative.image_hash.\n- Errors: 'Image exceeds 25 MB byte limit.' or 'Image URL returned a redirect.'\n\nSide effects:\n- Downloads the URL (rejects redirects, enforces 25 MB cap, validates public https).\n- Base64-encodes and POSTs to {account_id}/adimages; image is stored against the account.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs describe image_url as the input but do not state the internal mechanism is base64 'bytes' upload (not a Meta-fetched URL), nor that the 25MB cap is stricter than Meta's ~30MB native limit — an agent could wrongly assume a <30MB image will succeed. Also note: Docs do not mention image format constraints (Meta accepts JPG/PNG; GIF/WEBP/other may be rejected by Meta with code 100), so the agent cannot pre-validate format. Capability gap: copy_from: cross-account image reuse (clone an existing hash into another account) is unreachable in all three layers; agent must re-upload bytes per account.",
       "input_params": [
         {
           "name": "platform",
@@ -13831,8 +14466,11 @@
           "name": "upload_type",
           "type": "string",
           "required": false,
-          "description": "TikTok only: UPLOAD_BY_URL or UPLOAD_BY_FILE.",
+          "description": "TikTok only: this adapter supports UPLOAD_BY_URL only.",
           "example": "UPLOAD_BY_URL",
+          "enum": [
+            "UPLOAD_BY_URL"
+          ],
           "platform": [
             "tiktok"
           ]
@@ -13854,7 +14492,7 @@
       "id": "action:ads/upload_image_asset",
       "namespace": "ads",
       "action": "upload_image_asset",
-      "description": "Upload an image to a Google Ads account asset library from a public https URL; executes immediately and returns the asset_id.",
+      "description": "Upload an image to a Google Ads account asset library from a public https URL after HITL review and return the asset_id.",
       "mode": "write",
       "platforms": [
         "google"
@@ -13866,7 +14504,7 @@
         "action:ads/create_youtube_video_asset",
         "action:ads/create_pmax_campaign"
       ],
-      "long_description": "Primary use:\nDownload a public https image and create a Google ImageAsset via AssetService. Returns asset_id (+ resource_name) to reference in create_pmax_campaign's asset_group or Display/Video creatives.\n\nUse when:\n- A Google PMax / Display / Video campaign needs an image asset the account does not have yet.\n\nDo not use when:\n- The image URL is not public https, or is larger than 5 MB.\n- The platform is Meta. Use action:ads/upload_image (returns image_hash).\n\nWorkflow:\n1. Get a public https image URL <= 5 MB.\n2. Call this action directly (no HITL review; executes immediately).\n3. Feed the returned asset_id into the asset_group / creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- resource_id is the numeric asset id; raw.resource_name is the full path.\n- Google content-deduplicates images: re-uploading returns the same asset.\n\nSide effects:\n- Downloads the URL (enforces public https + 5 MB cap).\n- Creates an account-level ImageAsset; no ad spend.\n- Reversible only via the Google Ads UI; no L1.5 remove handler.",
+      "long_description": "Primary use:\nDownload a public https image and create a Google ImageAsset via AssetService. Returns asset_id (+ resource_name) to reference in create_pmax_campaign's asset_group or Display/Video creatives.\n\nUse when:\n- A Google PMax / Display / Video campaign needs an image asset the account does not have yet.\n\nDo not use when:\n- The image URL is not public https, or is larger than 5 MB.\n- The platform is Meta. Use action:ads/upload_image (returns image_hash).\n\nWorkflow:\n1. Get a public https image URL <= 5 MB.\n2. Submit this write through action:_batch/submit for HITL review.\n3. Feed the returned asset_id into the asset_group / creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- resource_id is the numeric asset id; raw.resource_name is the full path.\n- Google content-deduplicates images: re-uploading returns the same asset.\n\nSide effects:\n- Downloads the URL (enforces public https + 5 MB cap).\n- Creates an account-level ImageAsset; no ad spend.\n- Reversible only via the Google Ads UI; no L1.5 remove handler.",
       "input_params": [
         {
           "name": "platform",
@@ -13907,7 +14545,7 @@
       "id": "action:ads/upload_images",
       "namespace": "ads",
       "action": "upload_images",
-      "description": "Upload multiple images to a Meta ad account from direct base64 bytes or public URLs with bounded concurrency; executes immediately and returns per-item image_hash values. Also supports TikTok through its provider-native contract.",
+      "description": "Upload multiple images to a Meta ad account from direct base64 bytes or public URLs with bounded concurrency after HITL review and return per-item image_hash values. Also supports TikTok through its provider-native contract.",
       "mode": "write",
       "platforms": [
         "meta",
@@ -13920,7 +14558,7 @@
         "action:ads/create_ad_creative",
         "action:ads/deploy_image_ads_batch"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nBulk-ingest local image bytes or public https image URLs into Meta's {account_id}/adimages edge. Use this instead of many serial upload_image calls when the user has multiple assets for one account.\n\nUse when:\n- The user wants to upload more than one image asset for Meta creatives.\n- A batch campaign workflow has local files or public URLs and needs image_hash values before creative creation.\n\nDo not use when:\n- A URL source is private, http (non-https), an IP literal, redirects, or points to an image larger than 25 MB. Invalid items fail individually.\n- The platform is Google. Use a Google-specific action instead.\n\nWorkflow:\n1. Build images[] with {client_ref, name, image_url} for public URLs or {client_ref, name, bytes_base64} for local files. client_ref should be stable so the returned item can be mapped back to the source asset.\n2. Call this action directly (no HITL review; executes immediately). When image count is greater than 2, the handler uses bounded concurrency (default 6, max 10) plus transient Meta retry/backoff per image.\n3. Feed each successful items[].image_hash into create_ad_creative or deploy_image_ads_batch.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.items[] preserves input order and includes index, client_ref, image_hash, retry_count, and per-item error/error_code.\n- raw.success=false means at least one item failed; successful items remain usable.\n\nSide effects:\n- Downloads each URL (rejects redirects, enforces 25 MB cap, validates public https) or decodes bytes_base64 directly.\n- POSTs successful items to {account_id}/adimages using Meta's bytes field.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nBulk-ingest local image bytes or public https image URLs into Meta's {account_id}/adimages edge. Use this instead of many serial upload_image calls when the user has multiple assets for one account.\n\nUse when:\n- The user wants to upload more than one image asset for Meta creatives.\n- A batch campaign workflow has local files or public URLs and needs image_hash values before creative creation.\n\nDo not use when:\n- A URL source is private, http (non-https), an IP literal, redirects, or points to an image larger than 25 MB. Invalid items fail individually.\n- The platform is Google. Use a Google-specific action instead.\n\nWorkflow:\n1. Build images[] with {client_ref, name, image_url} for public URLs or {client_ref, name, bytes_base64} for local files. client_ref should be stable so the returned item can be mapped back to the source asset.\n2. Submit this write through action:_batch/submit for HITL review. When image count is greater than 2, the handler uses bounded concurrency (default 6, max 10) plus transient Meta retry/backoff per image.\n3. Feed each successful items[].image_hash into create_ad_creative or deploy_image_ads_batch.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.items[] preserves input order and includes index, client_ref, image_hash, retry_count, and per-item error/error_code.\n- raw.success=false means at least one item failed; successful items remain usable.\n\nSide effects:\n- Downloads each URL (rejects redirects, enforces 25 MB cap, validates public https) or decodes bytes_base64 directly.\n- POSTs successful items to {account_id}/adimages using Meta's bytes field.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.",
       "input_params": [
         {
           "name": "platform",
@@ -13945,17 +14583,12 @@
           "name": "images",
           "type": "list",
           "required": true,
-          "description": "List of image upload objects. Each item should include name, stable client_ref, and exactly one of image_url (public https URL) or bytes_base64 (local image bytes encoded by the CLI).",
+          "description": "List of image upload objects. Meta accepts image_url or bytes_base64; TikTok accepts a public HTTPS image_url only (an object with image_url/url or a bare URL string). name and stable client_ref are optional metadata.",
           "example": [
             {
               "client_ref": "asset-001",
               "image_url": "https://example.com/asset-001.jpg",
               "name": "asset-001.jpg"
-            },
-            {
-              "client_ref": "/tmp/asset-002.jpg",
-              "bytes_base64": "...",
-              "name": "asset-002.jpg"
             }
           ]
         },
@@ -13964,7 +14597,10 @@
           "type": "integer",
           "required": false,
           "description": "Optional concurrency limit for >2 images. Default 6, max 10. Values outside the range are clamped by the handler.",
-          "example": 6
+          "example": 6,
+          "platform": [
+            "meta"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"total\": 50, \"succeeded\": 50, \"failed\": 0, \"concurrency\": 6, \"items\": [{\"index\": 0, \"client_ref\": \"asset-001\", \"image_hash\": \"hex_md5\", \"retry_count\": 0, \"images\": [{\"hash\": \"...\"}]}]}\nTikTok output: raw.results[] contains each upload result; read image_id or id from each result. image_hash belongs to Meta results only."
@@ -13973,7 +14609,7 @@
       "id": "action:ads/upload_video",
       "namespace": "ads",
       "action": "upload_video",
-      "description": "Upload a video to a Meta ad account from a public URL; executes immediately and returns video_id for async encoding. Also supports TikTok through its provider-native contract.",
+      "description": "Upload a video to a Meta or TikTok ad account from a public URL after HITL review and return video_id for async encoding or readiness checks.",
       "mode": "write",
       "platforms": [
         "meta",
@@ -13985,7 +14621,7 @@
         "action:ads/upload_image",
         "action:ads/create_ad_creative"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nSubmit a public https video URL to Meta's {account_id}/advideos. Meta downloads + encodes asynchronously; the returned video_id may not be immediately usable in creatives.\n\nUse when:\n- The user wants to ingest a new video asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http, or an IP literal. The handler rejects it.\n- The platform is Google.\n\nWorkflow:\n1. Get a public https video URL.\n2. Call this action directly (no HITL review; executes immediately).\n3. After Meta finishes encoding, use the video_id in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new video_id; raw.success indicates upload accepted, not encoding done.\n\nSide effects:\n- POSTs file_url to {account_id}/advideos; Meta pulls and encodes the file asynchronously.\n- Encoding is async on Meta's side — the video may not be ready for creatives immediately.\n- No immediate spend; consumes Meta storage quota.\n- Reversible only via the Meta UI.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nSubmit a public https video URL to Meta's {account_id}/advideos. Meta downloads + encodes asynchronously; the returned video_id may not be immediately usable in creatives.\n\nUse when:\n- The user wants to ingest a new video asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http, or an IP literal. The handler rejects it.\n- The platform is Google.\n\nWorkflow:\n1. Get a public https video URL.\n2. Submit this write through action:_batch/submit for HITL review.\n3. After Meta finishes encoding, use the video_id in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new video_id; raw.success indicates upload accepted, not encoding done.\n\nSide effects:\n- POSTs file_url to {account_id}/advideos; Meta pulls and encodes the file asynchronously.\n- Encoding is async on Meta's side — the video may not be ready for creatives immediately.\n- No immediate spend; consumes Meta storage quota.\n- Reversible only via the Meta UI.",
       "input_params": [
         {
           "name": "platform",
@@ -14011,19 +14647,28 @@
           "type": "string",
           "required": true,
           "description": "Meta only: public https URL of the video to ingest. Required -- this is the only supported upload path (Meta's resumable chunked/source upload for very large files is NOT supported by this action). Must be a direct https URL (no http, no IP literal, no redirect); the handler SSRF-validates it and rejects redirects. Prefer reasonably sized MP4/H.264 clips; multi-GB assets that require chunked upload will fail. Source: user-provided public https URL of the video file.",
-          "example": "https://example.com/clip.mp4"
+          "example": "https://example.com/clip.mp4",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "title",
           "type": "string",
           "required": false,
-          "description": "Optional video title."
+          "description": "Optional video title.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "description",
           "type": "string",
           "required": false,
-          "description": "Optional video description."
+          "description": "Optional video description.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "name",
@@ -14046,8 +14691,11 @@
           "name": "upload_type",
           "type": "string",
           "required": false,
-          "description": "TikTok only: UPLOAD_BY_URL or UPLOAD_BY_FILE.",
+          "description": "TikTok only: this adapter supports UPLOAD_BY_URL only.",
           "example": "UPLOAD_BY_URL",
+          "enum": [
+            "UPLOAD_BY_URL"
+          ],
           "platform": [
             "tiktok"
           ]
