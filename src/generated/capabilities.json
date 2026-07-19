@@ -13849,6 +13849,118 @@
           "platform": [
             "tiktok"
           ]
+        },
+        {
+          "name": "affiliate_posts_enabled",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok only: Enable affiliate posts.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "auto_budget_enabled",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok only: Enable automatic budget allocation.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: Updated GMV Max campaign budget.",
+          "example": 100.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "campaign_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Updated GMV Max campaign name.",
+          "example": "GMV Max",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "custom_anchor_video_list",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Updated custom anchor video objects.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "item_group_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Updated item group ids.",
+          "example": [
+            "item-group-1"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "item_list",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Updated item objects.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "promotion_days",
+          "type": "object",
+          "required": false,
+          "description": "TikTok only: Updated promotion-day settings.",
+          "example": {},
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "roas_bid",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: Updated ROAS bid.",
+          "example": 2.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_end_time",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Updated schedule end time in the advertiser time zone.",
+          "example": "2026-07-31 23:59:59",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Updated schedule type.",
+          "example": "SCHEDULE_START_END",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\":true,\"raw\":{}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -14222,6 +14334,36 @@
           "platform": [
             "tiktok"
           ]
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: Updated Smart+ campaign budget.",
+          "example": 100.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "campaign_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Updated Smart+ campaign name.",
+          "example": "Smart Launch",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "po_number",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Updated purchase-order number.",
+          "example": "PO-123",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\":true,\"raw\":{}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -14272,8 +14414,13 @@
           "name": "operation_status",
           "type": "string",
           "required": true,
-          "description": "TikTok operation status.",
-          "example": "value",
+          "description": "TikTok only: Smart+ delivery operation.",
+          "example": "DISABLE",
+          "enum": [
+            "ENABLE",
+            "DISABLE",
+            "DELETE"
+          ],
           "platform": [
             "tiktok"
           ]
@@ -14284,6 +14431,22 @@
           "required": true,
           "description": "Explicit acknowledgement required before this side effect.",
           "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "postback_window_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Optional Smart+ postback-window mode for the status update.",
+          "example": "UNSET",
+          "enum": [
+            "POSTBACK_WINDOW_MODE1",
+            "POSTBACK_WINDOW_MODE2",
+            "POSTBACK_WINDOW_MODE3",
+            "UNSET"
+          ],
           "platform": [
             "tiktok"
           ]
