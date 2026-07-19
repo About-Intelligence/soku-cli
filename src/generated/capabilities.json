@@ -2460,7 +2460,7 @@
       "id": "action:ads/create_adset",
       "namespace": "ads",
       "action": "create_adset",
-      "description": "Create a Meta ad set in PAUSED state; review-gated, reversible via remove_adset. Also supports TikTok through its provider-native contract.",
+      "description": "Create a review-gated Meta ad set or TikTok ad group. Meta is force-paused; TikTok defaults to operation_status=DISABLE.",
       "mode": "write",
       "platforms": [
         "meta",
@@ -2475,7 +2475,7 @@
         "action:ads/estimate_audience_size",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new Meta ad set inside a campaign, with billing, optimization, targeting, and budget. Force-paused at create so ads can be attached before activating.\n\nUse when:\n- The user wants to add a new ad set to a Meta campaign.\n- A workflow needs an adset_id to host ads.\n\nDo not use when:\n- The platform is Google. Use action:ads/create_ad_group.\n- The campaign already has a matching ad set. Reuse via action:ads/list_adsets.\n\nWorkflow:\n1. Call action:ads/list_campaigns to choose a campaign_id.\n2. Build the targeting spec (geo_locations, age_min/max, interests, ...).\n3. Call action:ads/estimate_audience_size to validate reach if needed.\n4. Submit via action:_batch/submit for HITL review.\n5. After approval, call action:ads/create_ad with the new adset_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API response: {id: '...'}; the envelope's resource_id matches.\n- budget_daily_micros is converted to daily_budget in cents (int(micros/10_000)) by the dispatcher.\n\nMeta lead-gen / ON_AD notes:\n- For Campaign Budget Optimization campaigns, set is_cbo_adset=true and omit ad-set budget fields; budget stays on the campaign.\n- destination_type=ON_AD + optimization_goal=LEAD_GENERATION uses an instant form flow. The handler preserves manual targeting by defaulting targeting.targeting_automation.advantage_audience to 0 when omitted.\n- For OTHER objectives the handler does NOT inject that flag, and Meta now rejects detailed-targeting ad sets without it (error 100/1870227, live-verified): always set targeting.targeting_automation.advantage_audience explicitly (0 = manual targeting, 1 = Advantage+ audience).\n- If targeting.instagram_positions contains explore_home, Meta also requires explore; the handler auto-adds explore when it is missing.\n\nSide effects:\n- Creates an AdSet under the campaign.\n- Force-paused at create (status=PAUSED), overwriting any caller value.\n- No immediate spend; activation requires a later action:ads/update_adset with status=ACTIVE.\n- Reversible via action:ads/remove_adset (archives; can un-archive to PAUSED).",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nTikTok bidding: bid_amount is a positive account-currency number, not Meta cents. Providing it selects BID_TYPE_CUSTOM and maps to bid_price for CPC/CPM/CPV or conversion_bid_price for OCPM. Omitting it selects BID_TYPE_NO_BID. A manual bid must be lower than the ad group and parent campaign budgets. Creation defaults to operation_status=DISABLE unless an explicitly approved status=ENABLED is supplied.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new Meta ad set inside a campaign, with billing, optimization, targeting, and budget. Force-paused at create so ads can be attached before activating.\n\nUse when:\n- The user wants to add a new ad set to a Meta campaign.\n- A workflow needs an adset_id to host ads.\n\nDo not use when:\n- The platform is Google. Use action:ads/create_ad_group.\n- The campaign already has a matching ad set. Reuse via action:ads/list_adsets.\n\nWorkflow:\n1. Call action:ads/list_campaigns to choose a campaign_id.\n2. Build the targeting spec (geo_locations, age_min/max, interests, ...).\n3. Call action:ads/estimate_audience_size to validate reach if needed.\n4. Submit via action:_batch/submit for HITL review.\n5. After approval, call action:ads/create_ad with the new adset_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API response: {id: '...'}; the envelope's resource_id matches.\n- budget_daily_micros is converted to daily_budget in cents (int(micros/10_000)) by the dispatcher.\n\nMeta lead-gen / ON_AD notes:\n- For Campaign Budget Optimization campaigns, set is_cbo_adset=true and omit ad-set budget fields; budget stays on the campaign.\n- destination_type=ON_AD + optimization_goal=LEAD_GENERATION uses an instant form flow. The handler preserves manual targeting by defaulting targeting.targeting_automation.advantage_audience to 0 when omitted.\n- For OTHER objectives the handler does NOT inject that flag, and Meta now rejects detailed-targeting ad sets without it (error 100/1870227, live-verified): always set targeting.targeting_automation.advantage_audience explicitly (0 = manual targeting, 1 = Advantage+ audience).\n- If targeting.instagram_positions contains explore_home, Meta also requires explore; the handler auto-adds explore when it is missing.\n\nSide effects:\n- Creates an AdSet under the campaign.\n- Force-paused at create (status=PAUSED), overwriting any caller value.\n- No immediate spend; activation requires a later action:ads/update_adset with status=ACTIVE.\n- Reversible via action:ads/remove_adset (archives; can un-archive to PAUSED).",
       "input_params": [
         {
           "name": "platform",
@@ -2645,12 +2645,10 @@
         },
         {
           "name": "bid_amount",
-          "type": "integer",
+          "type": "number",
           "required": false,
-          "description": "Bid in cents (when optimization requires a manual bid).",
-          "platform": [
-            "meta"
-          ]
+          "description": "Manual bid amount. Meta uses integer cents. TikTok uses a positive float in the advertiser account currency, lower than the ad group and campaign budgets; CPC/CPM/CPV map to bid_price and OCPM maps to conversion_bid_price.",
+          "example": 100
         },
         {
           "name": "promoted_object",
@@ -2765,6 +2763,20 @@
           "required": true,
           "description": "TikTok only: budget as a float in the account currency (NOT micros).",
           "example": 20.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "bid_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: bidding strategy. Use BID_TYPE_CUSTOM with bid_amount, or BID_TYPE_NO_BID without bid_amount. Omit to infer CUSTOM when bid_amount is present and NO_BID otherwise.",
+          "example": "BID_TYPE_CUSTOM",
+          "enum": [
+            "BID_TYPE_CUSTOM",
+            "BID_TYPE_NO_BID"
+          ],
           "platform": [
             "tiktok"
           ]
