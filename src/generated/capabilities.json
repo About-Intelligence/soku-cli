@@ -2782,6 +2782,26 @@
           ]
         },
         {
+          "name": "frequency",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: Required for REACH: maximum impressions per person within frequency_schedule days. Must be an integer from 1 to 1000 and supplied together with frequency_schedule.",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "frequency_schedule",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: Required for REACH: number of days in the frequency-cap window. Must be an integer from 1 to 30 and supplied together with frequency.",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "status",
           "type": "string",
           "required": false,
