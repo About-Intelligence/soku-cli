@@ -9,7 +9,7 @@
 
 import { unzipSync } from 'fflate'
 
-const ALLOWED_EXTENSIONS = new Set(['.md', '.json', '.txt', '.yaml', '.yml', '.csv'])
+const ALLOWED_EXTENSIONS = new Set(['.md', '.py', '.json', '.txt', '.yaml', '.yml', '.csv'])
 const MAX_FILE_COUNT = 100
 const MAX_SINGLE_FILE_BYTES = 10 * 1024 * 1024
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024

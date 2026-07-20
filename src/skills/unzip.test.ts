@@ -30,6 +30,15 @@ test('keeps a flat layout when there is no single top folder', () => {
   assert.ok(out.has('extra.md'))
 })
 
+test('accepts Python source used by a mandatory skill delivery gate', () => {
+  const zip = makeZip({
+    'ads-media-plan/SKILL.md': '# Ads media plan',
+    'ads-media-plan/scripts/validate_google_editor_paths.py': 'print("validated")',
+  })
+  const out = safeUnzip(zip)
+  assert.ok(out.has('scripts/validate_google_editor_paths.py'))
+})
+
 test('rejects a bundle missing SKILL.md', () => {
   const zip = makeZip({ 'my-skill/other.md': 'x' })
   assert.throws(() => safeUnzip(zip), UnzipError)
