@@ -2960,6 +2960,16 @@
           "platform": [
             "tiktok"
           ]
+        },
+        {
+          "name": "operation_status",
+          "type": "string",
+          "required": false,
+          "description": "TikTok operation status.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"23...\"}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
