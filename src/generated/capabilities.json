@@ -5843,7 +5843,7 @@
         "action:ads/create_ad_creative",
         "action:ads/get_ad_creatives"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nRender a preview iframe for a Meta creative in a chosen placement format. Read-only — does not create or modify any creative.\n\nUse when:\n- The user wants to see what an ad will look like on a placement before publishing.\n- QA flow needs to confirm creative renders correctly across placements.\n\nDo not use when:\n- The user wants to actually create a creative. Use action:ads/create_ad_creative.\n- The platform is Google. Google's preview is not exposed here.\n\nWorkflow:\n1. Have a creative_id ready (from create_ad_creative or list_ads.creative.id).\n2. Pick ad_format (see enum below).\n3. Call this action.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[0].body is the iframe HTML markup; render it as-is for the preview.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: ad_format enum in capability docs is a curated 12-value subset of Meta's much larger AdPreview.AdFormat enum; an agent asked to preview a Reels or Audience Network placement will either guess an unlisted value (and the normalize whitelist will pass it through to Meta, which may accept it) or wrongly conclude it is unsupported. The docs do not state the list is non-exhaustive. Also note: Docs say creative_id comes 'from action:ads/create_ad_creative' but the long_description also points to list_ads.creative.id; the input_params description omits the list_ads/get_ad_creatives sources, narrowing the agent's discovery path. Capability gap: Inline/unsaved creative preview (creative={'object_story_spec': {}}) — cannot preview a creative before persisting it; agent is forced to call create_ad_creative first, defeating the documented 'see before publishing' use case.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nPreview an existing TikTok ad by supplying ad_id from list_ads or get_ad. preview_type=AD and may be omitted when ad_id is supplied because the handler defaults it to AD. This action does not currently expose TikTok's unsaved-material preview routes; do not send adgroup_id, identity fields, or an inline creative.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nRender a preview iframe for a Meta creative in a chosen placement format. Read-only — does not create or modify any creative.\n\nUse when:\n- The user wants to see what an ad will look like on a placement before publishing.\n- QA flow needs to confirm creative renders correctly across placements.\n\nDo not use when:\n- The user wants to actually create a creative. Use action:ads/create_ad_creative.\n- The platform is Google. Google's preview is not exposed here.\n\nWorkflow:\n1. Have a creative_id ready (from create_ad_creative or list_ads.creative.id).\n2. Pick ad_format (see enum below).\n3. Call this action.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[0].body is the iframe HTML markup; render it as-is for the preview.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: ad_format enum in capability docs is a curated 12-value subset of Meta's much larger AdPreview.AdFormat enum; an agent asked to preview a Reels or Audience Network placement will either guess an unlisted value (and the normalize whitelist will pass it through to Meta, which may accept it) or wrongly conclude it is unsupported. The docs do not state the list is non-exhaustive. Also note: Docs say creative_id comes 'from action:ads/create_ad_creative' but the long_description also points to list_ads.creative.id; the input_params description omits the list_ads/get_ad_creatives sources, narrowing the agent's discovery path. Capability gap: Inline/unsaved creative preview (creative={'object_story_spec': {}}) — cannot preview a creative before persisting it; agent is forced to call create_ad_creative first, defeating the documented 'see before publishing' use case.",
       "input_params": [
         {
           "name": "platform",
@@ -5900,49 +5900,31 @@
           ]
         },
         {
-          "name": "adgroup_id",
+          "name": "ad_id",
           "type": "string",
-          "required": false,
-          "description": "TikTok only: ad group id for a material-combination preview.",
+          "required": true,
+          "description": "TikTok only: existing ad id to preview. When supplied, preview_type defaults to AD.",
           "example": "17840000000000000",
+          "source": "upstream:action:ads/list_ads,action:ads/get_ad",
           "platform": [
             "tiktok"
           ]
         },
         {
-          "name": "identity_type",
+          "name": "preview_type",
           "type": "string",
           "required": false,
-          "description": "TikTok only: identity type for the preview.",
-          "example": "CUSTOMIZED_USER",
-          "platform": [
-            "tiktok"
-          ]
-        },
-        {
-          "name": "identity_id",
-          "type": "string",
-          "required": false,
-          "description": "TikTok only: identity id for the preview.",
-          "example": "id1",
-          "platform": [
-            "tiktok"
-          ]
-        },
-        {
-          "name": "creative",
-          "type": "object",
-          "required": false,
-          "description": "TikTok only: creative material combination to preview.",
-          "example": {
-            "ad_format": "SINGLE_VIDEO"
-          },
+          "description": "TikTok only: AD for an existing ad. Optional when ad_id is supplied and defaults to AD.",
+          "example": "AD",
+          "enum": [
+            "AD"
+          ],
           "platform": [
             "tiktok"
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"body\": \"<iframe ...></iframe>\"}]}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"body\": \"<iframe ...></iframe>\"}]}\nTikTok output: raw preserves TikTok's provider preview_link and also exposes its normalized HTTP(S) value as raw.preview_url for the generated existing-ad preview URL."
     },
     {
       "id": "action:ads/generate_ad_units",
