@@ -1279,7 +1279,7 @@
       "see_also": [
         "action:ads/create_ad"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEach merged item requires client_ref, adset_id, and creatives. Shared top-level defaults may supply adset_id/creatives unless an item overrides them. Items cannot override the top-level advertiser account. Missing per-item fields fail locally without a TikTok request; valid items continue and preserve input order.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta ads as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta ads with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_ad instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_ad either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta ads in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEach merged item requires client_ref, adset_id, and creatives. Each creative follows create_ad's identity/material contract: CUSTOMIZED_USER uses uploaded video_id/image_ids; uploaded video_id may include exactly one cover image_id; AUTH_CODE uses tiktok_item_id; TT_USER/BC_AUTH_TT can use video_id, tiktok_item_id, or CAROUSEL_ADS image_ids, and BC_AUTH_TT also requires identity_authorized_bc_id. Shared top-level defaults may supply adset_id/creatives unless an item overrides them. Items cannot override the top-level advertiser account. Missing per-item fields fail locally without a TikTok request; valid items continue and preserve input order.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate multiple Meta ads as one human-approved CLI/agent operation. This is a single-layer bulk action: it does not create a campaign tree or resolve cross-layer dependencies by itself.\n\nUse when:\n- The user has already prepared several Meta ads with the same account_id.\n- The operation is one hierarchy layer at a time, with all parent ids already known.\n- The user wants one approval record and ordered per-item results.\n\nDo not use when:\n- The user needs a full campaign -> ad set -> ad tree in one request. Create each layer separately and feed returned ids into the next layer.\n- The user only needs one object. Use action:ads/create_ad instead.\n- The platform is Google or the account_id is unknown.\n\nWorkflow:\n1. Prepare a JSON items array. Every item must include unique client_ref.\n2. Put fields accepted by action:ads/create_ad either at the top level as shared defaults or on individual items as overrides.\n3. Submit this action for review. Approval runs asynchronously for CLI bulk flows; poll the review for final item results.\n\nSide effects:\n- After approval, creates Meta ads in the target ad account.\n- Execution is sequential and non-transactional; already-created platform objects remain even if a later item fails.\n- Review rejection creates no platform-side objects.\n\nOutput semantics:\n- items[] preserves input order and includes index, client_ref, success, stage, created id field when available, and raw/error details.\n- The operation is not transactional: earlier successes are not rolled back if a later item fails.\n- No resume/idempotency in v1; use client_ref to map outputs and build a new retry file for failed items.",
       "input_params": [
         {
           "name": "platform",
@@ -1308,11 +1308,19 @@
           "name": "items",
           "type": "list",
           "required": true,
-          "description": "Non-empty array of item objects. Each item requires unique client_ref and may include fields accepted by action:ads/create_ad.",
+          "description": "Non-empty array of item objects. Each item requires a unique client_ref and may include create_ad fields. For TikTok, each item must resolve adset_id and creatives after shared defaults merge.",
           "example": [
             {
               "client_ref": "row-1",
-              "name": "Example"
+              "adset_id": "17840000000000000",
+              "creatives": [
+                {
+                  "identity_type": "CUSTOMIZED_USER",
+                  "identity_id": "identity-1",
+                  "ad_format": "SINGLE_VIDEO",
+                  "video_id": "video-1"
+                }
+              ]
             }
           ],
           "platform": [
@@ -1589,7 +1597,7 @@
         "action:ads/create_ad_creative",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEvery inline creative is created with operation_status=DISABLE by default. Only an explicitly approved top-level status=ENABLED applies ENABLE to every creative; a per-creative operation_status value cannot bypass the reviewed status.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
+      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEvery inline creative is created with operation_status=DISABLE by default. Only an explicitly approved top-level status=ENABLED applies ENABLE to every creative; a per-creative operation_status value cannot bypass the reviewed status. Choose one compatible creative route: SINGLE_VIDEO uses video_id or tiktok_item_id; an uploaded video_id may include exactly one image_id as a cover. SINGLE_IMAGE/CAROUSEL_ADS use image_ids. AUTH_CODE requires tiktok_item_id. TT_USER and BC_AUTH_TT accept a discovered post, an uploaded video pushed through the linked identity, or CAROUSEL_ADS image_ids; BC_AUTH_TT additionally requires identity_authorized_bc_id. Call get_account_pages once to list identities, then again with identity_id and identity_type to discover Spark tiktok_item_id values. References are verified before write.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
       "input_params": [
         {
           "name": "platform",
@@ -1798,12 +1806,23 @@
           "name": "creatives",
           "type": "list",
           "required": true,
-          "description": "TikTok only: required — up to 20 creative objects for one ad group. Each needs identity_type + identity_id (bind via ads.get_account_pages/identity), ad_format, material ids (video_id/image_ids), ad_text, call_to_action, landing_page_url. TikTok has no standalone creative object.",
+          "description": "TikTok only: required — up to 20 creative objects for one ad group. Every creative needs identity_type, identity_id, and ad_format. SINGLE_VIDEO uses video_id or tiktok_item_id; an uploaded video_id may also include image_ids as its cover. CUSTOMIZED_USER supports uploaded images. TT_USER and BC_AUTH_TT additionally support CAROUSEL_ADS; CAROUSEL_ADS requires 2 to 35 image_ids. AUTH_CODE uses tiktok_item_id. BC_AUTH_TT also requires identity_authorized_bc_id. Add objective-specific copy, CTA, and destination fields required by the target ad group. TikTok has no standalone creative object.",
           "example": [
             {
               "identity_type": "CUSTOMIZED_USER",
-              "identity_id": "id1",
-              "ad_format": "SINGLE_VIDEO"
+              "identity_id": "identity-1",
+              "ad_format": "SINGLE_VIDEO",
+              "video_id": "video-1",
+              "image_ids": [
+                "cover-image-1"
+              ]
+            },
+            {
+              "identity_type": "BC_AUTH_TT",
+              "identity_id": "identity-2",
+              "identity_authorized_bc_id": "bc-1",
+              "ad_format": "SINGLE_VIDEO",
+              "tiktok_item_id": "7663153197380406542"
             }
           ],
           "platform": [
@@ -6042,7 +6061,7 @@
         "action:ads/create_lead_form",
         "action:ads/get_account_info"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nList Facebook Pages the current ad account can promote. Use the returned page_id when building creatives or lead forms.\n\nUse when:\n- You need a page_id before action:ads/create_ad_creative or create_lead_form.\n- The user asks which pages are connected to the ad account.\n\nDo not use when:\n- The user wants all pages the user manages. This endpoint returns only promotable pages (subset).\n- The platform is Google.\n\nWorkflow:\n1. Call this action.\n2. Pick a page_id for creative or lead form workflows.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[].tasks lists capabilities (ADVERTISE, ANALYZE, MANAGE, ...).\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: The documented output_shape includes \"paging\": {\"cursors\": {\"after\": \"\"}} but no input param accepts a cursor, so an agent that sees paging.cursors.after has no documented way to request the next page — misleading guidance about pagination availability. Also note: The capability doc does not enumerate the full tasks enum (it lists \"ADVERTISE, ANALYZE, MANAGE, \" with an ellipsis). Agents deciding whether a page is usable for ads should be told the relevant gate is the presence of \"ADVERTISE\" in tasks; the complete enum is ANALYZE, ADVERTISE, MODERATE, CREATE_CONTENT, MANAGE, MESSAGING. Capability gap: Pagination (limit/after/before) is not wired: _EXTRAS_ALLOWLIST[(\"meta\",\"get_account_pages\")] is an empty frozenset (normalize.py:157), and the handler hard-codes no limit. For ad accounts with many promotable pages the agent only ever sees Meta's default first page and cannot iterate, even though the documented output_shape promises paging.cursors.after. Compare list_custom_audiences / list_saved_audiences / list_adsets which DO allowlist {limit, after}.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nFor TikTok, omit identity_id/identity_type to list advertiser identities. To discover constructible Spark material, call again with one returned identity_id + identity_type; the action then calls identity/video/get and returns posts whose item_id is the tiktok_item_id accepted by create_ad. For BC_AUTH_TT also pass identity_authorized_bc_id. Follow has_more/cursor until exhausted.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nList Facebook Pages the current ad account can promote. Use the returned page_id when building creatives or lead forms.\n\nUse when:\n- You need a page_id before action:ads/create_ad_creative or create_lead_form.\n- The user asks which pages are connected to the ad account.\n\nDo not use when:\n- The user wants all pages the user manages. This endpoint returns only promotable pages (subset).\n- The platform is Google.\n\nWorkflow:\n1. Call this action.\n2. Pick a page_id for creative or lead form workflows.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[].tasks lists capabilities (ADVERTISE, ANALYZE, MANAGE, ...).\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: The documented output_shape includes \"paging\": {\"cursors\": {\"after\": \"\"}} but no input param accepts a cursor, so an agent that sees paging.cursors.after has no documented way to request the next page — misleading guidance about pagination availability. Also note: The capability doc does not enumerate the full tasks enum (it lists \"ADVERTISE, ANALYZE, MANAGE, \" with an ellipsis). Agents deciding whether a page is usable for ads should be told the relevant gate is the presence of \"ADVERTISE\" in tasks; the complete enum is ANALYZE, ADVERTISE, MODERATE, CREATE_CONTENT, MANAGE, MESSAGING. Capability gap: Pagination (limit/after/before) is not wired: _EXTRAS_ALLOWLIST[(\"meta\",\"get_account_pages\")] is an empty frozenset (normalize.py:157), and the handler hard-codes no limit. For ad accounts with many promotable pages the agent only ever sees Meta's default first page and cannot iterate, even though the documented output_shape promises paging.cursors.after. Compare list_custom_audiences / list_saved_audiences / list_adsets which DO allowlist {limit, after}.",
       "input_params": [
         {
           "name": "platform",
@@ -6062,6 +6081,85 @@
           "required": true,
           "description": "Account id from ads.list_ad_accounts.rows[].account_id. For Google, digits only without dashes.",
           "example": "1234567890"
+        },
+        {
+          "name": "identity_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: identity id; provide with identity_type to list posts.",
+          "example": "identity-1",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "identity_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: identity type; provide with identity_id to list posts.",
+          "example": "BC_AUTH_TT",
+          "enum": [
+            "AUTH_CODE",
+            "TT_USER",
+            "BC_AUTH_TT"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "identity_authorized_bc_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: required when listing posts for BC_AUTH_TT.",
+          "example": "bc-1",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "item_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: post type returned by identity/video/get.",
+          "example": "VIDEO",
+          "enum": [
+            "VIDEO",
+            "CAROUSEL"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: optional AUTH_CODE post search keyword.",
+          "example": "summer",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "cursor",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: pagination cursor from the previous response.",
+          "example": "20",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "count",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok only: posts per page, from 1 through 20.",
+          "example": 20,
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"page_id\", \"name\": \"...\", \"category\": \"...\", \"tasks\": [\"ADVERTISE\", \"ANALYZE\", \"MANAGE\"]}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -12561,7 +12659,7 @@
           "name": "creatives",
           "type": "list",
           "required": false,
-          "description": "TikTok only: creative objects (each carrying its ad_id) submitted as a full ad-group-scoped array.",
+          "description": "TikTok only: partial creative updates (each carrying its ad_id) submitted as an ad-group-scoped array. Omitted fields retain their current values. If identity/material fields are supplied, they must satisfy create_ad's compatibility rules.",
           "example": [
             {
               "ad_id": "178",
