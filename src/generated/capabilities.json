@@ -5907,7 +5907,7 @@
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"estimate_ready\": true, \"users_lower_bound\": N, \"users_upper_bound\": N, \"estimate_dau\": N, \"estimate_mau\": N, \"bid_estimate\": {...}, \"daily_outcomes_curve\": [{\"spend\": 100.0, \"reach\": 1234.0}]}], \"user_count\": 123456}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "Meta output: {\"raw\": {\"data\": [{\"estimate_ready\": true, \"users_lower_bound\": N, \"users_upper_bound\": N, \"estimate_dau\": N, \"estimate_mau\": N, \"bid_estimate\": {...}, \"daily_outcomes_curve\": [{\"spend\": 100.0, \"reach\": 1234.0}]}]}}; TikTok output: {\"raw\": {\"user_count\": 123456}}"
     },
     {
       "id": "action:ads/gaql_search",
