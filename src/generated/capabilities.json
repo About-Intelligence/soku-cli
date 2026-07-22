@@ -4052,10 +4052,10 @@
         },
         {
           "name": "dimensions",
-          "type": "list",
+          "type": "object",
           "required": false,
           "description": "TikTok dimensions.",
-          "example": [],
+          "example": {},
           "platform": [
             "tiktok"
           ]
