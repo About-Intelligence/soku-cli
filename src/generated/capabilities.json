@@ -1306,7 +1306,7 @@
         },
         {
           "name": "items",
-          "type": "list",
+          "type": "array<object>",
           "required": true,
           "description": "Non-empty array of item objects. Each item requires a unique client_ref and may include create_ad fields. For TikTok, each item must resolve adset_id and creatives after shared defaults merge.",
           "example": [
@@ -1329,11 +1329,51 @@
           ]
         },
         {
+          "name": "ad_group_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok ad group id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "adgroup_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok adgroup id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "adset_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok adset id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "concurrency",
           "type": "integer",
           "required": false,
           "description": "TikTok only: parallel item limit; defaults to 4 and is clamped to 1–8.",
           "example": 4,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "creatives",
+          "type": "array<object>",
+          "required": false,
+          "description": "TikTok creatives.",
+          "example": [],
           "platform": [
             "tiktok"
           ]
@@ -1398,9 +1438,9 @@
         },
         {
           "name": "items",
-          "type": "list",
+          "type": "array<object>",
           "required": true,
-          "description": "Non-empty array of item objects. Each item requires unique client_ref and may include fields accepted by action:ads/create_adset.",
+          "description": "Non-empty array of item objects. Each item requires unique client_ref and may include fields accepted by action:ads/create_adset. Required when platform=tiktok.",
           "example": [
             {
               "client_ref": "row-1",
@@ -1413,11 +1453,291 @@
           ]
         },
         {
+          "name": "adgroup_name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok adgroup name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "age_groups",
+          "type": "list",
+          "required": false,
+          "description": "TikTok age groups.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok app id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok audience ids.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "bid_amount",
+          "type": "number",
+          "required": false,
+          "description": "TikTok bid amount.",
+          "example": 1.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "bid_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok bid type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "billing_event",
+          "type": "string",
+          "required": false,
+          "description": "TikTok billing event.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok budget.",
+          "example": 1.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok budget mode.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok campaign id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "concurrency",
           "type": "integer",
           "required": false,
           "description": "TikTok only: parallel item limit; defaults to 4 and is clamped to 1–8.",
           "example": 4,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "excluded_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok excluded audience ids.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "frequency",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok frequency.",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "frequency_schedule",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok frequency schedule.",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "TikTok gender.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_category_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok interest category ids.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_keyword_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok interest keyword ids.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "languages",
+          "type": "list",
+          "required": false,
+          "description": "TikTok languages.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "location_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok location ids.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operating_systems",
+          "type": "list",
+          "required": false,
+          "description": "TikTok operating systems.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "optimization_goal",
+          "type": "string",
+          "required": false,
+          "description": "TikTok optimization goal.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "pacing",
+          "type": "string",
+          "required": false,
+          "description": "TikTok pacing.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placement_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok placement type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placements",
+          "type": "list",
+          "required": false,
+          "description": "TikTok placements.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "promotion_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok promotion type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_end_time",
+          "type": "string",
+          "required": false,
+          "description": "TikTok schedule end time.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_start_time",
+          "type": "string",
+          "required": false,
+          "description": "TikTok schedule start time.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "schedule_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok schedule type.",
+          "example": "value",
           "platform": [
             "tiktok"
           ]
@@ -1433,6 +1753,16 @@
             "ENABLED"
           ],
           "source": "constant",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "zipcode_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok zipcode ids.",
+          "example": [],
           "platform": [
             "tiktok"
           ]
@@ -1482,9 +1812,9 @@
         },
         {
           "name": "items",
-          "type": "list",
+          "type": "array<object>",
           "required": true,
-          "description": "Non-empty array of item objects. Each item requires unique client_ref and may include fields accepted by action:ads/create_campaign.",
+          "description": "Non-empty array of item objects. Each item requires unique client_ref and may include fields accepted by action:ads/create_campaign. Required when platform=tiktok.",
           "example": [
             {
               "client_ref": "row-1",
@@ -1497,11 +1827,81 @@
           ]
         },
         {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok budget.",
+          "example": 1.0,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok budget mode.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_optimize_on",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok budget optimize on.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "concurrency",
           "type": "integer",
           "required": false,
           "description": "TikTok only: parallel item limit; defaults to 4 and is clamped to 1–8.",
           "example": 4,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "TikTok name.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "objective_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok objective type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "request_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok request id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "special_industries",
+          "type": "list",
+          "required": false,
+          "description": "TikTok special industries.",
+          "example": [],
           "platform": [
             "tiktok"
           ]
@@ -1623,7 +2023,7 @@
           "name": "adset_id",
           "type": "string",
           "required": true,
-          "description": "Meta: ad set id from action:ads/list_adsets. Google: the dispatcher renames this to ad_group_id, so pass the Google ad group id.",
+          "description": "Meta: ad set id from action:ads/list_adsets. Google: the dispatcher renames this to ad_group_id, so pass the Google ad group id. Required when platform=tiktok.",
           "example": "23..."
         },
         {
@@ -1804,7 +2204,7 @@
         },
         {
           "name": "creatives",
-          "type": "list",
+          "type": "array<object>",
           "required": true,
           "description": "TikTok only: required — up to 20 creative objects for one ad group. Every creative needs identity_type, identity_id, and ad_format. SINGLE_VIDEO uses video_id or tiktok_item_id; an uploaded video_id may also include image_ids as its cover. CUSTOMIZED_USER supports uploaded images. TT_USER and BC_AUTH_TT additionally support CAROUSEL_ADS; CAROUSEL_ADS requires 2 to 35 image_ids. AUTH_CODE uses tiktok_item_id. BC_AUTH_TT also requires identity_authorized_bc_id. Add objective-specific copy, CTA, and destination fields required by the target ad group. TikTok has no standalone creative object.",
           "example": [
@@ -1825,6 +2225,28 @@
               "tiktok_item_id": "7663153197380406542"
             }
           ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "ad_group_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok ad group id.",
+          "example": "value",
+          "platform": [
+            "google",
+            "meta",
+            "tiktok"
+          ]
+        },
+        {
+          "name": "adgroup_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok adgroup id.",
+          "example": "value",
           "platform": [
             "tiktok"
           ]
@@ -2289,7 +2711,10 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Ad rule display name."
+          "description": "Ad rule display name.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "evaluation_spec",
@@ -2349,13 +2774,19 @@
           "type": "string",
           "required": false,
           "description": "Meta only: ad rule lifecycle status. Valid values are ENABLED, DISABLED, DELETED, HAS_ISSUES (the ad-rule enum, NOT the generic ACTIVE/PAUSED). Omit to default to ENABLED. Use DISABLED for an off/paused rule. Source: constant enum chosen by the agent.",
-          "example": "ENABLED"
+          "example": "ENABLED",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "rules",
           "type": "array<object>",
           "required": true,
-          "description": "TikTok only and required there: non-empty official rules array. Each rule includes name, apply_objects, conditions, actions, notification, and rule_exec_info."
+          "description": "TikTok only and required there: non-empty official rules array. Each rule includes name, apply_objects, conditions, actions, notification, and rule_exec_info.",
+          "platform": [
+            "tiktok"
+          ]
         },
         {
           "name": "lang",
@@ -2519,14 +2950,14 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Parent Meta campaign id from action:ads/list_campaigns.",
+          "description": "Parent Meta campaign id from action:ads/list_campaigns. Required when platform=tiktok.",
           "example": "23..."
         },
         {
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Ad set display name."
+          "description": "Ad set display name. Required when platform=tiktok."
         },
         {
           "name": "billing_event",
@@ -2538,7 +2969,7 @@
           "name": "optimization_goal",
           "type": "string",
           "required": true,
-          "description": "Provider-native optimization goal. Meta examples include REACH, IMPRESSIONS, LINK_CLICKS, OFFSITE_CONVERSIONS, and LEAD_GENERATION. TikTok examples include CLICK, PAGE_VISIT, CONVERT, INSTALL, REACH, ENGAGED_VIEW, and LEAD_GENERATION.",
+          "description": "Provider-native optimization goal. Meta examples include REACH, IMPRESSIONS, LINK_CLICKS, OFFSITE_CONVERSIONS, and LEAD_GENERATION. TikTok examples include CLICK, PAGE_VISIT, CONVERT, INSTALL, REACH, ENGAGED_VIEW, and LEAD_GENERATION. Required when platform=tiktok.",
           "example": "REACH"
         },
         {
@@ -2556,7 +2987,10 @@
           "required": false,
           "description": "Meta only: daily budget in micros (1 USD = 1_000_000); converted to daily_budget cents. CONDITIONAL: required for non-CBO ad sets (or use lifetime_budget); MUST be omitted for CBO campaigns (set is_cbo_adset=true instead). Source: user-provided budget amount.",
           "example": 50000000,
-          "one_of_group": "adset_budget"
+          "one_of_group": "adset_budget",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "lifetime_budget",
@@ -2979,16 +3413,6 @@
           "platform": [
             "tiktok"
           ]
-        },
-        {
-          "name": "operation_status",
-          "type": "string",
-          "required": false,
-          "description": "TikTok operation status.",
-          "example": "value",
-          "platform": [
-            "tiktok"
-          ]
         }
       ],
       "output_shape": "{\"id\": \"23...\"}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -3111,7 +3535,7 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Campaign display name; must be unique within the account.",
+          "description": "Campaign display name; must be unique within the account. Required when platform=tiktok.",
           "example": "Spring Promo 2026"
         },
         {
@@ -3136,7 +3560,12 @@
           "type": "integer",
           "required": false,
           "description": "Google only (required) / Meta: daily budget in micros (1 USD = 1_000_000). Backend rejects with HTTP 400 if omitted for Google. For Meta this is the ONLY campaign-level daily budget input (becomes daily_budget in cents) and becomes mandatory when bid_strategy is supplied at the campaign level; use lifetime_budget instead for a fixed-duration budget. Source: user-provided budget amount converted to micros.",
-          "example": 50000000
+          "example": 50000000,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "target_cpa_micros",
@@ -3620,6 +4049,16 @@
           "platform": [
             "chatgpt_ads"
           ]
+        },
+        {
+          "name": "dimensions",
+          "type": "list",
+          "required": false,
+          "description": "TikTok dimensions.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Campaign created successfully\", \"resource_id\": \"123\", \"resource_name\": \"customers/X/campaigns/123\", \"results\": [{\"campaignBudgetResult\": {\"resourceName\": \"...\"}}, {\"campaignResult\": {\"resourceName\": \"...\"}}]}  // Meta: {\"id\": \"23...\"}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -3911,7 +4350,7 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Audience display name."
+          "description": "Audience display name. Required when platform=tiktok."
         },
         {
           "name": "subtype",
@@ -4157,10 +4596,10 @@
         },
         {
           "name": "audience_enhancement",
-          "type": "string",
+          "type": "boolean",
           "required": false,
           "description": "TikTok audience enhancement.",
-          "example": "value",
+          "example": true,
           "platform": [
             "tiktok"
           ]
@@ -4187,20 +4626,20 @@
         },
         {
           "name": "file_paths",
-          "type": "string",
+          "type": "list",
           "required": true,
           "description": "TikTok file paths.",
-          "example": "value",
+          "example": [],
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "retention_in_days",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok retention in days.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
@@ -4541,13 +4980,13 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Lookalike audience display name."
+          "description": "Lookalike audience display name. Required when platform=tiktok."
         },
         {
           "name": "source_audience_id",
           "type": "string",
           "required": true,
-          "description": "Source custom audience id from action:ads/list_custom_audiences."
+          "description": "Source custom audience id from action:ads/list_custom_audiences. Required when platform=tiktok."
         },
         {
           "name": "country",
@@ -4582,14 +5021,17 @@
           "name": "lookalike_spec",
           "type": "object",
           "required": true,
-          "description": "Optional explicit lookalike_spec; otherwise built from country + ratio + origin."
+          "description": "Optional explicit lookalike_spec; otherwise built from country + ratio + origin.",
+          "platform": [
+            "tiktok"
+          ]
         },
         {
           "name": "context_info",
-          "type": "string",
+          "type": "object",
           "required": false,
           "description": "TikTok context info.",
-          "example": "value",
+          "example": {},
           "platform": [
             "tiktok"
           ]
@@ -4640,7 +5082,7 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Pixel display name."
+          "description": "Pixel display name. Required when platform=tiktok."
         }
       ],
       "output_shape": "{\"id\": \"pixel_id\"}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -4817,7 +5259,7 @@
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Catalog display name."
+          "description": "Catalog display name. Required when platform=tiktok."
         },
         {
           "name": "vertical",
@@ -4849,10 +5291,10 @@
         },
         {
           "name": "catalog_conf",
-          "type": "string",
+          "type": "object",
           "required": true,
           "description": "TikTok catalog conf.",
-          "example": "value",
+          "example": {},
           "platform": [
             "tiktok"
           ]
@@ -4924,13 +5366,16 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id."
+          "description": "Owned Meta product catalog id. Required when platform=tiktok."
         },
         {
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "Feed display name."
+          "description": "Feed display name.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "feed_url",
@@ -5062,7 +5507,7 @@
         {
           "name": "feed_name",
           "type": "string",
-          "required": false,
+          "required": true,
           "description": "TikTok feed name.",
           "example": "value",
           "platform": [
@@ -5071,10 +5516,10 @@
         },
         {
           "name": "schedule_param",
-          "type": "string",
+          "type": "object",
           "required": false,
           "description": "TikTok schedule param.",
-          "example": "value",
+          "example": {},
           "platform": [
             "tiktok"
           ]
@@ -5146,7 +5591,7 @@
         },
         {
           "name": "rule_spec",
-          "type": "string",
+          "type": "object",
           "required": true,
           "description": "TikTok rule spec.",
           "example": "value",
@@ -5616,11 +6061,11 @@
       "namespace": "ads",
       "action": "download_change_history",
       "description": "Download a completed TikTok change-log export.",
-      "mode": "write",
+      "mode": "read",
       "platforms": [
         "tiktok"
       ],
-      "requires_review": true,
+      "requires_review": false,
       "freshness_kind": "realtime",
       "see_also": [],
       "long_description": "Supported platforms: tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nDownload a completed TikTok change-log export.\n\nUse when:\nA change-history export task has completed and you need its file / rows.\n\nDo not use when:\nThe task is still running — poll get_change_history_task first.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nFetches the completed export payload; no advertiser-side mutation. Gated with the export flow.",
@@ -6353,7 +6798,7 @@
           "name": "ad_id",
           "type": "string",
           "required": true,
-          "description": "Meta ad id from create_ad, bulk_create_ads, or list_ads.",
+          "description": "Meta ad id from create_ad, bulk_create_ads, or list_ads. Required when platform=tiktok.",
           "example": "120251913609470079"
         }
       ],
@@ -6498,7 +6943,7 @@
           "name": "adset_id",
           "type": "string",
           "required": true,
-          "description": "Meta ad set id from create_adset, bulk_create_adsets, or list_adsets.",
+          "description": "Meta ad set id from create_adset, bulk_create_adsets, or list_adsets. Required when platform=tiktok.",
           "example": "120251905634300080"
         }
       ],
@@ -6594,7 +7039,7 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from create_campaign, bulk_create_campaigns, or list_campaigns.",
+          "description": "Campaign id from create_campaign, bulk_create_campaigns, or list_campaigns. Required when platform=tiktok.",
           "example": "120251905634300079"
         }
       ],
@@ -6781,11 +7226,11 @@
       "namespace": "ads",
       "action": "get_change_history_task",
       "description": "Check a TikTok change-log export task.",
-      "mode": "write",
+      "mode": "read",
       "platforms": [
         "tiktok"
       ],
-      "requires_review": true,
+      "requires_review": false,
       "freshness_kind": "realtime",
       "see_also": [],
       "long_description": "Supported platforms: tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCheck a TikTok change-log export task.\n\nUse when:\nPolling the status of a change-history export task created earlier.\n\nDo not use when:\nBefore create_change_history_task has returned a task_id.\n\nWorkflow:\n1. Resolve the TikTok advertiser grant.\n2. Submit the mutation through the review queue.\n3. Re-read the resource or report after execution.\n\nOutput semantics:\nReturns the TikTok Marketing API response without fabricating Meta-equivalent fields.\n\nSide effects:\nRead-only status poll of an async export task; no advertiser-side mutation. Gated with the export flow rather than exposed as an immediate read.",
@@ -7125,7 +7570,7 @@
         },
         {
           "name": "store_ids",
-          "type": "string",
+          "type": "list",
           "required": true,
           "description": "TikTok store ids.",
           "example": "value",
@@ -7135,7 +7580,7 @@
         },
         {
           "name": "dimensions",
-          "type": "string",
+          "type": "list",
           "required": true,
           "description": "TikTok dimensions.",
           "example": "value",
@@ -7145,7 +7590,7 @@
         },
         {
           "name": "metrics",
-          "type": "string",
+          "type": "list",
           "required": true,
           "description": "TikTok metrics.",
           "example": "value",
@@ -7413,7 +7858,7 @@
         },
         {
           "name": "filtering",
-          "type": "list",
+          "type": "array<object>",
           "required": false,
           "description": "Meta only: server-side row filter. List of {field, operator, value} objects; operator is one of EQUAL, NOT_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL, IN_RANGE, NOT_IN_RANGE, CONTAIN, NOT_CONTAIN, IN, NOT_IN. Use to drop rows like spend=0. Source: agent-constructed from the user's threshold criteria. TikTok only: report filters.",
           "example": [
@@ -7615,18 +8060,33 @@
           "name": "form_id",
           "type": "string",
           "required": false,
-          "description": "TikTok form id.",
-          "example": "value",
+          "description": "Alias of TikTok page_id. Required for INSTANT_FORM; omit for DIRECT_MESSAGE.",
+          "example": "form-1",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "lead_source",
+          "type": "string",
+          "required": true,
+          "description": "TikTok lead source. INSTANT_FORM reads Instant Form leads; DIRECT_MESSAGE reads leads generated by direct-message ads.",
+          "example": "INSTANT_FORM",
+          "enum": [
+            "INSTANT_FORM",
+            "DIRECT_MESSAGE"
+          ],
+          "source": "constant",
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
@@ -7635,18 +8095,18 @@
           "name": "page_id",
           "type": "string",
           "required": false,
-          "description": "TikTok page id.",
-          "example": "value",
+          "description": "Required for INSTANT_FORM leads; omit for DIRECT_MESSAGE leads.",
+          "example": "form-1",
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
@@ -7834,7 +8294,7 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id."
+          "description": "Owned Meta product catalog id. Required when platform=tiktok."
         },
         {
           "name": "bc_id",
@@ -7890,13 +8350,16 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id."
+          "description": "Owned Meta product catalog id. Required when platform=tiktok."
         },
         {
           "name": "product_feed_id",
           "type": "string",
           "required": true,
-          "description": "Meta product feed id."
+          "description": "Meta product feed id.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -8179,6 +8642,16 @@
           "platform": [
             "tiktok"
           ]
+        },
+        {
+          "name": "filtering",
+          "type": "object",
+          "required": false,
+          "description": "TikTok filtering.",
+          "example": {},
+          "platform": [
+            "tiktok"
+          ]
         }
       ],
       "output_shape": "{\"success\":true,\"raw\":{}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -8227,10 +8700,13 @@
         },
         {
           "name": "dimensions",
-          "type": "string",
+          "type": "list",
           "required": true,
-          "description": "TikTok dimensions.",
-          "example": "value",
+          "description": "At least two Upgraded Smart+ report dimensions. Overview example: ['campaign_id', 'main_material_id']; breakdown example: ['main_material_id', 'stat_time_day'].",
+          "example": [
+            "campaign_id",
+            "main_material_id"
+          ],
           "platform": [
             "tiktok"
           ]
@@ -8238,8 +8714,8 @@
         {
           "name": "start_date",
           "type": "string",
-          "required": true,
-          "description": "TikTok start date.",
+          "required": false,
+          "description": "TikTok start date (YYYY-MM-DD). Required for breakdown reports and for overview reports unless query_lifetime=true.",
           "example": "value",
           "platform": [
             "tiktok"
@@ -8248,8 +8724,88 @@
         {
           "name": "end_date",
           "type": "string",
-          "required": true,
-          "description": "TikTok end date.",
+          "required": false,
+          "description": "TikTok end date (YYYY-MM-DD). Required for breakdown reports and for overview reports unless query_lifetime=true.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "breakdown",
+          "type": "boolean",
+          "required": false,
+          "description": "Local route selector. true uses the breakdown endpoint and requires start_date/end_date; false uses overview.",
+          "example": false,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "filtering",
+          "type": "object",
+          "required": false,
+          "description": "TikTok filtering.",
+          "example": {},
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": false,
+          "description": "TikTok metrics.",
+          "example": [],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok page.",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "description": "TikTok page size.",
+          "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "query_lifetime",
+          "type": "boolean",
+          "required": false,
+          "description": "Overview only. Set true to query lifetime data without start_date/end_date; omit for breakdown reports.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "sort_field",
+          "type": "string",
+          "required": false,
+          "description": "TikTok sort field.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "sort_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok sort type.",
           "example": "value",
           "platform": [
             "tiktok"
@@ -8573,26 +9129,26 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"evaluation_spec\": {...}, \"execution_spec\": {...}, \"schedule_spec\": {...}, \"status\": \"ENABLED|PAUSED|DELETED\"}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"evaluation_spec\": {...}, \"execution_spec\": {...}, \"schedule_spec\": {...}, \"status\": \"ENABLED|PAUSED|DELETED\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/list_ads",
@@ -8646,7 +9202,11 @@
           "name": "ad_group_id",
           "type": "string",
           "required": false,
-          "description": "Google only: optional ad group filter."
+          "description": "Google only: optional ad group filter.",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "adset_id",
@@ -8782,6 +9342,16 @@
           "required": false,
           "description": "TikTok only: page size (max 100).",
           "example": 100,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "adgroup_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok adgroup id.",
+          "example": "value",
           "platform": [
             "tiktok"
           ]
@@ -9081,7 +9651,12 @@
           "type": "string",
           "required": false,
           "description": "Google: campaign.status filter (ENABLED, PAUSED, REMOVED). Meta: effective_status filter.",
-          "example": "ENABLED"
+          "example": "ENABLED",
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "objective_filter",
@@ -9397,36 +9972,36 @@
         },
         {
           "name": "custom_audience_ids",
-          "type": "string",
+          "type": "list",
           "required": false,
           "description": "TikTok custom audience ids.",
-          "example": "value",
+          "example": [],
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"subtype\": \"CUSTOM|WEBSITE|...\", \"description\": \"...\", \"delivery_status\": {\"code\": 200, \"description\": \"...\"}}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"subtype\": \"CUSTOM|WEBSITE|...\", \"description\": \"...\", \"delivery_status\": {\"code\": 200, \"description\": \"...\"}}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/list_customers",
@@ -9617,26 +10192,26 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"id\": \"lead_form_id\", \"name\": \"...\", \"status\": \"ACTIVE|ARCHIVED\", \"questions\": [...], \"privacy_policy_url\": \"...\", \"created_time\": \"ISO\"}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"id\": \"lead_form_id\", \"name\": \"...\", \"status\": \"ACTIVE|ARCHIVED\", \"questions\": [...], \"privacy_policy_url\": \"...\", \"created_time\": \"ISO\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/list_operation_records",
@@ -9746,26 +10321,26 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"id\": \"pixel_id\", \"name\": \"...\", \"code\": \"<script>fbq(...)</script>\", \"last_fired_time\": \"ISO\"}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"id\": \"pixel_id\", \"name\": \"...\", \"code\": \"<script>fbq(...)</script>\", \"last_fired_time\": \"ISO\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/list_product_catalogs",
@@ -9807,14 +10382,20 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
-          "source": "upstream:action:ads/list_product_catalogs"
+          "source": "upstream:action:ads/list_product_catalogs",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -9828,26 +10409,26 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"business\": {\"id\": \"...\"}}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"business\": {\"id\": \"...\"}}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/list_product_set_products",
@@ -9890,26 +10471,32 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id."
+          "description": "Owned Meta product catalog id. Required when platform=tiktok."
         },
         {
           "name": "product_set_id",
           "type": "string",
           "required": true,
-          "description": "Meta product set id."
+          "description": "Meta product set id. Required when platform=tiktok."
         },
         {
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
-          "source": "upstream:action:ads/list_product_set_products"
+          "source": "upstream:action:ads/list_product_set_products",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -9923,20 +10510,20 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
@@ -9984,20 +10571,26 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id."
+          "description": "Owned Meta product catalog id. Required when platform=tiktok."
         },
         {
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
-          "source": "upstream:action:ads/list_product_sets"
+          "source": "upstream:action:ads/list_product_sets",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -10011,20 +10604,20 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
@@ -10072,7 +10665,7 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id."
+          "description": "Owned Meta product catalog id. Required when platform=tiktok."
         },
         {
           "name": "product_id",
@@ -10084,14 +10677,20 @@
           "name": "limit",
           "type": "integer",
           "required": false,
-          "description": "Page size; default 100."
+          "description": "Page size; default 100.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "after",
           "type": "string",
           "required": false,
           "description": "Meta only: pagination cursor from the previous response's paging.cursors.after; pass it back to fetch the next page.",
-          "source": "upstream:action:ads/list_products"
+          "source": "upstream:action:ads/list_products",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "bc_id",
@@ -10105,20 +10704,20 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
@@ -10183,26 +10782,26 @@
         },
         {
           "name": "page",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "page_size",
-          "type": "string",
+          "type": "integer",
           "required": false,
           "description": "TikTok page size.",
-          "example": "value",
+          "example": 1,
           "platform": [
             "tiktok"
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"targeting\": {...}, \"description\": \"...\"}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"targeting\": {...}, \"description\": \"...\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/query_multi_dimension",
@@ -10469,7 +11068,7 @@
           "name": "ad_id",
           "type": "string",
           "required": true,
-          "description": "Meta only: archives the ad (POST /{ad_id} status=ARCHIVED). IMPORTANT: on Meta, ARCHIVED is effectively terminal - it cannot be reverted to PAUSED/ACTIVE via update_ad; to restore, re-create the ad with create_ad. Archive is also capped at ~50k archived objects per type per account. Google: ad id from action:ads/list_ads. Source: output of list_ads / create_ad (the ad id).",
+          "description": "Meta only: archives the ad (POST /{ad_id} status=ARCHIVED). IMPORTANT: on Meta, ARCHIVED is effectively terminal - it cannot be reverted to PAUSED/ACTIVE via update_ad; to restore, re-create the ad with create_ad. Archive is also capped at ~50k archived objects per type per account. Google: ad id from action:ads/list_ads. Source: output of list_ads / create_ad (the ad id). Required when platform=tiktok.",
           "example": "123"
         },
         {
@@ -10477,7 +11076,11 @@
           "type": "string",
           "required": false,
           "description": "Google only (required for remove on Google): combined with ad_id to synthesize the ad_group_ad resource name customers/{cid}/adGroupAds/{ad_group_id}~{ad_id}. Omitting it on Google returns a clear validation error (no platform call). Not used by Meta. Source: output of list_ads (ad_group_id field).",
-          "example": "1234567890"
+          "example": "1234567890",
+          "platform": [
+            "google",
+            "meta"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Ad removed\", \"resource_name\": \"customers/X/adGroupAds/AG~AD\", \"results\": [...]}  // Meta: {\"success\": true}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -10721,7 +11324,7 @@
           "name": "rule_id",
           "type": "string",
           "required": true,
-          "description": "Ad rule id to delete, from action:ads/list_ad_rules or action:ads/create_ad_rule (raw.id).",
+          "description": "Ad rule id to delete, from action:ads/list_ad_rules or action:ads/create_ad_rule (raw.id). Required when platform=tiktok.",
           "example": "97800000000000000"
         }
       ],
@@ -10769,7 +11372,7 @@
           "name": "adset_id",
           "type": "string",
           "required": true,
-          "description": "Ad set id from action:ads/list_adsets.",
+          "description": "Ad set id from action:ads/list_adsets. Required when platform=tiktok.",
           "example": "23..."
         }
       ],
@@ -10913,7 +11516,7 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns.",
+          "description": "Campaign id from action:ads/list_campaigns. Required when platform=tiktok.",
           "example": "123456"
         }
       ],
@@ -11277,7 +11880,7 @@
           "name": "audience_id",
           "type": "string",
           "required": true,
-          "description": "Custom audience id to delete, from action:ads/list_custom_audiences or action:ads/create_custom_audience (raw.id).",
+          "description": "Custom audience id to delete, from action:ads/list_custom_audiences or action:ads/create_custom_audience (raw.id). Required when platform=tiktok.",
           "example": "23845000000000000"
         }
       ],
@@ -11428,7 +12031,7 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id to delete."
+          "description": "Owned Meta product catalog id to delete. Required when platform=tiktok."
         },
         {
           "name": "bc_id",
@@ -11486,7 +12089,7 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id that contains the feed."
+          "description": "Owned Meta product catalog id that contains the feed. Required when platform=tiktok."
         },
         {
           "name": "product_feed_id",
@@ -11659,7 +12262,7 @@
           "name": "query",
           "type": "string",
           "required": true,
-          "description": "Free-text place name.",
+          "description": "Free-text place name. Required when platform=tiktok.",
           "example": "San Francisco"
         },
         {
@@ -11702,20 +12305,20 @@
         },
         {
           "name": "placements",
-          "type": "string",
+          "type": "list",
           "required": true,
           "description": "TikTok placements.",
-          "example": "value",
+          "example": [],
           "platform": [
             "tiktok"
           ]
         },
         {
           "name": "region_codes",
-          "type": "string",
+          "type": "list",
           "required": false,
           "description": "TikTok region codes.",
-          "example": "value",
+          "example": [],
           "platform": [
             "tiktok"
           ]
@@ -11775,7 +12378,7 @@
           "name": "query",
           "type": "string",
           "required": true,
-          "description": "Free-text interest keyword.",
+          "description": "Free-text interest keyword. Required when platform=tiktok.",
           "example": "yoga"
         },
         {
@@ -11849,20 +12452,20 @@
           "name": "pixel_id",
           "type": "string",
           "required": true,
-          "description": "Meta pixel id from action:ads/list_pixels."
+          "description": "Meta pixel id from action:ads/list_pixels. Required when platform=tiktok."
         },
         {
           "name": "event_name",
           "type": "string",
           "required": true,
-          "description": "Meta standard event name (Purchase, AddToCart, ViewContent, Lead, CompleteRegistration) or a custom string.",
+          "description": "Meta standard event name (Purchase, AddToCart, ViewContent, Lead, CompleteRegistration) or a custom string. Required when platform=tiktok.",
           "example": "Purchase"
         },
         {
           "name": "event_time",
           "type": "integer",
-          "required": true,
-          "description": "Unix seconds; defaults to current time if omitted by handler."
+          "required": false,
+          "description": "Unix seconds; required for Meta. Optional for TikTok, where the handler defaults to the current time."
         },
         {
           "name": "action_source",
@@ -11924,7 +12527,7 @@
         {
           "name": "event_id",
           "type": "string",
-          "required": true,
+          "required": false,
           "description": "Deduplication key; required for TikTok and recommended for Meta browser/CAPI dedupe."
         },
         {
@@ -12030,7 +12633,7 @@
           "type": "object",
           "required": false,
           "description": "TikTok Events API context object.",
-          "example": "value",
+          "example": {},
           "platform": [
             "tiktok"
           ]
@@ -12040,7 +12643,7 @@
           "type": "object",
           "required": false,
           "description": "TikTok Events API page object.",
-          "example": "value",
+          "example": {},
           "platform": [
             "tiktok"
           ]
@@ -12050,7 +12653,7 @@
           "type": "object",
           "required": false,
           "description": "TikTok Events API properties object.",
-          "example": "value",
+          "example": {},
           "platform": [
             "tiktok"
           ]
@@ -12666,7 +13269,7 @@
           "name": "ad_id",
           "type": "string",
           "required": true,
-          "description": "Ad id from action:ads/list_ads.",
+          "description": "Ad id from action:ads/list_ads. Required when platform=tiktok.",
           "example": "123"
         },
         {
@@ -12799,11 +13402,15 @@
           "type": "string",
           "required": false,
           "description": "Meta only: new name for the ad (renames the Ad node). Google only: not applicable. Source: user-provided ad name.",
-          "example": "Summer sale - v2"
+          "example": "Summer sale - v2",
+          "platform": [
+            "google",
+            "meta"
+          ]
         },
         {
           "name": "creatives",
-          "type": "list",
+          "type": "array<object>",
           "required": false,
           "description": "TikTok only: partial creative updates (each carrying its ad_id) submitted as an ad-group-scoped array. Omitted fields retain their current values. If identity/material fields are supplied, they must satisfy create_ad's compatibility rules.",
           "example": [
@@ -12822,6 +13429,26 @@
           "required": false,
           "description": "TikTok only: ad group id (falls back to adset_id).",
           "example": "17840000000000000",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "ad_group_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok ad group id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "adset_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok adset id.",
+          "example": "value",
           "platform": [
             "tiktok"
           ]
@@ -12944,14 +13571,17 @@
           "name": "rule_id",
           "type": "string",
           "required": true,
-          "description": "Ad rule id from action:ads/list_ad_rules or action:ads/create_ad_rule (raw.id).",
+          "description": "Ad rule id from action:ads/list_ad_rules or action:ads/create_ad_rule (raw.id). Required when platform=tiktok.",
           "example": "97800000000000000"
         },
         {
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "New rule display name. At least one updatable field must be provided."
+          "description": "New rule display name. At least one updatable field must be provided.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "evaluation_spec",
@@ -13011,7 +13641,10 @@
           "type": "string",
           "required": false,
           "description": "New rule status. For Meta the enum is the AdRule enum ENABLED / DISABLED (plus HAS_ISSUES), NOT the generic ACTIVE/PAUSED lifecycle enum; the platform maps generic values (PAUSED->DISABLED, ACTIVE->ENABLED). Pausing a rule = status=DISABLED. DELETED is rejected (invalid_param) — deletion is irreversible and goes through action:ads/remove_ad_rule. For TikTok, ENABLED/ACTIVE maps to TURN_ON and DISABLED/PAUSED maps to TURN_OFF. Source: constant enum chosen by the agent.",
-          "example": "DISABLED"
+          "example": "DISABLED",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "rules",
@@ -13024,6 +13657,16 @@
           "type": "string",
           "required": false,
           "description": "TikTok lang.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operate_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok operate type.",
           "example": "value",
           "platform": [
             "tiktok"
@@ -13076,7 +13719,7 @@
           "name": "adset_id",
           "type": "string",
           "required": true,
-          "description": "Ad set id from action:ads/list_adsets.",
+          "description": "Ad set id from action:ads/list_adsets. Required when platform=tiktok.",
           "example": "23..."
         },
         {
@@ -13520,7 +14163,7 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns. Numeric on both platforms.",
+          "description": "Campaign id from action:ads/list_campaigns. Numeric on both platforms. Required when platform=tiktok.",
           "example": "123456"
         },
         {
@@ -13566,7 +14209,12 @@
           "type": "integer",
           "required": false,
           "description": "Daily budget in micros (1 USD = 1_000_000). Google updates the linked CampaignBudget; Meta converts to daily_budget in cents.",
-          "example": 50000000
+          "example": 50000000,
+          "platform": [
+            "google",
+            "meta",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "bidding_strategy",
@@ -14054,7 +14702,7 @@
           "name": "audience_id",
           "type": "string",
           "required": true,
-          "description": "Custom audience id from action:ads/list_custom_audiences or action:ads/create_custom_audience (raw.id).",
+          "description": "Custom audience id from action:ads/list_custom_audiences or action:ads/create_custom_audience (raw.id). Required when platform=tiktok.",
           "example": "23845000000000000"
         },
         {
@@ -14355,13 +15003,13 @@
           "name": "pixel_id",
           "type": "string",
           "required": true,
-          "description": "provider pixel id from action:ads/list_pixels or action:ads/create_pixel (raw.id)."
+          "description": "provider pixel id from action:ads/list_pixels or action:ads/create_pixel (raw.id). Required when platform=tiktok."
         },
         {
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "New pixel display name. The only updatable field on this surface; the handler rejects the call when it is missing."
+          "description": "New pixel display name. The only updatable field on this surface; the handler rejects the call when it is missing. Required when platform=tiktok."
         }
       ],
       "output_shape": "{\"success\": true}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -14409,13 +15057,13 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id to rename."
+          "description": "Owned Meta product catalog id to rename. Required when platform=tiktok."
         },
         {
           "name": "name",
           "type": "string",
           "required": true,
-          "description": "New catalog display name. The only updatable field on this surface — vertical is create-only on the Graph API — and the handler rejects the call with error_code=invalid_param when it is missing."
+          "description": "New catalog display name. The only updatable field on this surface — vertical is create-only on the Graph API — and the handler rejects the call with error_code=invalid_param when it is missing. Required when platform=tiktok."
         },
         {
           "name": "bc_id",
@@ -14473,7 +15121,7 @@
           "name": "catalog_id",
           "type": "string",
           "required": true,
-          "description": "Owned Meta product catalog id that contains the feed."
+          "description": "Owned Meta product catalog id that contains the feed. Required when platform=tiktok."
         },
         {
           "name": "product_feed_id",
@@ -14488,7 +15136,10 @@
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "New feed display name. At least one of name / schedule must be provided."
+          "description": "New feed display name. At least one of name / schedule must be provided.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "schedule",
@@ -14536,10 +15187,10 @@
         },
         {
           "name": "schedule_param",
-          "type": "string",
+          "type": "object",
           "required": false,
           "description": "TikTok schedule param.",
-          "example": "value",
+          "example": {},
           "platform": [
             "tiktok"
           ]
@@ -14902,14 +15553,17 @@
           "name": "image_url",
           "type": "string",
           "required": true,
-          "description": "Public https URL of the image; rejects http, redirects, IP literals, and files > 25 MB.",
+          "description": "Public https URL of the image; rejects http, redirects, IP literals, and files > 25 MB. Required when platform=tiktok.",
           "example": "https://example.com/banner.jpg"
         },
         {
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "Optional file name. Default \"upload.jpg\"."
+          "description": "Optional file name. Default \"upload.jpg\".",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "upload_type",
@@ -15032,7 +15686,7 @@
           "name": "images",
           "type": "list",
           "required": true,
-          "description": "List of image upload objects. Meta accepts image_url or bytes_base64; TikTok accepts a public HTTPS image_url only (an object with image_url/url or a bare URL string). name and stable client_ref are optional metadata.",
+          "description": "List of image upload objects. Meta accepts image_url or bytes_base64; TikTok accepts a public HTTPS image_url only (an object with image_url/url or a bare URL string). name and stable client_ref are optional metadata. Required when platform=tiktok.",
           "example": [
             {
               "client_ref": "asset-001",
@@ -15124,7 +15778,10 @@
           "type": "string",
           "required": false,
           "description": "Meta only: optional asset name for the uploaded video in the ad account media library. Distinct from title/description (which annotate the video). Free-form, agent- or user-provided. Source: agent-provided or user-provided label (e.g. a campaign/asset naming convention).",
-          "example": "summer-sale-hero-15s"
+          "example": "summer-sale-hero-15s",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "video_url",
