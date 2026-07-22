@@ -2838,7 +2838,7 @@
           "name": "location_ids",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Target location ids; provide this or zipcode_ids when creating an ad group.",
+          "description": "TikTok only: Target location ids; provide this or zipcode_ids when geography is required.",
           "example": [
             "6252001"
           ],
@@ -2851,7 +2851,7 @@
           "name": "zipcode_ids",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Target ZIP/postal code ids; provide this or location_ids when creating an ad group. ZIP targeting requires PLACEMENT_TYPE_NORMAL and PLACEMENT_TIKTOK.",
+          "description": "TikTok only: Target ZIP/postal code ids; provide this or location_ids when geography is required. ZIP targeting requires PLACEMENT_TYPE_NORMAL and PLACEMENT_TIKTOK.",
           "example": [
             "123456789"
           ],
@@ -2958,7 +2958,7 @@
           "name": "placement_type",
           "type": "string",
           "required": false,
-          "description": "TikTok only: Create-only placement mode; defaults to PLACEMENT_TYPE_AUTOMATIC.",
+          "description": "TikTok only: Placement mode; ad-group creation defaults to PLACEMENT_TYPE_AUTOMATIC.",
           "example": "PLACEMENT_TYPE_AUTOMATIC",
           "enum": [
             "PLACEMENT_TYPE_AUTOMATIC",
@@ -2972,7 +2972,7 @@
           "name": "placements",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Create-only placements; required when placement_type is PLACEMENT_TYPE_NORMAL.",
+          "description": "TikTok only: Placements; required when placement_type is PLACEMENT_TYPE_NORMAL.",
           "example": [
             "PLACEMENT_TIKTOK"
           ],
@@ -5660,7 +5660,7 @@
       "id": "action:ads/estimate_audience_size",
       "namespace": "ads",
       "action": "estimate_audience_size",
-      "description": "Read Meta delivery estimate for a targeting spec; returns reach bounds and DAU/MAU. Also supports TikTok through its provider-native contract.",
+      "description": "Estimate audience size for a Meta targeting spec or flat TikTok ad-group targeting.",
       "mode": "read",
       "platforms": [
         "meta",
@@ -5673,7 +5673,7 @@
         "action:ads/search_geo_locations",
         "action:ads/create_adset"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nEstimate reach and delivery for a Meta targeting spec. Use this before action:ads/create_adset to validate the audience size.\n\nUse when:\n- The user wants to know the reachable audience for a targeting spec.\n- A workflow needs DAU/MAU to compare two targeting variants.\n\nDo not use when:\n- The user wants delivered impressions or clicks. Use action:ads/get_insights.\n- The platform is Google. Google does not expose an equivalent endpoint here.\n\nWorkflow:\n1. Build a targeting spec (use action:ads/search_interests and action:ads/search_geo_locations for canonical keys).\n2. Call this action with optional optimization_goal (default REACH).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[0].estimate_ready indicates whether Meta produced the estimate.\n- users_lower_bound / users_upper_bound is the reach range.\n- daily_outcomes_curve plots spend vs reach trade-off points.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nEstimate reach and delivery for Meta or TikTok targeting. Use this before action:ads/create_adset to validate the audience size.\n\nUse when:\n- The user wants to know the reachable audience for a targeting spec.\n- A workflow needs DAU/MAU to compare two targeting variants.\n\nDo not use when:\n- The user wants delivered impressions or clicks. Use action:ads/get_insights.\n- The platform is Google. Google does not expose an equivalent endpoint here.\n\nWorkflow:\n1. Build a targeting spec (use action:ads/search_interests and action:ads/search_geo_locations for canonical keys).\n2. Meta: pass the nested targeting object and optional optimization_goal (default REACH). TikTok: pass objective_type plus flat ad-group targeting fields. The official automatic-placement example also passes placement_type, optimization_goal, location_ids, and auto_targeting_enabled. For PLACEMENT_TYPE_NORMAL, placements is required.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.data[0].estimate_ready indicates whether Meta produced the estimate.\n- users_lower_bound / users_upper_bound is the reach range.\n- daily_outcomes_curve plots Meta spend vs reach trade-off points.\n- TikTok returns the estimated account count in raw.user_count.",
       "input_params": [
         {
           "name": "platform",
@@ -5707,17 +5707,17 @@
             },
             "age_min": 18,
             "age_max": 65
-          }
+          },
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "optimization_goal",
           "type": "string",
           "required": false,
-          "description": "Meta only: delivery optimization goal; default REACH. Non-REACH conversion/app/lead/DPA goals (OFFSITE_CONVERSIONS, VALUE, APP_INSTALLS, LEAD_GENERATION, PAGE_LIKES, CONVERSATIONS, PRODUCT_CATALOG_SALES) also require promoted_object. estimate_ready=false in the response is a valid low-confidence result, not an error. Source: constant enum from Meta OptimizationGoal (see create_adset for the full legal set).",
-          "example": "OFFSITE_CONVERSIONS",
-          "platform": [
-            "meta"
-          ]
+          "description": "Meta only: delivery optimization goal; default REACH. Non-REACH conversion/app/lead/DPA goals (OFFSITE_CONVERSIONS, VALUE, APP_INSTALLS, LEAD_GENERATION, PAGE_LIKES, CONVERSATIONS, PRODUCT_CATALOG_SALES) also require promoted_object. estimate_ready=false in the response is a valid low-confidence result, not an error. Source: constant enum from Meta OptimizationGoal (see create_adset for the full legal set). TikTok only: optimization goal used for the estimate; the official REACH example uses CLICK.",
+          "example": "OFFSITE_CONVERSIONS"
         },
         {
           "name": "promoted_object",
@@ -5733,6 +5733,170 @@
           ]
         },
         {
+          "name": "objective_type",
+          "type": "string",
+          "required": true,
+          "description": "TikTok only: required — campaign objective used for the estimate, for example REACH or TRAFFIC.",
+          "example": "REACH",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "auto_targeting_enabled",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok only: whether TikTok automatic targeting is enabled for the estimated ad group.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "location_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target location ids; provide this or zipcode_ids when geography is required.",
+          "example": [
+            "6252001"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "zipcode_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target ZIP/postal code ids; provide this or location_ids when geography is required. ZIP targeting requires PLACEMENT_TYPE_NORMAL and PLACEMENT_TIKTOK.",
+          "example": [
+            "123456789"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "age_groups",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target age group enums.",
+          "example": [
+            "AGE_25_34"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "gender",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Target gender.",
+          "example": "GENDER_UNLIMITED",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "languages",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target language codes.",
+          "example": [
+            "en"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_category_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Interest category ids.",
+          "example": [
+            "100"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "interest_keyword_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Interest keyword ids.",
+          "example": [
+            "200"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Included custom-audience ids.",
+          "example": [
+            "300"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "excluded_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Excluded custom-audience ids.",
+          "example": [
+            "400"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operating_systems",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Target operating systems.",
+          "example": [
+            "ANDROID"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placement_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Placement mode; ad-group creation defaults to PLACEMENT_TYPE_AUTOMATIC.",
+          "example": "PLACEMENT_TYPE_AUTOMATIC",
+          "enum": [
+            "PLACEMENT_TYPE_AUTOMATIC",
+            "PLACEMENT_TYPE_NORMAL"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "placements",
+          "type": "list",
+          "required": false,
+          "description": "TikTok only: Placements; required when placement_type is PLACEMENT_TYPE_NORMAL.",
+          "example": [
+            "PLACEMENT_TIKTOK"
+          ],
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "adgroup_id",
           "type": "string",
           "required": false,
@@ -5743,7 +5907,7 @@
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"estimate_ready\": true, \"users_lower_bound\": N, \"users_upper_bound\": N, \"estimate_dau\": N, \"estimate_mau\": N, \"bid_estimate\": {...}, \"daily_outcomes_curve\": [{\"spend\": 100.0, \"reach\": 1234.0}]}]}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+      "output_shape": "{\"data\": [{\"estimate_ready\": true, \"users_lower_bound\": N, \"users_upper_bound\": N, \"estimate_dau\": N, \"estimate_mau\": N, \"bid_estimate\": {...}, \"daily_outcomes_curve\": [{\"spend\": 100.0, \"reach\": 1234.0}]}], \"user_count\": 123456}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
     },
     {
       "id": "action:ads/gaql_search",
@@ -13115,7 +13279,7 @@
           "name": "location_ids",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Target location ids; provide this or zipcode_ids when creating an ad group.",
+          "description": "TikTok only: Target location ids; provide this or zipcode_ids when geography is required.",
           "example": [
             "6252001"
           ],
@@ -13127,7 +13291,7 @@
           "name": "zipcode_ids",
           "type": "list",
           "required": false,
-          "description": "TikTok only: Target ZIP/postal code ids; provide this or location_ids when creating an ad group. ZIP targeting requires PLACEMENT_TYPE_NORMAL and PLACEMENT_TIKTOK.",
+          "description": "TikTok only: Target ZIP/postal code ids; provide this or location_ids when geography is required. ZIP targeting requires PLACEMENT_TYPE_NORMAL and PLACEMENT_TIKTOK.",
           "example": [
             "123456789"
           ],
