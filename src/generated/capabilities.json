@@ -16704,7 +16704,7 @@
       "id": "action:seo_hosting/publish_page",
       "namespace": "seo_hosting",
       "action": "publish_page",
-      "description": "Publish a file-based SEO page after light validation (no custom JS, page.json fields). Flips page.json to published. Returns advisory link_warnings (dead internal links) that do NOT block publishing.",
+      "description": "Publish a file-based SEO page after light validation (no custom JS, page.json fields). Flips page.json to published. Returns advisory link_warnings (dead internal links) and content_warnings (off-brand canonical/og/link domains, emoji in headings/icons, missing JSON-LD or publication date) — neither blocks publishing.",
       "mode": "write",
       "platforms": [
         "seo_hosting"
@@ -16714,7 +16714,7 @@
       "see_also": [
         "action:seo_hosting/get_status"
       ],
-      "long_description": "Reads the index.html + page.json you wrote under /brand/seo-hosting/pages/{section}/{slug}/, validates them, and on success sets status=published (stamps publishedAt on first publish). Returns the public_url + whether it is actually served (depends on a live domain connection). 422 with the issues if validation fails.",
+      "long_description": "Reads the index.html + page.json you wrote under /brand/seo-hosting/pages/{section}/{slug}/, validates them, and on success sets status=published (stamps publishedAt on first publish). Returns the public_url + whether it is actually served (depends on a live domain connection), plus advisory link_warnings and content_warnings. 422 with the issues if validation fails.",
       "input_params": [
         {
           "name": "section",
@@ -16731,7 +16731,7 @@
           "source": "upstream:action:seo_hosting/list_pages"
         }
       ],
-      "output_shape": "{ section, slug, status: 'published', public_url, served, ... }"
+      "output_shape": "{ section, slug, status: 'published', public_url, served, link_warnings, content_warnings, ... }"
     },
     {
       "id": "action:seo_hosting/put_page",
