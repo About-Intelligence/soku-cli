@@ -17623,6 +17623,46 @@
       "output_shape": "{ url, path, size_bytes }"
     },
     {
+      "id": "action:shopify/graphql_query",
+      "namespace": "shopify",
+      "action": "graphql_query",
+      "description": "Run a read-only Shopify Admin GraphQL query (products, orders, customers, ...).",
+      "mode": "read",
+      "platforms": [
+        "shopify"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Executes a query document against the connected store's Shopify Admin GraphQL API (version 2026-07). One GraphQL endpoint covers the whole Admin API read surface — products, orders, customers, inventory, collections, and shop metadata — so there are no per-entity wrapper actions; consult the official Shopify Admin GraphQL API reference for query shapes. The Shopify integration is READ-ONLY in this version: no write action exists, and a document containing a mutation or subscription is rejected before any request is sent. Known scope limit: read_orders only covers roughly the last 60 days of orders by default (full history needs the Shopify-approved read_all_orders scope, which is not enabled). When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw GraphQL response body (data / errors / extensions.cost throttle status) is returned verbatim.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Shopify store id (the shop's gid). Optional when the brand has exactly one connected store; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "gid://shopify/Shop/548380009"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": true,
+          "description": "GraphQL query document (reads only — mutations and subscriptions are rejected).",
+          "example": "{ products(first: 10) { edges { node { id title } } } }"
+        },
+        {
+          "name": "variables",
+          "type": "object",
+          "required": false,
+          "description": "GraphQL variables object for the query document.",
+          "example": {
+            "first": 10
+          }
+        }
+      ],
+      "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shopify GraphQL response body ({data, errors[], extensions.cost})"
+    },
+    {
       "id": "action:stripe/list_accounts",
       "namespace": "stripe",
       "action": "list_accounts",
