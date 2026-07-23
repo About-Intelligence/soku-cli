@@ -1887,16 +1887,6 @@
           ]
         },
         {
-          "name": "request_id",
-          "type": "string",
-          "required": false,
-          "description": "TikTok request id.",
-          "example": "value",
-          "platform": [
-            "tiktok"
-          ]
-        },
-        {
           "name": "special_industries",
           "type": "list",
           "required": false,
@@ -2783,7 +2773,43 @@
           "name": "rules",
           "type": "array<object>",
           "required": true,
-          "description": "TikTok only and required there: non-empty official rules array. Each rule includes name, apply_objects, conditions, actions, notification, and rule_exec_info.",
+          "description": "TikTok only: Non-empty optimizer rule objects. Every apply_objects item requires dimension and pre_condition_type.",
+          "example": [
+            {
+              "name": "Pause expensive ads",
+              "actions": [
+                {
+                  "action_type": "DEFAULT",
+                  "subject_type": "TURN_OFF"
+                }
+              ],
+              "apply_objects": [
+                {
+                  "dimension": "AD",
+                  "dimension_ids": [
+                    "1870855452608946"
+                  ],
+                  "pre_condition_type": "SELECTED"
+                }
+              ],
+              "conditions": [
+                {
+                  "subject_type": "COST",
+                  "match_type": "GT",
+                  "values": [
+                    "100"
+                  ]
+                }
+              ],
+              "notification": {
+                "notification_type": "NOT_NOTIFICATION"
+              },
+              "rule_exec_info": {
+                "exec_time_type": "PER_HALF_HOUR"
+              }
+            }
+          ],
+          "source": "user",
           "platform": [
             "tiktok"
           ]
@@ -3867,8 +3893,8 @@
           "name": "request_id",
           "type": "string",
           "required": false,
-          "description": "TikTok only: idempotency key (10s dedup window) for safe retries.",
-          "example": "req-abc123",
+          "description": "TikTok only: optional unique request id used for provider-side idempotency.",
+          "example": "202607230001",
           "platform": [
             "tiktok"
           ]
@@ -4618,8 +4644,17 @@
           "name": "calculate_type",
           "type": "string",
           "required": true,
-          "description": "TikTok calculate type.",
-          "example": "value",
+          "description": "TikTok only: Hash scheme matching the uploaded identifier column.",
+          "example": "EMAIL_SHA256",
+          "enum": [
+            "EMAIL_SHA256",
+            "PHONE_SHA256",
+            "IDFA_MD5",
+            "IDFA_SHA256",
+            "GAID_MD5",
+            "GAID_SHA256"
+          ],
+          "source": "constant",
           "platform": [
             "tiktok"
           ]
@@ -5021,7 +5056,14 @@
           "name": "lookalike_spec",
           "type": "object",
           "required": true,
-          "description": "Optional explicit lookalike_spec; otherwise built from country + ratio + origin.",
+          "description": "TikTok only: Lookalike settings with audience_size and non-empty location_ids. source_audience_id is injected from the top-level field.",
+          "example": {
+            "audience_size": "NARROW",
+            "location_ids": [
+              "6252001"
+            ]
+          },
+          "source": "user",
           "platform": [
             "tiktok"
           ]
@@ -5057,7 +5099,7 @@
         "action:ads/send_conversion_event",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a Meta or TikTok Pixel on the resolved ad account.\n\nUse when:\nStanding up conversion tracking for an advertiser that has no suitable existing pixel.\n\nDo not use when:\nA pixel already exists — reuse it via list_pixels; never reuse a pixel id across providers.\n\nWorkflow:\n1. Resolve the advertiser account (meta or tiktok).\n2. Submit through the review queue.\n3. Read the new pixel id from the provider response.\n\nOutput semantics:\nReturns the provider-native pixel resource (Meta Graph adspixels / TikTok Marketing API /pixel/*); responses are not coerced into fake cross-provider parity.\n\nSide effects:\nCreates a new tracking pixel on the ad account; it begins accepting events once installed. Reversible via the provider UI.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a Meta or TikTok Pixel on the resolved ad account.\n\nUse when:\nStanding up conversion tracking for an advertiser that has no suitable existing pixel.\n\nDo not use when:\nA pixel already exists — reuse it via list_pixels; never reuse a pixel id across providers.\n\nWorkflow:\n1. Resolve the advertiser account (meta or tiktok).\n2. Submit through the review queue.\n3. Read the new pixel identity from the provider response.\n\nOutput semantics:\nFor TikTok, resource_id/raw.pixel_id is the numeric mutation ID used by update_pixel, while raw.pixel_code is the Events API event_source_id. Meta and TikTok responses are not coerced into fake cross-provider parity.\n\nSide effects:\nCreates a new tracking pixel on the ad account; it begins accepting events once installed. Reversible via the provider UI.",
       "input_params": [
         {
           "name": "platform",
@@ -5518,8 +5560,13 @@
           "name": "schedule_param",
           "type": "object",
           "required": false,
-          "description": "TikTok schedule param.",
-          "example": {},
+          "description": "TikTok only: Feed schedule source; source.uri is the provider feed URL.",
+          "example": {
+            "source": {
+              "uri": "https://example.com/feed.csv"
+            }
+          },
+          "source": "user",
           "platform": [
             "tiktok"
           ]
@@ -5593,8 +5640,21 @@
           "name": "rule_spec",
           "type": "object",
           "required": true,
-          "description": "TikTok rule spec.",
-          "example": "value",
+          "description": "TikTok only: Rule spec with inclusion_rule_set.operator=OR and a non-empty inclusion_rule_set.rules array.",
+          "example": {
+            "inclusion_rule_set": {
+              "operator": "OR",
+              "rules": [
+                {
+                  "event_source_ids": [
+                    "7665621501147643922"
+                  ],
+                  "retention_days": 30
+                }
+              ]
+            }
+          },
+          "source": "user",
           "platform": [
             "tiktok"
           ]
@@ -5658,8 +5718,9 @@
           "name": "request_id",
           "type": "string",
           "required": true,
-          "description": "TikTok request id.",
-          "example": "value",
+          "description": "TikTok only: Digit-only idempotency request identifier.",
+          "example": "202607230001",
+          "source": "user",
           "platform": [
             "tiktok"
           ]
@@ -5670,6 +5731,203 @@
           "required": true,
           "description": "Explicit acknowledgement required before this side effect.",
           "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok app id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "app_promotion_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok app promotion type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "bid_align_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok bid align type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: Positive account-currency budget; provide with budget_mode.",
+          "example": 100.0,
+          "source": "user",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Budget mode; provide with budget.",
+          "example": "BUDGET_MODE_DAY",
+          "source": "constant",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "budget_optimize_on",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok budget optimize on.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "campaign_app_profile_page_state",
+          "type": "string",
+          "required": false,
+          "description": "TikTok campaign app profile page state.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "campaign_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok campaign type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "catalog_enabled",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok catalog enabled.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "catalog_type",
+          "type": "string",
+          "required": false,
+          "description": "TikTok catalog type.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "disable_skan_campaign",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok disable skan campaign.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "is_advanced_dedicated_campaign",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok is advanced dedicated campaign.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "is_promotional_campaign",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok is promotional campaign.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "open_api_partner",
+          "type": "string",
+          "required": false,
+          "description": "TikTok open api partner.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "operation_status",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Initial native lifecycle status. Defaults to DISABLE for safe review.",
+          "example": "DISABLE",
+          "enum": [
+            "DISABLE",
+            "ENABLE"
+          ],
+          "source": "constant",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "po_number",
+          "type": "string",
+          "required": false,
+          "description": "TikTok po number.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "postback_window_mode",
+          "type": "string",
+          "required": false,
+          "description": "TikTok postback window mode.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "sales_destination",
+          "type": "string",
+          "required": false,
+          "description": "TikTok sales destination.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "special_industries",
+          "type": "list",
+          "required": false,
+          "description": "TikTok special industries.",
+          "example": [],
           "platform": [
             "tiktok"
           ]
@@ -8097,6 +8355,7 @@
           "required": false,
           "description": "Required for INSTANT_FORM leads; omit for DIRECT_MESSAGE leads.",
           "example": "form-1",
+          "source": "upstream:action:ads/list_lead_forms",
           "platform": [
             "tiktok"
           ]
@@ -10603,21 +10862,21 @@
           ]
         },
         {
-          "name": "page",
-          "type": "integer",
+          "name": "product_set_id",
+          "type": "string",
           "required": false,
-          "description": "TikTok page.",
-          "example": 1,
+          "description": "TikTok product set id.",
+          "example": "value",
           "platform": [
             "tiktok"
           ]
         },
         {
-          "name": "page_size",
-          "type": "integer",
+          "name": "return_product_count",
+          "type": "boolean",
           "required": false,
-          "description": "TikTok page size.",
-          "example": 1,
+          "description": "TikTok return product count.",
+          "example": true,
           "platform": [
             "tiktok"
           ]
@@ -12452,7 +12711,10 @@
           "name": "pixel_id",
           "type": "string",
           "required": true,
-          "description": "Meta pixel id from action:ads/list_pixels. Required when platform=tiktok."
+          "description": "Meta pixel id from action:ads/list_pixels.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "event_name",
@@ -12472,7 +12734,7 @@
           "type": "string",
           "required": true,
           "description": "Meta CAPI event source. One of website, email, app, phone_call, chat, physical_store, system_generated, business_messaging, other.",
-          "example": "website",
+          "example": "other",
           "enum": [
             "app",
             "business_messaging",
@@ -12492,13 +12754,12 @@
         {
           "name": "user_data",
           "type": "object",
-          "required": false,
-          "description": "Provider-native identity object. Hash all PII as SHA-256 lowercase hex; Meta and TikTok accept different key names, so follow the selected provider schema.",
+          "required": true,
+          "description": "Provider-native identity object. For TikTok use email, phone_number, or external_id with SHA-256 lowercase-hex values; Meta uses different key names.",
           "example": {
-            "em": [
-              "<sha256-email>"
-            ],
-            "client_user_agent": "Mozilla/5.0 (test)"
+            "external_id": [
+              "0000000000000000000000000000000000000000000000000000000000000000"
+            ]
           }
         },
         {
@@ -12633,7 +12894,11 @@
           "type": "object",
           "required": false,
           "description": "TikTok Events API context object.",
-          "example": {},
+          "example": {
+            "ad": {
+              "callback": "provider-callback"
+            }
+          },
           "platform": [
             "tiktok"
           ]
@@ -12643,7 +12908,20 @@
           "type": "object",
           "required": false,
           "description": "TikTok Events API page object.",
-          "example": {},
+          "example": {
+            "url": "https://example.com/checkout"
+          },
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "pixel_code",
+          "type": "string",
+          "required": true,
+          "description": "TikTok only: Alphanumeric pixel_code used as Events API event_source_id. Do not pass the numeric pixel_id used by update_pixel.",
+          "example": "D9GS9MBC77UCJG7151AG",
+          "source": "upstream:action:ads/list_pixels",
           "platform": [
             "tiktok"
           ]
@@ -12653,7 +12931,10 @@
           "type": "object",
           "required": false,
           "description": "TikTok Events API properties object.",
-          "example": {},
+          "example": {
+            "currency": "USD",
+            "value": 99.0
+          },
           "platform": [
             "tiktok"
           ]
@@ -14709,13 +14990,16 @@
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "New audience display name. At least one of name / description must be provided."
+          "description": "New audience display name. At least one of name / description must be provided. Required when platform=tiktok."
         },
         {
           "name": "description",
           "type": "string",
           "required": false,
-          "description": "New audience description. At least one of name / description must be provided."
+          "description": "New audience description. At least one of name / description must be provided.",
+          "platform": [
+            "meta"
+          ]
         }
       ],
       "output_shape": "{\"success\": true}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
@@ -14817,7 +15101,11 @@
           "type": "list",
           "required": false,
           "description": "TikTok only: Updated custom anchor video objects.",
-          "example": [],
+          "example": [
+            {
+              "item_id": "item-1"
+            }
+          ],
           "platform": [
             "tiktok"
           ]
@@ -14839,7 +15127,11 @@
           "type": "list",
           "required": false,
           "description": "TikTok only: Updated item objects.",
-          "example": [],
+          "example": [
+            {
+              "item_id": "item-1"
+            }
+          ],
           "platform": [
             "tiktok"
           ]
@@ -14849,7 +15141,9 @@
           "type": "object",
           "required": false,
           "description": "TikTok only: Updated promotion-day settings.",
-          "example": {},
+          "example": {
+            "is_enabled": false
+          },
           "platform": [
             "tiktok"
           ]
@@ -15189,8 +15483,13 @@
           "name": "schedule_param",
           "type": "object",
           "required": false,
-          "description": "TikTok schedule param.",
-          "example": {},
+          "description": "TikTok only: Feed schedule source; source.uri is the provider feed URL.",
+          "example": {
+            "source": {
+              "uri": "https://example.com/feed.csv"
+            }
+          },
+          "source": "user",
           "platform": [
             "tiktok"
           ]
@@ -15502,8 +15801,28 @@
           "name": "calculate_type",
           "type": "string",
           "required": true,
-          "description": "TikTok calculate type.",
-          "example": "value",
+          "description": "TikTok only: Hash scheme matching the uploaded identifier column.",
+          "example": "EMAIL_SHA256",
+          "enum": [
+            "EMAIL_SHA256",
+            "PHONE_SHA256",
+            "IDFA_MD5",
+            "IDFA_SHA256",
+            "GAID_MD5",
+            "GAID_SHA256"
+          ],
+          "source": "constant",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "file_signature",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Optional lowercase MD5 of decoded file bytes. Soku computes it when omitted and rejects a supplied mismatch before upload.",
+          "example": "f3e40b9481d2d140b9e8b380c4e9c59a",
+          "source": "user",
           "platform": [
             "tiktok"
           ]
