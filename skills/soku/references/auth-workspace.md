@@ -30,6 +30,11 @@ with the exact `next` command returned by the CLI, prefixed the same way:
 SOKU_NO_KEYCHAIN=1 soku auth login --device-code <device_code>
 ```
 
+If the browser approval page shows no workspace options (for example, a
+platform admin with no org memberships), the user can approve directly without
+selecting a workspace. Select a brand after login with
+`soku workspace use-brand`.
+
 For CI or headless contexts, use `SOKU_TOKEN`; do not echo it.
 
 ## Resources
@@ -64,6 +69,15 @@ soku org use <slug-or-id>
 soku brand list
 soku brand use <slug-or-id>
 ```
+
+## Platform Admins
+
+`soku auth status` reports `is_platform_admin`, which is `true` only for an
+active platform admin. An active platform admin can work across every active
+org without holding an org membership: `soku workspace use-brand`,
+`soku workspace resolve`, `soku org list`, and `soku brand list` cover the
+full set of active orgs and brands. Everyone else stays scoped to the orgs
+where they have a membership.
 
 ## Session State
 
