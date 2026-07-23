@@ -95,11 +95,8 @@ export function registerAuthCommands(program: Command): void {
       if (!token) {
         emitError('not_authenticated', 'Not signed in.', ExitCode.AUTH, 'Run `soku auth login`.')
       }
-      const me = await apiRequest<{ owner_id: string; scope_type: string }>('/api/cli/me')
-      emitSuccess(
-        { signed_in: true, ...me },
-        (d) => `${green('✓')} Signed in ${dim(`(${d.scope_type})`)}\n  owner: ${cyan(d.owner_id)}`,
-      )
+      const me = await apiRequest<AuthStatusMe>('/api/cli/me')
+      emitSuccess(authStatusPayload(me), renderAuthStatus)
     })
 
   auth
@@ -109,6 +106,25 @@ export function registerAuthCommands(program: Command): void {
       await clearToken()
       emitSuccess({ signed_out: true }, () => `${green('✓')} Signed out`)
     })
+}
+
+/** `/api/cli/me` response. `is_platform_admin` is optional so the CLI stays
+ * compatible with servers that predate the field. */
+export interface AuthStatusMe {
+  owner_id: string
+  scope_type: string
+  is_platform_admin?: boolean
+}
+
+/** JSON envelope payload for `auth status`; passes server fields through. */
+export function authStatusPayload(me: AuthStatusMe): { signed_in: true } & AuthStatusMe {
+  return { signed_in: true, ...me }
+}
+
+/** Human (TTY) renderer for `auth status`. */
+export function renderAuthStatus(d: AuthStatusMe): string {
+  const scope = d.is_platform_admin ? `${d.scope_type} — platform admin` : d.scope_type
+  return `${green('✓')} Signed in ${dim(`(${scope})`)}\n  owner: ${cyan(d.owner_id)}`
 }
 
 async function pollAndStore(opts: {
