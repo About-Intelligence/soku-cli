@@ -16395,7 +16395,7 @@
       "requires_review": false,
       "freshness_kind": "realtime",
       "see_also": [],
-      "long_description": "Returns the Composio connected accounts granted to the current brand: each row is (account_id, toolkit, name, status, execution_available, api_shape, docs_url, api_hosts, recommended). START HERE for any third-party task — every proxy action needs an (account_id, toolkit) pair from this list; neither is guessable. Do NOT ask the user for an account id; this action is the source of truth. Every connected toolkit is executable (execution_available is true). api_shape is 'rest' (use proxy_get / request_change) or 'graphql' (use graphql_query / graphql_mutate). docs_url is the provider's OFFICIAL API reference when vetted; when null, web_search the provider's official API reference before building requests. Unless you are certain of the exact endpoint, consult the reference first — never guess endpoints from memory or use Composio tool names. api_hosts lists the toolkit's official hosts: a relative endpoint resolves against the toolkit's PRIMARY host only, so an endpoint served from any other host in api_hosts must be an absolute https URL.",
+      "long_description": "Returns the Composio connected accounts granted to the current brand: each row is (account_id, toolkit, name, status, execution_available, api_shape, docs_url, api_hosts, recommended). START HERE for any third-party task — every proxy action needs an (account_id, toolkit) pair from this list; neither is guessable. Do NOT ask the user for an account id; this action is the source of truth. Every connected toolkit is executable (execution_available is true). api_shape is 'rest' (use proxy_get / request_change) or 'graphql' (use graphql_query / graphql_mutate). docs_url is the provider's OFFICIAL API reference when vetted; when null, web_search the provider's official API reference before building requests. Unless you are certain of the exact endpoint, consult the reference first — never guess endpoints from memory or use Composio tool names. api_hosts lists the toolkit's curated official hosts: a relative endpoint resolves against the toolkit's PRIMARY host, so reaching any OTHER host in api_hosts needs an absolute https URL. An EMPTY api_hosts means the toolkit has no host allowlist — use a relative endpoint ONLY; an absolute URL is rejected (400).",
       "input_params": [],
       "output_shape": "data.rows[].{account_id, toolkit, name, status, execution_available, api_shape, docs_url, api_hosts, recommended}"
     },
@@ -16431,8 +16431,8 @@
           "name": "endpoint",
           "type": "string",
           "required": true,
-          "description": "Relative path (e.g. /gmail/v1/users/me/profile) ONLY for endpoints on the toolkit's primary host — Composio pins relative paths to that one host. For an endpoint on any other official host of the toolkit (see api_hosts from list_accounts), pass an absolute https URL — e.g. listing Google Docs/Sheets files is a Drive API call: https://www.googleapis.com/drive/v3/files?q=... (exception: slack — always pass an absolute https://slack.com/api/... URL; slack's registered base URL already ends in /api, so a docs-style relative /api/... path double-prefixes and 404s).",
-          "example": "https://gmail.googleapis.com/gmail/v1/users/me/profile"
+          "description": "Prefer a RELATIVE path (e.g. /gmail/v1/users/me/profile): it works for EVERY toolkit — Composio pins it to the toolkit's primary host, so when the official reference shows a full URL on that primary host, copy just the path. Pass an absolute https URL ONLY to reach a secondary official host listed in api_hosts (from list_accounts) — e.g. listing Google Docs/Sheets files is a Drive API call: https://www.googleapis.com/drive/v3/files?q=... (keep that URL absolute; do NOT strip it to a relative path). When api_hosts is EMPTY the toolkit has no host allowlist, so a relative path is the ONLY valid form — an absolute URL is rejected (400). (Exception: slack — always pass an absolute https://slack.com/api/... URL; slack's registered base URL already ends in /api, so a docs-style relative /api/... path double-prefixes and 404s.)",
+          "example": "/gmail/v1/users/me/profile"
         },
         {
           "name": "parameters",
@@ -16488,8 +16488,8 @@
           "name": "endpoint",
           "type": "string",
           "required": true,
-          "description": "Relative path ONLY for endpoints on the toolkit's primary host (Composio pins relative paths to that one host); for any other official host of the toolkit (see api_hosts from list_accounts), pass an absolute https URL.",
-          "example": "https://gmail.googleapis.com/gmail/v1/users/me/drafts"
+          "description": "Prefer a RELATIVE path: it works for EVERY toolkit — Composio pins it to the toolkit's primary host, so when the official reference shows a full URL on that primary host, copy just the path. Pass an absolute https URL ONLY to reach a secondary official host listed in api_hosts (from list_accounts) — keep such a URL absolute (e.g. a Drive write from a googledocs account: https://www.googleapis.com/drive/v3/...). When api_hosts is EMPTY the toolkit has no host allowlist, so a relative path is the ONLY valid form — an absolute URL is rejected (400). (Exception: slack — always pass an absolute https://slack.com/api/... URL; a relative /api/... path double-prefixes and 404s.)",
+          "example": "/gmail/v1/users/me/drafts"
         },
         {
           "name": "body",
