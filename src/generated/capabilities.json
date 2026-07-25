@@ -392,7 +392,7 @@
       "id": "action:ads/add_campaign_ad_units",
       "namespace": "ads",
       "action": "add_campaign_ad_units",
-      "description": "Append ChatGPT Ads ad units to a campaign.",
+      "description": "Deprecated legacy compatibility: Append ChatGPT Ads ad units to a campaign.",
       "mode": "risk",
       "platforms": [
         "chatgpt_ads"
@@ -403,7 +403,7 @@
         "action:ads/create_ad_unit",
         "action:ads/get_campaign"
       ],
-      "long_description": "Primary use:\nAppend ChatGPT Ads ad units to a campaign while keeping existing campaign ad units.\n\nUse when:\n- The user approved additional ad units for an existing campaign.\n- Existing campaign ad units should remain attached.\n\nDo not use when:\n- The desired final set should exactly match a new list. Use replace_campaign_ad_units.\n- The ad_unit_ids are unknown. Create or inspect ad units first.\n\nWorkflow:\n1. Resolve campaign_id and ad_unit_ids.\n2. Submit the append operation for HITL review.\n3. Read the campaign back to confirm the final binding.\n\nSide effects:\n- Mutates the campaign's attached ad units by adding ids.\n- Does not activate the campaign.\n\nOutput semantics:\n- raw is the ChatGPT Ads platform response for the ad-unit binding mutation.",
+      "long_description": "Deprecated compatibility path. New deployments use inline Campaign -> Ad Group -> Ad.\n\nPrimary use:\nAppend ChatGPT Ads ad units to a campaign while keeping existing campaign ad units.\n\nUse when:\n- The user approved additional ad units for an existing campaign.\n- Existing campaign ad units should remain attached.\n\nDo not use when:\n- The desired final set should exactly match a new list. Use replace_campaign_ad_units.\n- The ad_unit_ids are unknown. Create or inspect ad units first.\n\nWorkflow:\n1. Resolve campaign_id and ad_unit_ids.\n2. Submit the append operation for HITL review.\n3. Read the campaign back to confirm the final binding.\n\nSide effects:\n- Mutates the campaign's attached ad units by adding ids.\n- Does not activate the campaign.\n\nOutput semantics:\n- raw is the ChatGPT Ads platform response for the ad-unit binding mutation.",
       "input_params": [
         {
           "name": "platform",
@@ -1060,10 +1060,129 @@
       "output_shape": "{\"success\": true}"
     },
     {
+      "id": "action:ads/archive_ad",
+      "namespace": "ads",
+      "action": "archive_ad",
+      "description": "Archive one authored ChatGPT Ads Ad; review-gated risk action.",
+      "mode": "risk",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/get_ad_group",
+        "action:_batch/submit"
+      ],
+      "long_description": "Primary use:\nArchive one manual authored Ad inside a confirmed Ad Group.\n\nUse when:\n- The user explicitly approved archiving the exact authored Ad.\n\nDo not use when:\n- The Ad is provider-generated; generated Ads are read-only.\n- The complete parent read model is unavailable.\n\nWorkflow:\n1. Read the parent Ad Group and verify the Ad id, manual source, and lifecycle.\n2. Submit archive_ad through HITL review.\n3. Read the parent group again before any retry.\n\nOutput semantics:\n- resource_id/ad_id identify the Ad and ad_group_id identifies its parent.\n- Unknown outcomes require reconciliation before retry.\n\nSide effects:\n- Archives one authored Ad; it does not activate the Campaign or group.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Advertiser account id.",
+          "example": "account_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_group_id",
+          "type": "string",
+          "required": true,
+          "description": "Canonical parent Ad Group id.",
+          "example": "ag_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_id",
+          "type": "string",
+          "required": true,
+          "description": "Authored Ad id.",
+          "example": "ad_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\": true, \"resource_id\": \"ad_123\", \"ad_id\": \"ad_123\", \"ad_group_id\": \"ag_123\"}"
+    },
+    {
+      "id": "action:ads/archive_ad_group",
+      "namespace": "ads",
+      "action": "archive_ad_group",
+      "description": "Archive one ChatGPT Ads Ad Group and its Ads; review-gated risk action.",
+      "mode": "risk",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/get_ad_group",
+        "action:ads/list_ad_groups",
+        "action:_batch/submit"
+      ],
+      "long_description": "Primary use:\nArchive one confirmed Ad Group and its Ads.\n\nUse when:\n- The user explicitly approved archiving the exact Ad Group.\n\nDo not use when:\n- The target or current state is unknown; read it first.\n- The user only wants to pause delivery; use update_ad_group.\n\nWorkflow:\n1. Read the target with get_ad_group.\n2. Present the group-and-Ads impact in the HITL summary.\n3. Submit archive_ad_group and reconcile the returned id.\n\nOutput semantics:\n- resource_id and ad_group_id identify the archived group.\n- Unknown outcomes require readback before retry.\n\nSide effects:\n- Archives the Ad Group and its Ads; this is not an activation operation.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Advertiser account id.",
+          "example": "account_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_group_id",
+          "type": "string",
+          "required": true,
+          "description": "Canonical Ad Group id; adset_id is not accepted.",
+          "example": "ag_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\": true, \"resource_id\": \"ag_123\", \"ad_group_id\": \"ag_123\"}"
+    },
+    {
       "id": "action:ads/archive_ad_unit",
       "namespace": "ads",
       "action": "archive_ad_unit",
-      "description": "Toggle archive state for one ChatGPT Ads ad unit; review-gated risk action.",
+      "description": "Deprecated legacy compatibility: Toggle archive state for one ChatGPT Ads ad unit; review-gated risk action.",
       "mode": "risk",
       "platforms": [
         "chatgpt_ads"
@@ -1073,7 +1192,7 @@
       "see_also": [
         "action:ads/get_campaign"
       ],
-      "long_description": "Primary use:\nToggle archive state for one ChatGPT Ads ad unit after explicit user confirmation.\n\nUse when:\n- The current ad-unit state has been verified and the user wants to archive it.\n- The user understands the ChatGPT Ads endpoint is a toggle, not a one-way delete.\n\nDo not use when:\n- The current state is unknown. Read dashboard/campaign detail first.\n- The intent is campaign removal. Campaign archive is not exposed because it is also a toggle.\n\nWorkflow:\n1. Verify the target ad_unit_id and current state.\n2. Present the toggle risk in the HITL summary.\n3. Submit archive_ad_unit only after explicit approval.\n\nSide effects:\n- Calls the ChatGPT Ads ad-unit archive toggle endpoint.\n- Repeating the same action may unarchive the ad unit.\n\nOutput semantics:\n- resource_id is the ad_unit_id when available or the requested id fallback.\n- raw preserves the ChatGPT Ads platform response.",
+      "long_description": "Deprecated compatibility path. New deployments use inline Campaign -> Ad Group -> Ad.\n\nPrimary use:\nToggle archive state for one ChatGPT Ads ad unit after explicit user confirmation.\n\nUse when:\n- The current ad-unit state has been verified and the user wants to archive it.\n- The user understands the ChatGPT Ads endpoint is a toggle, not a one-way delete.\n\nDo not use when:\n- The current state is unknown. Read dashboard/campaign detail first.\n- The intent is campaign removal. Use action:ads/remove_campaign, whose ChatGPT Ads handler guards the campaign archive toggle with pre-read and post-read proof.\n\nWorkflow:\n1. Verify the target ad_unit_id and current state.\n2. Present the toggle risk in the HITL summary.\n3. Submit archive_ad_unit only after explicit approval.\n\nSide effects:\n- Calls the ChatGPT Ads ad-unit archive toggle endpoint.\n- Repeating the same action may unarchive the ad unit.\n\nOutput semantics:\n- resource_id is the ad_unit_id when available or the requested id fallback.\n- raw preserves the ChatGPT Ads platform response.",
       "input_params": [
         {
           "name": "platform",
@@ -1976,7 +2095,8 @@
       "platforms": [
         "google",
         "meta",
-        "tiktok"
+        "tiktok",
+        "chatgpt_ads"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -1987,18 +2107,19 @@
         "action:ads/create_ad_creative",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEvery inline creative is created with operation_status=DISABLE by default. Only an explicitly approved top-level status=ENABLED applies ENABLE to every creative; a per-creative operation_status value cannot bypass the reviewed status. Choose one compatible creative route: SINGLE_VIDEO uses video_id or tiktok_item_id; an uploaded video_id may include exactly one image_id as a cover. SINGLE_IMAGE/CAROUSEL_ADS use image_ids. AUTH_CODE requires tiktok_item_id. TT_USER and BC_AUTH_TT accept a discovered post, an uploaded video pushed through the linked identity, or CAROUSEL_ADS image_ids; BC_AUTH_TT additionally requires identity_authorized_bc_id. Call get_account_pages once to list identities, then again with identity_id and identity_type to discover Spark tiktok_item_id values. References are verified before write.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEvery inline creative is created with operation_status=DISABLE by default. Only an explicitly approved top-level status=ENABLED applies ENABLE to every creative; a per-creative operation_status value cannot bypass the reviewed status. Choose one compatible creative route: SINGLE_VIDEO uses video_id or tiktok_item_id; an uploaded video_id may include exactly one image_id as a cover. SINGLE_IMAGE/CAROUSEL_ADS use image_ids. AUTH_CODE requires tiktok_item_id. TT_USER and BC_AUTH_TT accept a discovered post, an uploaded video pushed through the linked identity, or CAROUSEL_ADS image_ids; BC_AUTH_TT additionally requires identity_authorized_bc_id. Call get_account_pages once to list identities, then again with identity_id and identity_type to discover Spark tiktok_item_id values. References are verified before write.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
           "example": "google",
           "enum": [
             "google",
             "meta",
-            "tiktok"
+            "tiktok",
+            "chatgpt_ads"
           ],
           "source": "constant"
         },
@@ -2012,18 +2133,24 @@
         {
           "name": "adset_id",
           "type": "string",
-          "required": true,
-          "description": "Meta: ad set id from action:ads/list_adsets. Google: the dispatcher renames this to ad_group_id, so pass the Google ad group id. Required when platform=tiktok.",
-          "example": "23..."
+          "required": false,
+          "description": "Provider-native parent id for Google, Meta, and TikTok. Do not send this field for ChatGPT Ads; send ad_group_id instead.",
+          "example": "23...",
+          "platform": [
+            "google",
+            "meta",
+            "tiktok"
+          ]
         },
         {
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "Meta only (required): the ad name. Required by the registry and by Meta's Ad node create contract. Source: user-provided ad name.",
+          "description": "Meta only (required): the ad name. Required by the registry and by Meta's Ad node create contract. Source: user-provided ad name. ChatGPT Ads: Optional authored Ad name.",
           "example": "QA create_ad smoke",
           "platform": [
-            "meta"
+            "meta",
+            "chatgpt_ads"
           ]
         },
         {
@@ -2185,12 +2312,8 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Meta and Google create ads paused. TikTok sets every inline creative to operation_status=DISABLE when status is omitted; an explicitly approved top-level status=ENABLED sets every creative to ENABLE. Per-creative operation_status cannot bypass this review payload.",
-          "example": "PAUSED",
-          "enum": [
-            "PAUSED",
-            "ENABLED"
-          ]
+          "description": "Provider-specific create lifecycle value with no global enum: Google and Meta force paused; TikTok maps omitted/PAUSED to operation_status=DISABLE and an explicitly approved status=ENABLED to operation_status=ENABLE; ChatGPT Ads accepts only omitted or lowercase paused.",
+          "source": "constant"
         },
         {
           "name": "creatives",
@@ -2220,15 +2343,68 @@
           ]
         },
         {
+          "name": "headline",
+          "type": "string",
+          "required": false,
+          "description": "Authored Ad headline.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "copy",
+          "type": "string",
+          "required": false,
+          "description": "Authored Ad body copy.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "cta",
+          "type": "string",
+          "required": false,
+          "description": "Explicitly approved call to action.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "description": "Optional authored Ad description.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "landing_page",
+          "type": "string",
+          "required": false,
+          "description": "Final HTTP(S) destination URL.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "image_url",
+          "type": "string",
+          "required": false,
+          "description": "Optional durable public image URL.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
           "name": "ad_group_id",
           "type": "string",
           "required": false,
-          "description": "TikTok ad group id.",
-          "example": "value",
+          "description": "ChatGPT Ads canonical Ad Group id. Required for ChatGPT Ads, which does not accept adset_id.",
+          "example": "ag_123",
+          "source": "upstream:action:ads/list_ad_groups",
           "platform": [
-            "google",
-            "meta",
-            "tiktok"
+            "chatgpt_ads"
           ]
         },
         {
@@ -2521,10 +2697,11 @@
       "id": "action:ads/create_ad_group",
       "namespace": "ads",
       "action": "create_ad_group",
-      "description": "Create a Google Ads ad group in PAUSED state; review-gated, reversible via remove_ad_group.",
+      "description": "Create a paused Google or ChatGPT Ads Ad Group; review-gated. ChatGPT Ads supports manual authored Ads or a generative group.",
       "mode": "write",
       "platforms": [
-        "google"
+        "google",
+        "chatgpt_ads"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -2534,16 +2711,17 @@
         "action:ads/remove_ad_group",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nCreate a new ad group as a SEARCH_STANDARD child of a campaign. Always force-paused so keywords and ads can be attached before activating.\n\nUse when:\n- The user wants to add a new ad group to a Google campaign.\n- A workflow needs an ad_group_id to host keywords and ads.\n\nDo not use when:\n- The platform is Meta. Meta uses ad sets; use action:ads/create_adset.\n- The user wants to clone an existing ad group. There is no clone action; inspect existing ad groups via action:ads/gaql_search, then create_ad_group with the same parameters.\n\nWorkflow:\n1. Call action:ads/list_campaigns to choose a campaign_id.\n2. Submit via action:_batch/submit for HITL review.\n3. After approval, call action:ads/add_keywords or create_ad to populate.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.resource_id is the new ad group's numeric id.\n\nSide effects:\n- Creates an AdGroup with type_=SEARCH_STANDARD.\n- Force-paused at create time (status=PAUSED); no immediate spend.\n- Reversible via action:ads/remove_ad_group (terminal REMOVED).",
+      "long_description": "Primary use:\nCreate a paused Ad Group under an existing Google or ChatGPT Ads Campaign.\n\nUse when:\n- The user approved a new Google search Ad Group or a ChatGPT Ads manual/generative group.\n- A ChatGPT Ads hierarchy needs an independently created group after Campaign creation.\n\nDo not use when:\n- The platform is Meta or TikTok; use action:ads/create_adset.\n- The ChatGPT Ads group lacks required name, landing_page, or brand_name.\n- The caller wants an active create; both providers create paused.\n\nWorkflow:\n1. Read the parent Campaign and prepare the exact group fields.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify the returned id and persisted group detail. ChatGPT Ads additionally verifies the complete authored-Ad window and caller-controlled field signature.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- resource_id is the new Ad Group id; ChatGPT Ads also returns ad_group_id and exact persisted fields.\n\nSide effects:\n- Creates one paused Ad Group. A ChatGPT Ads manual group may atomically create its paused authored Ads; a generative group must not contain authored Ads.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google.",
+          "description": "Supported platforms: google, chatgpt_ads.",
           "example": "google",
           "enum": [
-            "google"
+            "google",
+            "chatgpt_ads"
           ],
           "source": "constant"
         },
@@ -2573,42 +2751,278 @@
           "type": "integer",
           "required": false,
           "description": "Default CPC bid in micros (1 USD = 1_000_000).",
-          "example": 1000000
+          "example": 1000000,
+          "platform": [
+            "google"
+          ]
         },
         {
           "name": "type",
           "type": "string",
           "required": false,
           "description": "Google only: AdGroup type enum, immutable after create. Defaults to SEARCH_STANDARD when omitted. Must match the parent campaign's channel or the platform rejects it. Source: constant enum value chosen by the agent based on the parent campaign type from action:ads/list_campaigns.",
-          "example": "DISPLAY_STANDARD"
+          "example": "DISPLAY_STANDARD",
+          "platform": [
+            "google"
+          ]
         },
         {
           "name": "target_cpa_micros",
           "type": "integer",
           "required": false,
           "description": "Google only: ad-group-level target CPA override in micros (1 USD = 1_000_000). Only effective when the parent campaign uses TargetCpa or MaximizeConversions with a target CPA. Source: user-provided target CPA budget converted to micros.",
-          "example": 5000000
+          "example": 5000000,
+          "platform": [
+            "google"
+          ]
         },
         {
           "name": "target_roas",
           "type": "number",
           "required": false,
           "description": "Google only: ad-group-level target ROAS override as a ratio (e.g. 4.0 = 400%). Only effective when the parent campaign uses TargetRoas or MaximizeConversionValue with a target ROAS. Source: user-provided target return-on-ad-spend ratio.",
-          "example": 4.0
+          "example": 4.0,
+          "platform": [
+            "google"
+          ]
         },
         {
           "name": "tracking_url_template",
           "type": "string",
           "required": false,
           "description": "Google only: ad-group-level tracking URL template for click measurement. Source: user-provided tracking URL template (often from a third-party click tracker).",
-          "example": "https://tracker.example.com/?url={lpurl}"
+          "example": "https://tracker.example.com/?url={lpurl}",
+          "platform": [
+            "google"
+          ]
         },
         {
           "name": "final_url_suffix",
           "type": "string",
           "required": false,
           "description": "Google only: ad-group-level suffix appended to the final URL when parallel tracking is enabled. Source: user-provided URL suffix string.",
-          "example": "src=google&campaign=spring"
+          "example": "src=google&campaign=spring",
+          "platform": [
+            "google"
+          ]
+        },
+        {
+          "name": "group_type",
+          "type": "string",
+          "required": false,
+          "description": "manual (default) or generative.",
+          "example": "manual",
+          "enum": [
+            "manual",
+            "generative"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "context",
+          "type": "string",
+          "required": false,
+          "description": "Conversation context used by the Ad Group.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "negative_context",
+          "type": "string",
+          "required": false,
+          "description": "Explicitly approved contexts where the Ad Group must not appear.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_prompt",
+          "type": "string",
+          "required": false,
+          "description": "Explicitly approved generation prompt; required by the deployment workflow for generative groups.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "image_url",
+          "type": "string",
+          "required": false,
+          "description": "Optional durable public Ad Group image URL.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "Optional Ad Group daily budget.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "auto_optimize_budget",
+          "type": "boolean",
+          "required": false,
+          "description": "Whether the platform automatically optimizes the Ad Group budget. Defaults to true.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "min_daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum daily-spend bound.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "max_daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum daily-spend bound.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "max_cpc",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum CPC bound.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "required": false,
+          "description": "Optional stable Ad Group display order.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_countries",
+          "type": "list",
+          "required": false,
+          "description": "Explicitly approved country targeting.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_devices",
+          "type": "list",
+          "required": false,
+          "description": "Explicitly approved device targeting.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "include_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "Audience ids explicitly included.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "exclude_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "Audience ids explicitly excluded.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "example_query",
+          "type": "string",
+          "required": false,
+          "description": "Example query that should match the group.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "utm_params",
+          "type": "list",
+          "required": false,
+          "description": "Ordered UTM objects with key and value fields.",
+          "example": [
+            {
+              "key": "utm_source",
+              "value": "chatgpt"
+            }
+          ],
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "preview",
+          "type": "object",
+          "required": false,
+          "description": "Structured advertiser-dashboard preview metadata.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "landing_page",
+          "type": "string",
+          "required": true,
+          "description": "Required final HTTP(S) destination URL for the Ad Group.",
+          "example": "https://example.com",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "description": "Provider-specific paused create value: Google uses uppercase PAUSED; ChatGPT Ads accepts only lowercase paused. Omit when possible because the handler forces the provider-safe paused state.",
+          "source": "constant"
+        },
+        {
+          "name": "brand_name",
+          "type": "string",
+          "required": true,
+          "description": "Required brand display name shown by the advertiser dashboard.",
+          "example": "Acme",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ads",
+          "type": "list",
+          "required": false,
+          "description": "Authored Ads for a manual group. Each object requires headline, copy, cta, and landing_page; create forces every Ad to paused. Omit for generative groups.",
+          "example": [
+            {
+              "headline": "Approved headline",
+              "copy": "Approved body copy.",
+              "cta": "Learn more",
+              "landing_page": "https://example.com/?utm_source=nexad_c"
+            }
+          ],
+          "platform": [
+            "chatgpt_ads"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Ad group created successfully\", \"resource_id\": \"123\", \"results\": [{\"adGroupResult\": {\"resourceName\": \"customers/X/adGroups/Y\"}}]}"
@@ -2831,7 +3245,7 @@
       "id": "action:ads/create_ad_unit",
       "namespace": "ads",
       "action": "create_ad_unit",
-      "description": "Create a ChatGPT Ads ad unit draft; review-gated.",
+      "description": "Deprecated legacy compatibility: Create a ChatGPT Ads ad unit draft; review-gated.",
       "mode": "write",
       "platforms": [
         "chatgpt_ads"
@@ -2841,7 +3255,7 @@
       "see_also": [
         "action:ads/create_campaign"
       ],
-      "long_description": "Primary use:\nCreate one ChatGPT Ads ad unit before creating a campaign. ChatGPT Ads campaigns require at least one ad_unit_id.\n\nUse when:\n- The user has approved ChatGPT Ads copy and landing page inputs.\n- A deployment flow needs an ad_unit_id for action:ads/create_campaign.\n\nDo not use when:\n- The platform is Google or Meta. Use their creative/ad actions instead.\n- The user only needs a media plan draft. Use the ChatGPT Ads media-plan workflow.\n\nWorkflow:\n1. Map media-plan Context Hints to context_hints and Body to static_ad_text; these values must be distinct. Prepare landing_page and static_cta.\n2. Submit create_ad_unit for HITL review.\n3. Use the returned resource_id/id in create_campaign.ad_unit_ids.\n\nSide effects:\n- Creates a draft ad unit in the advertiser dashboard.\n- Projects the ordered 2-4 context_hints into the provider description field. A legacy description input remains backend-compatible but should not be used by new workflows.\n- Rejects upstream server-managed fields like ad_text_mode, source, status, review_status, review_reason, metadata, and generate_static_text before calling the dashboard API.\n- Does not create or activate a campaign and does not start spend by itself.\n\nOutput semantics:\n- resource_id is the ad unit id when the dashboard response includes id.\n- raw preserves the ChatGPT Ads platform response for later campaign binding.",
+      "long_description": "Deprecated compatibility path. New deployments use inline Campaign -> Ad Group -> Ad.\n\nPrimary use:\nCreate one ChatGPT Ads ad unit before creating a campaign. ChatGPT Ads campaigns require at least one ad_unit_id.\n\nUse when:\n- The user has approved ChatGPT Ads copy and landing page inputs.\n- A deployment flow needs an ad_unit_id for action:ads/create_campaign.\n\nDo not use when:\n- The platform is Google or Meta. Use their creative/ad actions instead.\n- The user only needs a media plan draft. Use the ChatGPT Ads media-plan workflow.\n\nWorkflow:\n1. Map media-plan Context Hints to context_hints and Body to static_ad_text; these values must be distinct. Prepare landing_page and static_cta.\n2. Submit create_ad_unit for HITL review.\n3. Use the returned resource_id/id in create_campaign.ad_unit_ids.\n\nSide effects:\n- Creates a draft ad unit in the advertiser dashboard.\n- Projects the ordered 2-4 context_hints into the provider description field. A legacy description input remains backend-compatible but should not be used by new workflows.\n- Rejects upstream server-managed fields like ad_text_mode, source, status, review_status, review_reason, metadata, and generate_static_text before calling the dashboard API.\n- Does not create or activate a campaign and does not start spend by itself.\n\nOutput semantics:\n- resource_id is the ad unit id when the dashboard response includes id.\n- raw preserves the ChatGPT Ads platform response for later campaign binding.",
       "input_params": [
         {
           "name": "platform",
@@ -3530,11 +3944,11 @@
         "action:_batch/submit",
         "action:ads/list_campaigns",
         "action:ads/get_campaign",
-        "action:ads/update_campaign",
-        "action:ads/create_ad_unit",
-        "action:ads/query_single_dimension"
+        "action:ads/list_ad_groups",
+        "action:ads/get_ad_group",
+        "action:ads/update_campaign"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a new advertising campaign shell. Google, Meta, and ChatGPT Ads force creation into a paused/non-active state. TikTok defaults to operation_status=DISABLE when status is omitted, but an explicitly approved status=ENABLED is sent as ENABLE.\n\nUse when:\n- The user asks to launch a new campaign with a chosen objective and budget.\n- A workflow needs a fresh campaign to host ad groups, ad sets, or ChatGPT Ads ad units.\n\nDo not use when:\n- The user wants to enable spend immediately on Google, Meta, or ChatGPT Ads. Create paused first, then use action:ads/update_campaign after explicit activation approval. For TikTok, an explicitly approved status=ENABLED may be supplied to this action.\n- The user wants a Google Performance Max campaign. Use action:ads/create_pmax_campaign.\n- The campaign already exists. Use action:ads/update_campaign instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. For Google choose campaign_type and budget_daily_micros; for Meta choose objective; for ChatGPT Ads create ad units first and pass landing_page, campaign_objective, budget, and a non-empty ad_unit_ids list.\n3. Submit via action:_batch/submit for HITL review.\n4. After approval, call action:ads/list_campaigns or action:ads/get_campaign to confirm the requested state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new campaign's numeric id. Meta raw.id is the new campaign id. ChatGPT Ads raw.campaign_id or raw.id is surfaced as resource_id.\n\nSide effects:\n- Creates a Campaign on the platform; Google also creates a dedicated CampaignBudget named 'Budget for {name}' in the same atomic mutate.\n- Google, Meta, and ChatGPT Ads are force-paused/non-active. TikTok defaults to DISABLE and preserves an explicitly approved ENABLED status.\n- ChatGPT Ads create rejects upstream-removed fields like keywords, network_type, and network_config before calling the dashboard API.\n- No immediate spend by default. An explicitly approved TikTok ENABLED create can begin delivery when the provider accepts it.\n- remove_campaign is available for Google, Meta, and TikTok. ChatGPT Ads campaign archive is not exposed because the ChatGPT Ads endpoint is a toggle.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a new advertising campaign. For ChatGPT Ads, the default source is an inline Campaign -> Ad Group -> Ad hierarchy; Campaign, groups, and authored Ads are created paused, and the Campaign is explicitly inactive. TikTok defaults to operation_status=DISABLE; explicitly approved status=ENABLED is sent as ENABLE.\n\nUse when:\n- The user approved a new campaign, budget, objective, targeting, and creative hierarchy.\n- For ChatGPT Ads, you have a non-empty ad_groups list built from approved media-plan rows.\n\nDo not use when:\n- The user wants immediate activation. Activation is a separate approved update_campaign.\n- The campaign already exists. Use update_campaign and the Ad Group/Ad actions.\n- For ChatGPT Ads, do not use deprecated ad_unit_ids unless legacy compatibility was explicit.\n\nWorkflow:\n1. Resolve account_id and review current campaigns.\n2. For ChatGPT Ads, submit exactly one source: default ad_groups or deprecated ad_unit_ids.\n3. Submit the create through HITL review.\n4. Require the returned materialization proof and perform the documented readback.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Inline ChatGPT Ads success includes campaign_id, ad_group_ids, ad_ids, creation_success=true, materialization_verified=true, campaign_status=paused, is_active=false, campaign_field_verification, and separate POST/GET lifecycle observations. materialization_verified proves the hierarchy and readable fields; never claim create-only Campaign fields persisted when they appear under campaign_field_verification.unverifiable_fields.\n- Review/deployment observations never imply activation or billing readiness.\n- Legacy compatibility success instead includes binding_verified=true and exact ad_unit_ids.\n\nSide effects:\n- Creates provider resources only after approval.\n- ChatGPT Ads inline create writes the complete paused hierarchy and then performs readback.\n- A partial or unknown result may represent completed provider writes; reconcile known ids before any retry.",
       "input_params": [
         {
           "name": "platform",
@@ -3601,8 +4015,7 @@
           "example": 20000000,
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3613,8 +4026,7 @@
           "example": 4.0,
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3625,8 +4037,7 @@
           "example": "2026-07-01",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3637,8 +4048,7 @@
           "example": "2026-07-31",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3649,8 +4059,7 @@
           "example": "{\"target_google_search\": true, \"target_search_network\": false, \"target_content_network\": false}",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3671,8 +4080,7 @@
           "source": "constant",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3682,8 +4090,7 @@
           "description": "Google only: max CPC bid in micros; applies only to MAXIMIZE_CLICKS and TARGET_SPEND. Ignored for other strategies (warning emitted).",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3712,8 +4119,7 @@
           "description": "Meta only: special category list. Defaults to []. Values include EMPLOYMENT, HOUSING, CREDIT, ISSUES_ELECTIONS_POLITICS, ONLINE_GAMBLING_AND_GAMING.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3729,8 +4135,7 @@
           "source": "constant",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3760,8 +4165,7 @@
           "example": 100000,
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3774,8 +4178,7 @@
           ],
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3786,8 +4189,7 @@
           "example": 50000,
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3799,20 +4201,15 @@
           "source": "user",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "TikTok only: omit to create with operation_status=DISABLE, or pass ENABLED after explicit HITL approval to send operation_status=ENABLE. Google, Meta, and ChatGPT Ads ignore the caller value and force a paused/non-active create.",
+          "description": "TikTok only: omit to create with operation_status=DISABLE, or pass ENABLED after explicit HITL approval to send operation_status=ENABLE. Google and Meta force a paused/non-active create. ChatGPT Ads accepts only omitted or lowercase paused and rejects every other caller value before the provider request.",
           "example": "PAUSED",
-          "enum": [
-            "PAUSED",
-            "ENABLED"
-          ],
           "source": "constant"
         },
         {
@@ -3833,8 +4230,7 @@
           "description": "Meta only: ISO-8601 scheduled stop time.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -3935,11 +4331,13 @@
           "name": "campaign_objective",
           "type": "string",
           "required": false,
-          "description": "ChatGPT Ads only (required): campaign objective. Current ChatGPT Ads dashboard values are clicks or conversions.",
+          "description": "ChatGPT Ads only (required): campaign objective. Current ChatGPT Ads dashboard values are clicks, reach, conversions, or leads.",
           "example": "clicks",
           "enum": [
             "clicks",
-            "conversions"
+            "reach",
+            "conversions",
+            "leads"
           ],
           "source": "constant",
           "platform": [
@@ -3950,9 +4348,9 @@
           "name": "ad_unit_ids",
           "type": "list",
           "required": false,
-          "description": "ChatGPT Ads only (required): non-empty ad unit id list. Create ad units first with action:ads/create_ad_unit, then pass the returned ids.",
+          "description": "Deprecated legacy compatibility source. Use only when the caller explicitly requests the old Ad Unit binding path; mutually exclusive with ad_groups.",
           "example": [
-            "ad_unit_123"
+            "legacy_ad_unit_123"
           ],
           "source": "upstream:action:ads/create_ad_unit",
           "platform": [
@@ -3963,7 +4361,12 @@
           "name": "billing_model",
           "type": "string",
           "required": false,
-          "description": "",
+          "description": "ChatGPT Ads create-only billing model: cpm, cpc, or cpa. The platform accepts this field but may omit it from both create response and Campaign readback; inspect campaign_field_verification before claiming persistence.",
+          "enum": [
+            "cpm",
+            "cpc",
+            "cpa"
+          ],
           "platform": [
             "chatgpt_ads"
           ]
@@ -3972,7 +4375,7 @@
           "name": "end_time",
           "type": "string",
           "required": false,
-          "description": "",
+          "description": "ChatGPT Ads campaign end time.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -3981,7 +4384,7 @@
           "name": "click_goal",
           "type": "integer",
           "required": false,
-          "description": "",
+          "description": "ChatGPT Ads create-only click goal. Check campaign_field_verification; The platform may accept it without exposing readback evidence.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -3990,7 +4393,7 @@
           "name": "max_cpc",
           "type": "number",
           "required": false,
-          "description": "",
+          "description": "ChatGPT Ads create-only Campaign max CPC. Prefer Ad Group max_cpc when operator-visible persisted verification is required.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -4035,7 +4438,7 @@
           "name": "demographics",
           "type": "object",
           "required": false,
-          "description": "",
+          "description": "ChatGPT Ads create-only demographic configuration. Check campaign_field_verification; the platform may omit it from readback.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -4044,7 +4447,13 @@
           "name": "utm_params",
           "type": "list",
           "required": false,
-          "description": "",
+          "description": "ChatGPT Ads ordered UTM objects with key and value fields.",
+          "example": [
+            {
+              "key": "utm_source",
+              "value": "chatgpt"
+            }
+          ],
           "platform": [
             "chatgpt_ads"
           ]
@@ -4072,6 +4481,32 @@
           "type": "object",
           "required": false,
           "description": "",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_groups",
+          "type": "list",
+          "required": false,
+          "description": "Default ChatGPT Ads hierarchy source: a non-empty inline list of paused manual or generative Ad Groups. Mutually exclusive with deprecated ad_unit_ids.",
+          "example": [
+            {
+              "name": "Research workflow",
+              "group_type": "manual",
+              "context": "Comparing tools for a research workflow",
+              "landing_page": "https://example.com",
+              "brand_name": "Example",
+              "ads": [
+                {
+                  "headline": "Approved headline",
+                  "copy": "Approved body copy.",
+                  "cta": "Learn more",
+                  "landing_page": "https://example.com/?utm_source=nexad_c"
+                }
+              ]
+            }
+          ],
           "platform": [
             "chatgpt_ads"
           ]
@@ -6797,7 +7232,7 @@
       "id": "action:ads/generate_ad_units",
       "namespace": "ads",
       "action": "generate_ad_units",
-      "description": "Generate ChatGPT Ads draft ad units from a landing page URL.",
+      "description": "Deprecated legacy compatibility: Generate ChatGPT Ads draft ad units from a landing page URL.",
       "mode": "write",
       "platforms": [
         "chatgpt_ads"
@@ -6808,7 +7243,7 @@
         "action:ads/get_campaign",
         "action:ads/replace_campaign_ad_units"
       ],
-      "long_description": "Primary use:\nAsk the ChatGPT Ads platform to generate 1-5 draft ad units from a site URL and attach them to an existing ChatGPT Ads campaign.\n\nUse when:\n- A campaign already exists and the user wants platform-generated draft variants.\n- The landing page is public and appropriate for creative generation.\n\nDo not use when:\n- The campaign does not exist yet. Create ad units and a campaign first.\n- The user needs deterministic approved copy. Use create_ad_unit instead.\n\nWorkflow:\n1. Resolve campaign_id via create_campaign, get_campaign, or list_campaigns.\n2. Submit site_url and count for HITL review. count must be between 1 and 5.\n3. Read the campaign back and review generated drafts before activation.\n\nSide effects:\n- Creates draft ad units on the ChatGPT Ads platform and attaches them to the campaign.\n- Does not activate the campaign.\n\nOutput semantics:\n- raw is the ChatGPT Ads platform response and may include generated ad-unit records or ids.",
+      "long_description": "Deprecated compatibility path. New deployments use inline Campaign -> Ad Group -> Ad.\n\nPrimary use:\nAsk the ChatGPT Ads platform to generate 1-5 draft ad units from a site URL and attach them to an existing ChatGPT Ads campaign.\n\nUse when:\n- A campaign already exists and the user wants platform-generated draft variants.\n- The landing page is public and appropriate for creative generation.\n\nDo not use when:\n- The campaign does not exist yet. Create ad units and a campaign first.\n- The user needs deterministic approved copy. Use create_ad_unit instead.\n\nWorkflow:\n1. Resolve campaign_id via create_campaign, get_campaign, or list_campaigns.\n2. Submit site_url and count for HITL review. count must be between 1 and 5.\n3. Read the campaign back and review generated drafts before activation.\n\nSide effects:\n- Creates draft ad units on the ChatGPT Ads platform and attaches them to the campaign.\n- Does not activate the campaign.\n\nOutput semantics:\n- raw is the ChatGPT Ads platform response and may include generated ad-unit records or ids.",
       "input_params": [
         {
           "name": "platform",
@@ -7157,6 +7592,59 @@
         }
       ],
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"title\": \"...\", \"body\": \"...\", \"image_url\": \"...\", \"thumbnail_url\": \"...\", \"object_story_spec\": {...}, \"asset_feed_spec\": {...}, \"status\": \"...\", \"effective_status\": \"...\"}], \"paging\": {...}}"
+    },
+    {
+      "id": "action:ads/get_ad_group",
+      "namespace": "ads",
+      "action": "get_ad_group",
+      "description": "Read one ChatGPT Ads Ad Group and its embedded Ads window; read-only.",
+      "mode": "read",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/list_ad_groups"
+      ],
+      "long_description": "Primary use:\nRead one Ad Group by canonical id, including embedded Ads and ads_total.\n\nUse when:\n- You need lifecycle, source, or complete-window evidence before an Ad write.\n- You need to verify a create/update result.\n\nDo not use when:\n- The Ad Group id is unknown. Use list_ad_groups first.\n\nWorkflow:\n1. Resolve the canonical ad_group_id.\n2. Call directly; no HITL review is required.\n3. Treat a missing, malformed, or incomplete Ads window as unsafe for mutation.\n\nOutput semantics:\n- Returns one platform-native Ad Group object with ads and ads_total when available.\n- Readback is observational and does not imply review, activation, or billing readiness.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Advertiser account id.",
+          "example": "account_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_group_id",
+          "type": "string",
+          "required": true,
+          "description": "Canonical Ad Group id; adset_id is not accepted.",
+          "example": "ag_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        }
+      ],
+      "output_shape": "{\"id\": \"ag_123\", \"campaign_id\": \"campaign_123\", \"status\": \"paused\", \"group_type\": \"manual\", \"ads\": [...], \"ads_total\": 1}"
     },
     {
       "id": "action:ads/get_adset",
@@ -9296,6 +9784,70 @@
       "output_shape": "{\"success\": true, \"negative_keywords\": [{\"criterion_id\": \"...\", \"text\": \"free\", \"match_type\": \"BROAD\", \"status\": \"ENABLED\", \"resource_name\": \"customers/123/adGroupCriteria/111~222\", \"ad_group_id\": \"...\", \"ad_group_name\": \"...\", \"campaign_id\": \"...\", \"campaign_name\": \"...\"}]}"
     },
     {
+      "id": "action:ads/list_ad_groups",
+      "namespace": "ads",
+      "action": "list_ad_groups",
+      "description": "List ChatGPT Ads Ad Groups, optionally scoped to one Campaign; read-only.",
+      "mode": "read",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/get_ad_group",
+        "action:ads/get_campaign"
+      ],
+      "long_description": "Primary use:\nRead Ad Groups and their current lifecycle state without changing delivery.\n\nUse when:\n- You need to inspect a Campaign hierarchy or reconcile a write.\n- You need include_archived=true before a legacy migration.\n\nDo not use when:\n- You already know one ad_group_id and need its complete embedded Ads window; use get_ad_group.\n\nWorkflow:\n1. Resolve account_id and optionally campaign_id.\n2. Call directly; no HITL review is required.\n3. Follow the returned collection and inspect each group independently.\n\nOutput semantics:\n- Returns the platform collection envelope containing Ad Group objects.\n- This read does not prove a previous create unless exact ids and signatures match.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Advertiser account id.",
+          "example": "account_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": false,
+          "description": "Optional Campaign filter.",
+          "example": "campaign_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "include_archived",
+          "type": "boolean",
+          "required": false,
+          "description": "Include archived groups; required for migration reconciliation.",
+          "example": true,
+          "platform": [
+            "chatgpt_ads"
+          ]
+        }
+      ],
+      "output_shape": "{\"ad_groups\": [{\"id\": \"ag_123\", \"campaign_id\": \"campaign_123\", \"status\": \"paused\", \"group_type\": \"manual\", \"ads\": [...], \"ads_total\": 1}]}"
+    },
+    {
       "id": "action:ads/list_ad_labels",
       "namespace": "ads",
       "action": "list_ad_labels",
@@ -9925,8 +10477,7 @@
           "example": "OUTCOME_TRAFFIC",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -9936,8 +10487,7 @@
           "description": "Meta only: raw Graph filtering list, e.g. [{field, operator, value}].",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -9947,8 +10497,7 @@
           "description": "Meta only: page size; default 25.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -9958,8 +10507,7 @@
           "description": "Meta only: pagination cursor returned in paging.cursors.after.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -11063,6 +11611,83 @@
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"targeting\": {...}, \"description\": \"...\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
+      "id": "action:ads/migrate_legacy_ad_units",
+      "namespace": "ads",
+      "action": "migrate_legacy_ad_units",
+      "description": "Migrate explicit legacy Ad Unit records into paused Ad Groups and authored Ads; review-gated risk action.",
+      "mode": "risk",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/list_ad_groups",
+        "action:ads/get_ad_group",
+        "action:_batch/submit"
+      ],
+      "long_description": "Primary use:\nPerform an explicit, idempotent HITL migration from caller-supplied legacy Ad Unit records into paused manual Ad Groups and Ads without changing legacy resources.\n\nUse when:\n- The user approved migration for a known Campaign and supplied complete legacy records.\n\nDo not use when:\n- The caller expects automatic legacy discovery, deletion, archival, or activation.\n- Any prior result is ambiguous and has not been reconciled.\n\nWorkflow:\n1. Supply stable ad_unit_id identities and approved content for every record.\n2. Submit one migration through HITL review.\n3. Inspect records[] and require materialization_verified=true for full success.\n4. Reconcile existing/created/ambiguous/failed records before retry.\n\nOutput semantics:\n- Success returns ordered records[], ad_group_ids, ad_ids, materialization_verified=true, and legacy_resources_modified=false.\n- A blocked, partial_failure, or unknown outcome returns per-record status and reconcile_required=true; known ids are retained.\n\nSide effects:\n- May create paused Ad Groups and authored Ads.\n- Never modifies, archives, or deletes the supplied legacy resources.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Advertiser account id.",
+          "example": "account_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "Existing Campaign id that will own the migrated groups.",
+          "example": "campaign_123",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "legacy_ad_units",
+          "type": "list",
+          "required": true,
+          "description": "Non-empty explicit records. Every record requires stable ad_unit_id, headline, static_ad_text, static_cta, landing_page, and brand_name; optional fields include description, ad_name, image_url, and utm_params.",
+          "example": [
+            {
+              "ad_unit_id": "legacy_123",
+              "headline": "Approved headline",
+              "static_ad_text": "Approved body copy.",
+              "static_cta": "Learn more",
+              "landing_page": "https://example.com",
+              "brand_name": "Example",
+              "utm_params": {
+                "utm_source": "nexad_c"
+              }
+            }
+          ],
+          "platform": [
+            "chatgpt_ads"
+          ]
+        }
+      ],
+      "output_shape": "{\"success\": true|false, \"campaign_id\": \"campaign_123\", \"records\": [{\"index\": 0, \"ad_unit_id\": \"legacy_123\", \"status\": \"existing|created|ambiguous|failed\", \"ad_group_id\": \"ag_123\", \"ad_ids\": [\"ad_123\"]}], \"materialization_verified\": true, \"legacy_resources_modified\": false}"
+    },
+    {
       "id": "action:ads/query_multi_dimension",
       "namespace": "ads",
       "action": "query_multi_dimension",
@@ -11734,12 +12359,13 @@
       "id": "action:ads/remove_campaign",
       "namespace": "ads",
       "action": "remove_campaign",
-      "description": "Remove a campaign on Google (terminal REMOVED) or archive on Meta; review-gated, stops spend immediately. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
+      "description": "Remove a campaign on Google/TikTok or archive on Meta/ChatGPT Ads; review-gated and stops spend. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "mode": "risk",
       "platforms": [
         "google",
         "meta",
-        "tiktok"
+        "tiktok",
+        "chatgpt_ads"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -11749,18 +12375,19 @@
         "action:_batch/submit",
         "action:ads/list_operation_records"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action sends operation_status=DELETE through TikTok's campaign status-update endpoint. It is a soft delete in storage (the resource remains queryable), but its status can no longer change, so treat it as irreversible and recreate the resource to restore delivery. The returned resource_id is the deleted TikTok resource id.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nTerminate a campaign so it stops spending and disappears from default listings. On Google this is irreversible; on Meta it is archive-style and can be un-archived to PAUSED.\n\nUse when:\n- The user wants to permanently retire a Google campaign.\n- The user wants to archive a Meta campaign and possibly restore later.\n\nDo not use when:\n- The user wants to temporarily pause spend. Use action:ads/update_campaign with status=PAUSED instead.\n- The user wants to delete only an ad or ad group. Use action:ads/remove_ad or action:ads/remove_ad_group / remove_adset.\n\nWorkflow:\n1. Call action:ads/list_campaigns to confirm the target campaign_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify removal via action:ads/list_campaigns with status_filter.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed campaign resource name.\n- Meta raw is {success: true}; the campaign moves to ARCHIVED status.\n\nSide effects:\n- Google: terminal — sets status=REMOVED via mutate(remove=resource_name); not reversible.\n- Meta: not a true delete — POSTs status=ARCHIVED. The campaign disappears from default listings; it can be un-archived to PAUSED (not ACTIVE) via action:ads/update_campaign.\n- Stops spend immediately on both platforms.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Capability docs do not state the customer_id is derived from account_id; harmless but the input_params omit customer_id while the handler reads it — an agent reading only handler source could be confused about which key to send. Also note: Docs say Google removal is 'terminal/irreversible' (correct) but do not warn that re-removing an already-REMOVED campaign returns a raw API error rather than an idempotent success; agent may retry and surface a confusing error. Capability gap: validate_only / partial_failure (Google Ads mutate options) are not exposed at this layer; a remove cannot be dry-run via the agent contract (acceptable for a destructive op but worth noting).\n- meta: Guidance: capability docs declare account_id required:True for remove_campaign, but for Meta it is not needed (handler ignores it; archive targets the campaign-id node). This forces the agent to fetch/pass an account_id that has no effect on Meta and risks confusing it about what is load-bearing. Also note: Docs say Meta archive 'can be un-archived to PAUSED (not ACTIVE) via update_campaign' but do not warn about the 50,000 ARCHIVED-objects-per-type-per-account ceiling that can make the operation fail; the agent cannot anticipate this failure mode. Capability gap: No way to perform a TRUE delete (status=DELETED) on Meta via remove_campaign. The handler is hard-coded to ARCHIVED, so the agent cannot evacuate archived objects when an account hits the 50,000-archived-per-type limit, and cannot satisfy a user request to permanently delete a Meta campaign. capability docs even claim Meta is 'archive-style  can be un-archived', acknowledging this gap as intentional. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action sends operation_status=DELETE through TikTok's campaign status-update endpoint. It is a soft delete in storage (the resource remains queryable), but its status can no longer change, so treat it as irreversible and recreate the resource to restore delivery. The returned resource_id is the deleted TikTok resource id.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nTerminate or archive a campaign so it stops spending and disappears from default listings. Google/TikTok removal is irreversible; Meta is archive-style. ChatGPT Ads uses a provider toggle guarded by a pre-read, at-most-once mutation, and post-read proof.\n\nUse when:\n- The user wants to permanently retire a Google campaign.\n- The user wants to archive a Meta or ChatGPT Ads campaign.\n\nDo not use when:\n- The user wants to temporarily pause spend. Use action:ads/update_campaign with status=PAUSED instead.\n- The user wants to delete only an ad or ad group. Use action:ads/remove_ad or action:ads/remove_ad_group / remove_adset.\n\nWorkflow:\n1. Call action:ads/list_campaigns to confirm the target campaign_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify removal via action:ads/list_campaigns with status_filter.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed campaign resource name.\n- Meta raw is {success: true}; the campaign moves to ARCHIVED status.\n\nSide effects:\n- Google: terminal — sets status=REMOVED via mutate(remove=resource_name); not reversible.\n- Meta: not a true delete — POSTs status=ARCHIVED. The campaign disappears from default listings; it can be un-archived to PAUSED (not ACTIVE) via action:ads/update_campaign.\n- Stops spend immediately on both platforms.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Capability docs do not state the customer_id is derived from account_id; harmless but the input_params omit customer_id while the handler reads it — an agent reading only handler source could be confused about which key to send. Also note: Docs say Google removal is 'terminal/irreversible' (correct) but do not warn that re-removing an already-REMOVED campaign returns a raw API error rather than an idempotent success; agent may retry and surface a confusing error. Capability gap: validate_only / partial_failure (Google Ads mutate options) are not exposed at this layer; a remove cannot be dry-run via the agent contract (acceptable for a destructive op but worth noting).\n- meta: Guidance: capability docs declare account_id required:True for remove_campaign, but for Meta it is not needed (handler ignores it; archive targets the campaign-id node). This forces the agent to fetch/pass an account_id that has no effect on Meta and risks confusing it about what is load-bearing. Also note: Docs say Meta archive 'can be un-archived to PAUSED (not ACTIVE) via update_campaign' but do not warn about the 50,000 ARCHIVED-objects-per-type-per-account ceiling that can make the operation fail; the agent cannot anticipate this failure mode. Capability gap: No way to perform a TRUE delete (status=DELETED) on Meta via remove_campaign. The handler is hard-coded to ARCHIVED, so the agent cannot evacuate archived objects when an account hits the 50,000-archived-per-type limit, and cannot satisfy a user request to permanently delete a Meta campaign. capability docs even claim Meta is 'archive-style  can be un-archived', acknowledging this gap as intentional. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
           "example": "google",
           "enum": [
             "google",
             "meta",
-            "tiktok"
+            "tiktok",
+            "chatgpt_ads"
           ],
           "source": "constant"
         },
@@ -12386,7 +13013,7 @@
       "id": "action:ads/replace_campaign_ad_units",
       "namespace": "ads",
       "action": "replace_campaign_ad_units",
-      "description": "Replace the full ChatGPT Ads ad-unit set on a campaign.",
+      "description": "Deprecated legacy compatibility: Replace the full ChatGPT Ads ad-unit set on a campaign.",
       "mode": "risk",
       "platforms": [
         "chatgpt_ads"
@@ -12397,7 +13024,7 @@
         "action:ads/create_ad_unit",
         "action:ads/get_campaign"
       ],
-      "long_description": "Primary use:\nReplace the complete ChatGPT Ads ad-unit set attached to a campaign.\n\nUse when:\n- The user approved an exact final list of campaign ad units.\n- Old campaign ad units should be detached from the campaign.\n\nDo not use when:\n- The user only wants to add variants. Use add_campaign_ad_units.\n- The provided ad_unit_ids list is empty.\n\nWorkflow:\n1. Resolve campaign_id and the exact non-empty ad_unit_ids list.\n2. Submit the replace operation for HITL review.\n3. Read the campaign back to confirm the final binding.\n\nSide effects:\n- Replaces the campaign's full ad-unit binding set.\n- Does not archive detached ad units and does not activate the campaign.\n\nOutput semantics:\n- raw is the ChatGPT Ads platform response for the replacement mutation.",
+      "long_description": "Deprecated compatibility path. New deployments use inline Campaign -> Ad Group -> Ad.\n\nPrimary use:\nReplace the complete ChatGPT Ads ad-unit set attached to a campaign.\n\nUse when:\n- The user approved an exact final list of campaign ad units.\n- Old campaign ad units should be detached from the campaign.\n\nDo not use when:\n- The user only wants to add variants. Use add_campaign_ad_units.\n- The provided ad_unit_ids list is empty.\n\nWorkflow:\n1. Resolve campaign_id and the exact non-empty ad_unit_ids list.\n2. Submit the replace operation for HITL review.\n3. Read the campaign back to confirm the final binding.\n\nSide effects:\n- Replaces the campaign's full ad-unit binding set.\n- Does not archive detached ad units and does not activate the campaign.\n\nOutput semantics:\n- raw is the ChatGPT Ads platform response for the replacement mutation.",
       "input_params": [
         {
           "name": "platform",
@@ -13514,7 +14141,8 @@
       "platforms": [
         "google",
         "meta",
-        "tiktok"
+        "tiktok",
+        "chatgpt_ads"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -13524,18 +14152,19 @@
         "action:ads/remove_ad",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing ad's status, URLs (Google), or creative wiring (Meta).\n\nUse when:\n- The user wants to activate, pause, or remove an ad.\n- The user wants to update final_urls on a Google RSA.\n- The user wants to swap a Meta ad's creative_id or tracking_specs.\n\nDo not use when:\n- The user wants to update Google RSA headlines or descriptions. These are NOT mutable; use action:ads/remove_ad then action:ads/create_ad.\n- The user wants to update the ad group or ad set. Use action:ads/update_ad_group or action:ads/update_adset.\n\nWorkflow:\n1. Call action:ads/list_ads to capture prior state.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields updated; warnings[] may explain that RSA creative fields were skipped.\n- Google returns success=false with the warning message if only RSA creative fields are supplied (nothing actually mutable).\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: status update targets AdGroupAd; final_urls update targets the Ad. Headlines/descriptions are silently skipped with a warning.\n- Meta: POST {ad_id} with supplied fields. If creative_id is provided it is wrapped as creative={creative_id: ...}.\n- Setting status to ENABLED/ACTIVE resumes spend immediately.\n- Reversible if prior values captured.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing ad's status, URLs (Google), or creative wiring (Meta).\n\nUse when:\n- The user wants to activate, pause, or remove an ad.\n- The user wants to update final_urls on a Google RSA.\n- The user wants to swap a Meta ad's creative_id or tracking_specs.\n\nDo not use when:\n- The user wants to update Google RSA headlines or descriptions. These are NOT mutable; use action:ads/remove_ad then action:ads/create_ad.\n- The user wants to update the ad group or ad set. Use action:ads/update_ad_group or action:ads/update_adset.\n\nWorkflow:\n1. Call action:ads/list_ads to capture prior state.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields updated; warnings[] may explain that RSA creative fields were skipped.\n- Google returns success=false with the warning message if only RSA creative fields are supplied (nothing actually mutable).\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: status update targets AdGroupAd; final_urls update targets the Ad. Headlines/descriptions are silently skipped with a warning.\n- Meta: POST {ad_id} with supplied fields. If creative_id is provided it is wrapped as creative={creative_id: ...}.\n- Setting status to ENABLED/ACTIVE resumes spend immediately.\n- Reversible if prior values captured.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
           "example": "google",
           "enum": [
             "google",
             "meta",
-            "tiktok"
+            "tiktok",
+            "chatgpt_ads"
           ],
           "source": "constant"
         },
@@ -13557,7 +14186,7 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Provider-specific lifecycle state (no global enum). TikTok and Google: ENABLED, PAUSED, or REMOVED; TikTok maps these to ENABLE, DISABLE, or DELETE. Meta: ACTIVE, PAUSED, or ARCHIVED; unified ENABLED/REMOVED map to ACTIVE/ARCHIVED.",
+          "description": "Provider-specific lifecycle state (no global enum). TikTok and Google: ENABLED, PAUSED, or REMOVED; TikTok maps these to ENABLE, DISABLE, or DELETE. Meta: ACTIVE, PAUSED, or ARCHIVED; unified ENABLED/REMOVED map to ACTIVE/ARCHIVED. ChatGPT Ads: lowercase active or paused.",
           "example": "PAUSED",
           "source": "constant"
         },
@@ -13682,11 +14311,12 @@
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "Meta only: new name for the ad (renames the Ad node). Google only: not applicable. Source: user-provided ad name.",
+          "description": "Meta only: new name for the ad (renames the Ad node). Google only: not applicable. Source: user-provided ad name. ChatGPT Ads: Optional authored Ad name.",
           "example": "Summer sale - v2",
           "platform": [
             "google",
-            "meta"
+            "meta",
+            "chatgpt_ads"
           ]
         },
         {
@@ -13715,22 +14345,80 @@
           ]
         },
         {
+          "name": "headline",
+          "type": "string",
+          "required": false,
+          "description": "Authored Ad headline.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "copy",
+          "type": "string",
+          "required": false,
+          "description": "Authored Ad body copy.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "cta",
+          "type": "string",
+          "required": false,
+          "description": "Explicitly approved call to action.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "description": "Optional authored Ad description.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "landing_page",
+          "type": "string",
+          "required": false,
+          "description": "Final HTTP(S) destination URL.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "image_url",
+          "type": "string",
+          "required": false,
+          "description": "Optional durable public image URL.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
           "name": "ad_group_id",
           "type": "string",
           "required": false,
-          "description": "TikTok ad group id.",
-          "example": "value",
+          "description": "Canonical parent Ad Group id. Do not send adset_id for ChatGPT Ads.",
+          "example": "ag_123",
+          "source": "upstream:action:ads/list_ad_groups",
           "platform": [
-            "tiktok"
+            "tiktok",
+            "chatgpt_ads"
           ]
         },
         {
           "name": "adset_id",
           "type": "string",
           "required": false,
-          "description": "TikTok adset id.",
+          "description": "Provider-native parent alias. Do not send this field for ChatGPT Ads; send exactly one canonical ad_group_id instead.",
           "example": "value",
           "platform": [
+            "google",
+            "meta",
             "tiktok"
           ]
         }
@@ -13741,10 +14429,11 @@
       "id": "action:ads/update_ad_group",
       "namespace": "ads",
       "action": "update_ad_group",
-      "description": "Update Google Ads ad group name/status/cpc_bid_micros; review-gated, setting status=ENABLED resumes spend.",
+      "description": "Update a Google or ChatGPT Ads Ad Group; review-gated. Enabling/activating may resume spend.",
       "mode": "risk",
       "platforms": [
-        "google"
+        "google",
+        "chatgpt_ads"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -13754,16 +14443,17 @@
         "action:ads/remove_ad_group",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nMutate an existing Google ad group's name, status, or default CPC bid.\n\nUse when:\n- The user wants to activate or pause an ad group.\n- The user wants to rename an ad group or change its default CPC bid.\n\nDo not use when:\n- The platform is Meta. Use action:ads/update_adset.\n- The user wants to change keywords or ads. Use action:ads/update_keyword or action:ads/update_ad.\n\nWorkflow:\n1. Call action:ads/gaql_search to capture the prior state.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/gaql_search.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.message lists the fields actually updated.\n- Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n\nSide effects:\n- Field-mask update of (name, status, cpc_bid_micros) on the AdGroup.\n- Setting status=ENABLED resumes spend immediately if the parent campaign is also enabled.\n- Reversible if the prior value was captured.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: cpc_bid_micros: docs do not warn that it is a no-op (or error) unless the ad group is on a manual-CPC-compatible bidding strategy. An agent could set it under an automated strategy and report success while the bid has no effect. Also note: status: capability docs list 'ENABLED, PAUSED, REMOVED' but do not warn that an out-of-enum value is silently coerced to PAUSED by the handler. An agent that sends 'ACTIVE' or 'ENABLE' will unexpectedly PAUSE the ad group instead of getting an error — a potentially harmful silent behavior. Capability gap: No automated-bid override fields are exposed: target_cpa_micros, target_roas, cpm_bid_micros, percent_cpc_bid_micros, and the newer target_cpc_micros (added v22) are all mutable AdGroup fields per the official reference but absent from handler, capability docs, and normalize allowlist. Agents cannot set an ad-group-level Target CPA/ROAS or CPM bid override through this action — only manual cpc_bid_micros. This is a capability gap (P2; cpc covers the common manual-bidding case).",
+      "long_description": "Primary use:\nUpdate caller-controlled fields on an existing Google or ChatGPT Ads Ad Group.\n\nUse when:\n- The user approved a name, lifecycle, bid, content, targeting, budget, or tracking change.\n- A ChatGPT Ads manual group needs a persisted field correction.\n\nDo not use when:\n- The platform is Meta or TikTok; use action:ads/update_adset.\n- A ChatGPT Ads manual group still has authored Ads and the requested type is generative.\n- The update would activate delivery without separate explicit approval.\n\nWorkflow:\n1. Read the current Ad Group and capture the before state.\n2. Present the exact presence-aware patch and submit it for HITL review.\n3. Read the same id back and verify every supplied field, including explicit null.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- ChatGPT Ads returns the exact persisted Ad Group after readback proof.\n\nSide effects:\n- Mutates only supplied fields. Google lifecycle values are ENABLED, PAUSED, or REMOVED; ChatGPT Ads lifecycle values are lowercase active or paused.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google.",
+          "description": "Supported platforms: google, chatgpt_ads.",
           "example": "google",
           "enum": [
-            "google"
+            "google",
+            "chatgpt_ads"
           ],
           "source": "constant"
         },
@@ -13791,20 +14481,211 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "One of ENABLED, PAUSED, REMOVED.",
-          "example": "ENABLED",
-          "enum": [
-            "ENABLED",
-            "PAUSED",
-            "REMOVED"
-          ],
+          "description": "Provider-specific lifecycle value: Google uses ENABLED, PAUSED, or REMOVED; ChatGPT Ads uses lowercase active or paused. Activation requires separate approval.",
           "source": "constant"
         },
         {
           "name": "cpc_bid_micros",
           "type": "integer",
           "required": false,
-          "description": "Default CPC bid in micros (1 USD = 1_000_000)."
+          "description": "Default CPC bid in micros (1 USD = 1_000_000).",
+          "platform": [
+            "google"
+          ]
+        },
+        {
+          "name": "group_type",
+          "type": "string",
+          "required": false,
+          "description": "manual (default) or generative.",
+          "example": "manual",
+          "enum": [
+            "manual",
+            "generative"
+          ],
+          "source": "constant",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "context",
+          "type": "string",
+          "required": false,
+          "description": "Conversation context used by the Ad Group.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "negative_context",
+          "type": "string",
+          "required": false,
+          "description": "Explicitly approved contexts where the Ad Group must not appear.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "ad_prompt",
+          "type": "string",
+          "required": false,
+          "description": "Explicitly approved generation prompt; required by the deployment workflow for generative groups.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "image_url",
+          "type": "string",
+          "required": false,
+          "description": "Optional durable public Ad Group image URL.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "Optional Ad Group daily budget.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "auto_optimize_budget",
+          "type": "boolean",
+          "required": false,
+          "description": "Whether the platform automatically optimizes the Ad Group budget. Defaults to true.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "min_daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "Optional minimum daily-spend bound.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "max_daily_budget",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum daily-spend bound.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "max_cpc",
+          "type": "number",
+          "required": false,
+          "description": "Optional maximum CPC bound.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "required": false,
+          "description": "Optional stable Ad Group display order.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_countries",
+          "type": "list",
+          "required": false,
+          "description": "Explicitly approved country targeting.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "allowed_devices",
+          "type": "list",
+          "required": false,
+          "description": "Explicitly approved device targeting.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "include_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "Audience ids explicitly included.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "exclude_audience_ids",
+          "type": "list",
+          "required": false,
+          "description": "Audience ids explicitly excluded.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "example_query",
+          "type": "string",
+          "required": false,
+          "description": "Example query that should match the group.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "utm_params",
+          "type": "list",
+          "required": false,
+          "description": "Ordered UTM objects with key and value fields.",
+          "example": [
+            {
+              "key": "utm_source",
+              "value": "chatgpt"
+            }
+          ],
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "preview",
+          "type": "object",
+          "required": false,
+          "description": "Structured advertiser-dashboard preview metadata.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "landing_page",
+          "type": "string",
+          "required": false,
+          "description": "Replacement final HTTP(S) destination URL for the Ad Group.",
+          "example": "https://example.com",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "brand_name",
+          "type": "string",
+          "required": false,
+          "description": "Replacement brand display name shown by the advertiser dashboard.",
+          "example": "Acme",
+          "platform": [
+            "chatgpt_ads"
+          ]
         }
       ],
       "output_shape": "{\"success\": true, \"message\": \"Ad group updated: name, status, cpc_bid_micros\", \"results\": [...]}"
@@ -14469,8 +15350,7 @@
           "example": "2026-07-05",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14481,8 +15361,7 @@
           "example": "2026-08-31",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14493,8 +15372,7 @@
           "example": 50000000,
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14564,8 +15442,7 @@
           "description": "Meta only: campaign objective (see create_campaign for legal values).",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14575,8 +15452,7 @@
           "description": "Meta only: special category list.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14586,8 +15462,7 @@
           "description": "Meta only: AUCTION or RESERVED.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14597,8 +15472,7 @@
           "description": "Meta only: bid strategy enum.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14609,8 +15483,7 @@
           "example": 100000,
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14623,8 +15496,7 @@
           ],
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14635,8 +15507,7 @@
           "example": 50000,
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14657,8 +15528,7 @@
           "description": "Meta only: ISO-8601 stop time.",
           "platform": [
             "google",
-            "meta",
-            "chatgpt_ads"
+            "meta"
           ]
         },
         {
@@ -14706,7 +15576,9 @@
           "description": "",
           "enum": [
             "clicks",
-            "conversions"
+            "reach",
+            "conversions",
+            "leads"
           ],
           "source": "constant",
           "platform": [
