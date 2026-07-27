@@ -18854,6 +18854,245 @@
       "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shopify GraphQL response body ({data, errors[], extensions.cost})"
     },
     {
+      "id": "action:shoplazza/get_order",
+      "namespace": "shoplazza",
+      "action": "get_order",
+      "description": "Read a single Shoplazza order by id (read-only).",
+      "mode": "read",
+      "platforms": [
+        "shoplazza"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Fetches one order from the connected store via the Shoplazza OpenAPI (version 2022-01, GET /orders/{order_id}). The Shoplazza integration is READ-ONLY in this version: no write action exists and every request is a GET against a fixed path. This is a single-object read — there is no pagination; use list_orders to page through orders. order_id is the vendor order id shaped like {store_id}-{number} (e.g. 633130-00000007), as returned by list_orders. When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw OpenAPI response body ({order: {...}}) is returned verbatim inside the envelope.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Shoplazza store id. Optional when the brand has exactly one connected store; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "633130"
+        },
+        {
+          "name": "order_id",
+          "type": "string",
+          "required": true,
+          "description": "Order id shaped like {store_id}-{number} (letters, digits, hyphens).",
+          "example": "633130-00000007"
+        }
+      ],
+      "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shoplazza OpenAPI response body ({order: {...}})"
+    },
+    {
+      "id": "action:shoplazza/get_product",
+      "namespace": "shoplazza",
+      "action": "get_product",
+      "description": "Read a single Shoplazza product by its UUID (read-only).",
+      "mode": "read",
+      "platforms": [
+        "shoplazza"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Fetches one product from the connected store via the Shoplazza OpenAPI (version 2022-01, GET /products/{product_id}). The Shoplazza integration is READ-ONLY in this version: no write action exists and every request is a GET against a fixed path. This is a single-object read — there is no pagination; use list_products to page through the catalog. product_id must be the product UUID as returned by list_products. When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw OpenAPI response body ({product: {...}}) is returned verbatim inside the envelope.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Shoplazza store id. Optional when the brand has exactly one connected store; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "633130"
+        },
+        {
+          "name": "product_id",
+          "type": "string",
+          "required": true,
+          "description": "Product UUID (as returned by list_products).",
+          "example": "0f3e2b1a-1234-5678-9abc-def012345678"
+        }
+      ],
+      "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shoplazza OpenAPI response body ({product: {...}})"
+    },
+    {
+      "id": "action:shoplazza/get_shop",
+      "namespace": "shoplazza",
+      "action": "get_shop",
+      "description": "Read a Shoplazza store's shop metadata (name, domain, currency, ...).",
+      "mode": "read",
+      "platforms": [
+        "shoplazza"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Fetches the connected store's shop object from the Shoplazza OpenAPI (version 2022-01, GET /shop). The Shoplazza integration is READ-ONLY in this version: no write action exists and every request is a GET against a fixed path. This is a single-object read — there is no pagination. When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw OpenAPI response body ({shop: {...}}) is returned verbatim inside the envelope.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Shoplazza store id. Optional when the brand has exactly one connected store; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "633130"
+        }
+      ],
+      "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shoplazza OpenAPI response body ({shop: {...}})"
+    },
+    {
+      "id": "action:shoplazza/list_orders",
+      "namespace": "shoplazza",
+      "action": "list_orders",
+      "description": "List orders from a Shoplazza store (page/limit or page_token, read-only).",
+      "mode": "read",
+      "platforms": [
+        "shoplazza"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Lists orders from the connected store via the Shoplazza OpenAPI (version 2022-01, GET /orders). The Shoplazza integration is READ-ONLY in this version: no write action exists and every request is a GET against a fixed path. Pagination: either page (1-based) + limit (default 50, max 250), or page_token from a previous response's next_token (page_token takes precedence upstream). Optional filters: status, financial_status, fulfillment_status, created_at_min, created_at_max, and keyword. When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw OpenAPI response body ({orders: [...], count, next_token}) is returned verbatim inside the envelope.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Shoplazza store id. Optional when the brand has exactly one connected store; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "633130"
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "1-based page number (ignored upstream when page_token is set).",
+          "example": 1
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Page size (default 50, clamped to 1-250).",
+          "example": 50
+        },
+        {
+          "name": "page_token",
+          "type": "string",
+          "required": false,
+          "description": "Pagination token from a previous response's next_token.",
+          "example": "eyJwYWdlIjoy..."
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "description": "Filter by order status (opened / placed / finished / cancelled).",
+          "example": "opened"
+        },
+        {
+          "name": "financial_status",
+          "type": "string",
+          "required": false,
+          "description": "Filter by financial status (waiting / paying / paid / cancelled / failed / refunding / refund_failed / refunded / partially_refunded).",
+          "example": "paid"
+        },
+        {
+          "name": "fulfillment_status",
+          "type": "string",
+          "required": false,
+          "description": "Filter by fulfillment status (initialled / waiting / partially_shipped / shipped / partially_finished / finished / cancelled / returning / returned / partially_returned).",
+          "example": "shipped"
+        },
+        {
+          "name": "created_at_min",
+          "type": "string",
+          "required": false,
+          "description": "Only orders created at or after this timestamp (ISO 8601).",
+          "example": "2026-01-01T00:00:00Z"
+        },
+        {
+          "name": "created_at_max",
+          "type": "string",
+          "required": false,
+          "description": "Only orders created at or before this timestamp (ISO 8601).",
+          "example": "2026-07-01T00:00:00Z"
+        },
+        {
+          "name": "keyword",
+          "type": "string",
+          "required": false,
+          "description": "Keyword search over orders (upstream matching semantics).",
+          "example": "alice@example.com"
+        }
+      ],
+      "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shoplazza OpenAPI response body ({orders: [...], count, next_token})"
+    },
+    {
+      "id": "action:shoplazza/list_products",
+      "namespace": "shoplazza",
+      "action": "list_products",
+      "description": "List products from a Shoplazza store (cursor-paginated, read-only).",
+      "mode": "read",
+      "platforms": [
+        "shoplazza"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Lists products from the connected store via the Shoplazza OpenAPI (version 2022-01, GET /products). The Shoplazza integration is READ-ONLY in this version: no write action exists and every request is a GET against a fixed path. Pagination is cursor-based: pass the `cursor` value from the previous response to fetch the next page (`pre_cursor` walks back); per_page controls the page size (default 50, max 250). Optional filters: ids (comma-separated product UUIDs), title, and published_status. When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw OpenAPI response body ({products: [...], cursor, pre_cursor}) is returned verbatim inside the envelope.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Shoplazza store id. Optional when the brand has exactly one connected store; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "633130"
+        },
+        {
+          "name": "cursor",
+          "type": "string",
+          "required": false,
+          "description": "Pagination cursor from a previous list_products response.",
+          "example": "eyJsYXN0X2lkIjoi..."
+        },
+        {
+          "name": "pre_cursor",
+          "type": "string",
+          "required": false,
+          "description": "Pagination cursor walking back to the previous page.",
+          "example": "eyJmaXJzdF9pZCI6Ii..."
+        },
+        {
+          "name": "per_page",
+          "type": "integer",
+          "required": false,
+          "description": "Page size (default 50, clamped to 1-250).",
+          "example": 50
+        },
+        {
+          "name": "ids",
+          "type": "string",
+          "required": false,
+          "description": "Comma-separated product UUIDs to restrict the listing to.",
+          "example": "0f3e2b1a-....,9c8d7e6f-..."
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "Filter products by title (upstream matching semantics).",
+          "example": "T-shirt"
+        },
+        {
+          "name": "published_status",
+          "type": "string",
+          "required": false,
+          "description": "Filter by published status (e.g. published / unpublished).",
+          "example": "published"
+        }
+      ],
+      "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shoplazza OpenAPI response body ({products: [...], cursor, pre_cursor})"
+    },
+    {
       "id": "action:stripe/list_accounts",
       "namespace": "stripe",
       "action": "list_accounts",
