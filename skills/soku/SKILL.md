@@ -3,8 +3,9 @@ name: soku
 description: >-
   Use when calling Soku CLI capabilities from a shell: auth, workspace
   selection, ads/GA4/PostHog data reads, typed ads writes, SEO Hosting,
-  automations, Context Hub files, temporary file publishing, brand skills,
-  third-party egress, review-gated writes, skill installation, or CLI updates.
+  automations, Context Hub files, migrating context or project files from
+  Claude/ChatGPT, temporary file publishing, brand skills, third-party egress,
+  review-gated writes, skill installation, or CLI updates.
 license: MIT
 metadata:
   author: About Intelligence
@@ -30,6 +31,7 @@ Read only the reference files needed for the user's task:
 | SEO Hosting, automations, Context Hub files, temporary public file URLs | `references/seo-automation-files.md` |
 | Third-party APIs through server-side credential injection; security rules | `references/egress-security.md` |
 | Installing, updating, or removing Soku-managed local skills | `references/skills-updates.md` |
+| Migrate context, project files, or workspaces from Claude or ChatGPT into Soku | Run `soku skill install migrate-from-claude`, then read the installed `soku-migrate-from-claude` skill. |
 
 For an installed business skill such as `soku-ads-report`, read that skill too.
 Business skills carry their own "Running this skill with the Soku CLI" section.
