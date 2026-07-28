@@ -18552,7 +18552,7 @@
       "id": "action:seo_hosting/publish_page",
       "namespace": "seo_hosting",
       "action": "publish_page",
-      "description": "Publish a file-based SEO page after light validation (no custom JS, page.json fields). Flips page.json to published. Returns advisory link_warnings (dead internal links) and content_warnings (off-brand canonical/og/link domains, emoji in headings/icons, missing JSON-LD or publication date) — neither blocks publishing.",
+      "description": "Publish a file-based SEO page after light validation (no custom JS, page.json fields). Flips page.json to published. Returns advisory link_warnings (dead internal links, zero internal links) and content_warnings (off-brand canonical/og/link domains, canonical/og:url on a host with no connected SEO-hosting domain, no <img>, emoji in headings/icons, missing JSON-LD or publication date) — neither blocks publishing.",
       "mode": "write",
       "platforms": [
         "seo_hosting"
@@ -18787,7 +18787,7 @@
       "see_also": [
         "action:seo_hosting/publish_page"
       ],
-      "long_description": "Writes asset bytes to the public asset CDN under the brand's namespace and returns { url }. Provide the bytes via EITHER 'source_path' (a file you already wrote under your /brand/seo-hosting/ mount, e.g. 'pages/blog/best-crm/hero.png' — preferred in-sandbox, no base64) OR 'content_base64' (inline base64, for callers without the mount). 'path' is the relative CDN path like 'blog/best-crm/hero.png' (page asset) or '_templates/article/theme.css' (shared template asset). Allowed types: images / css / fonts. Reference the returned URL absolutely in your HTML. Content-Type is derived from the file extension. Assets are not auto-deleted with pages.",
+      "long_description": "Writes asset bytes to the public asset CDN under the brand's namespace and returns { url }. Provide the bytes via EITHER 'source_path' (a file you already wrote under your /brand/seo-hosting/ mount, e.g. 'pages/blog/best-crm/hero.png' — preferred in-sandbox, no base64) OR 'content_base64' (inline base64, for callers without the mount). 'path' is the relative CDN path like 'blog/best-crm/hero.png' (page asset) or '_templates/article/theme.css' (shared template asset). Allowed types: images / css / fonts. Reference the returned URL absolutely in your HTML. Content-Type is derived from the file extension. Assets are not auto-deleted with pages. For .css uploads the response 'warnings' lists fonts declared via font-family but never loaded (no @font-face / @import) — advisory; add an @font-face (upload the woff2 first) or use a system font stack.",
       "input_params": [
         {
           "name": "path",
@@ -18811,7 +18811,7 @@
           "source": "user"
         }
       ],
-      "output_shape": "{ url, path, size_bytes }"
+      "output_shape": "{ url, path, size_bytes, warnings: [str] (css only; [] otherwise) }"
     },
     {
       "id": "action:shopify/graphql_query",
