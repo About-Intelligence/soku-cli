@@ -17144,6 +17144,102 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
     },
     {
+      "id": "action:composio/append_doc_from_markdown",
+      "namespace": "composio",
+      "action": "append_doc_from_markdown",
+      "description": "Append richly formatted Markdown to an existing Google Doc through human review.",
+      "mode": "risk",
+      "platforms": [
+        "composio_managed"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Use only with a googledocs account from composio/list_accounts. Nothing is read or written before approval. On approval, the server reads all tabs, appends native formatting to the first tab, and uses the returned revision id as write control so collaborator changes are merged by Google Docs. Native tables use server-returned cell indexes rather than agent-computed offsets.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "A googledocs account id from composio/list_accounts.",
+          "example": "googledocs:google_user:1163774059..."
+        },
+        {
+          "name": "toolkit",
+          "type": "string",
+          "required": true,
+          "description": "Must be the literal toolkit slug googledocs.",
+          "example": "googledocs",
+          "enum": [
+            "googledocs"
+          ]
+        },
+        {
+          "name": "document_id",
+          "type": "string",
+          "required": true,
+          "description": "Existing Google Docs document id.",
+          "example": "1AbCdEfGhIjKlMn"
+        },
+        {
+          "name": "markdown",
+          "type": "string",
+          "required": true,
+          "description": "Non-empty Markdown content to append.",
+          "example": "## Update\n\nNew data received at 14:00 UTC."
+        }
+      ],
+      "output_shape": "202 -> {ok, pending_review_id}; on approval data.{document_id, url}; partial failure details include {stage, document_id, document_url}"
+    },
+    {
+      "id": "action:composio/create_doc_from_markdown",
+      "namespace": "composio",
+      "action": "create_doc_from_markdown",
+      "description": "Create a richly formatted Google Doc from Markdown through one human-reviewed semantic action.",
+      "mode": "risk",
+      "platforms": [
+        "composio_managed"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Use only with a googledocs account copied from composio/list_accounts. The dispatcher requests human approval before any Google API call. On approval, the server compiles the Markdown into native Google Docs headings, text styles, links, lists, code, images, and tables, then performs the required multi-stage official API calls through the same granted Composio account. Do not build batchUpdate indexes yourself. If creation succeeds but formatting fails, the error includes the document id and recovery URL for the empty or partially updated document.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "A googledocs account id from composio/list_accounts.",
+          "example": "googledocs:google_user:1163774059..."
+        },
+        {
+          "name": "toolkit",
+          "type": "string",
+          "required": true,
+          "description": "Must be the literal toolkit slug googledocs.",
+          "example": "googledocs",
+          "enum": [
+            "googledocs"
+          ]
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "Title for the new Google Doc.",
+          "example": "Weekly Performance Report"
+        },
+        {
+          "name": "markdown",
+          "type": "string",
+          "required": true,
+          "description": "Complete Markdown content to compile and write.",
+          "example": "# Summary\n\n- Spend: $150\n- Conversions: 12"
+        }
+      ],
+      "output_shape": "202 -> {ok, pending_review_id}; on approval data.{document_id, url, title}; partial failure details include {stage, document_id, document_url}"
+    },
+    {
       "id": "action:composio/graphql_mutate",
       "namespace": "composio",
       "action": "graphql_mutate",
@@ -17308,6 +17404,54 @@
         }
       ],
       "output_shape": "data.{toolkit, endpoint, method, status, data}"
+    },
+    {
+      "id": "action:composio/replace_doc_with_markdown",
+      "namespace": "composio",
+      "action": "replace_doc_with_markdown",
+      "description": "Replace the first tab of an existing Google Doc with richly formatted Markdown through human review.",
+      "mode": "risk",
+      "platforms": [
+        "composio_managed"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "This is destructive and always requires human approval. Use only with a googledocs account from composio/list_accounts. On approval, the server reads all tabs, deletes only the editable content in the first tab, writes the compiled Markdown, and carries the read revision id into write control. An empty Markdown string clears the first tab while preserving its required trailing paragraph and all other tabs.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "A googledocs account id from composio/list_accounts.",
+          "example": "googledocs:google_user:1163774059..."
+        },
+        {
+          "name": "toolkit",
+          "type": "string",
+          "required": true,
+          "description": "Must be the literal toolkit slug googledocs.",
+          "example": "googledocs",
+          "enum": [
+            "googledocs"
+          ]
+        },
+        {
+          "name": "document_id",
+          "type": "string",
+          "required": true,
+          "description": "Existing Google Docs document id.",
+          "example": "1AbCdEfGhIjKlMn"
+        },
+        {
+          "name": "markdown",
+          "type": "string",
+          "required": true,
+          "description": "Replacement Markdown. An empty string intentionally clears the first tab.",
+          "example": "# Replaced Report\n\nFull replacement content."
+        }
+      ],
+      "output_shape": "202 -> {ok, pending_review_id}; on approval data.{document_id, url}; partial failure details include {stage, document_id, document_url}"
     },
     {
       "id": "action:composio/request_change",
