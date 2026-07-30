@@ -192,7 +192,13 @@ export function buildGeneratedCommands(
   const groupFor = (namespace: string): Command => {
     let group = groups.get(namespace)
     if (!group) {
-      group = program.command(namespace).description(`${namespace} data capabilities`)
+      // Reuse a pre-registered hand-written top-level command with the same
+      // name (e.g. `org`) instead of creating a second, conflicting
+      // `command(namespace)`.
+      group = program.commands.find((cmd) => cmd.name() === namespace)
+      if (!group) {
+        group = program.command(namespace).description(`${namespace} data capabilities`)
+      }
       groups.set(namespace, group)
     }
     return group
