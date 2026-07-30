@@ -18456,6 +18456,144 @@
       "output_shape": "packages[].tools[] plus credentials[] grant bindings for BYO MCP runtime calls."
     },
     {
+      "id": "action:org/get_overview",
+      "namespace": "org",
+      "action": "get_overview",
+      "description": "Read the current organization's cross-brand overview.",
+      "mode": "read",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:org/list_brands",
+        "action:org/get_usage_summary"
+      ],
+      "long_description": "Returns the existing org-workspace overview aggregate for an inclusive UTC date window: per-brand usage and spend, health badges, unattributed/unassigned buckets, approvals, and seats.",
+      "input_params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive UTC start date in YYYY-MM-DD format.",
+          "example": "2026-07-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive UTC end date in YYYY-MM-DD format.",
+          "example": "2026-07-29"
+        }
+      ],
+      "output_shape": "{start_date, end_date, brands, total_credits, total_turns, total_spend, ...}"
+    },
+    {
+      "id": "action:org/get_usage_summary",
+      "namespace": "org",
+      "action": "get_usage_summary",
+      "description": "Read cross-brand usage, tokens, source split, and spend.",
+      "mode": "read",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:org/get_overview",
+        "action:org/list_brands"
+      ],
+      "long_description": "Wraps the existing org-workspace usage and overview services over the same inclusive UTC date window. Returns credits and tokens, coarse source attribution, time series, and currency-grouped spend. Vendor/internal cost is never exposed.",
+      "input_params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive UTC start date in YYYY-MM-DD format.",
+          "example": "2026-07-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive UTC end date in YYYY-MM-DD format.",
+          "example": "2026-07-29"
+        }
+      ],
+      "output_shape": "{start_date, end_date, total_credits, total_tokens, brands, timeseries, spend}"
+    },
+    {
+      "id": "action:org/list_activity",
+      "namespace": "org",
+      "action": "list_activity",
+      "description": "List the current organization's merged activity feed.",
+      "mode": "read",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:org/list_brands"
+      ],
+      "long_description": "Reads the existing org activity aggregate across agent reviews, org/member audit events, and billing events. Use the opaque cursor unchanged for the next page.",
+      "input_params": [
+        {
+          "name": "kinds",
+          "type": "list|string",
+          "required": false,
+          "description": "Optional subset of agent, org, member, and billing.",
+          "enum": [
+            "agent",
+            "org",
+            "member",
+            "billing"
+          ]
+        },
+        {
+          "name": "brand_id",
+          "type": "string",
+          "required": false,
+          "description": "Optional live brand UUID filter for agent activity."
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "required": false,
+          "description": "Optional inclusive ISO datetime lower bound."
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "required": false,
+          "description": "Optional inclusive ISO datetime upper bound."
+        },
+        {
+          "name": "cursor",
+          "type": "string",
+          "required": false,
+          "description": "Opaque cursor returned by the previous page."
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Page size from 1 to 100; defaults to 50.",
+          "example": 50
+        }
+      ],
+      "output_shape": "{items: [{kind, occurred_at, source, title, ...}], next_cursor: string|null}"
+    },
+    {
+      "id": "action:org/list_brands",
+      "namespace": "org",
+      "action": "list_brands",
+      "description": "List live brands in the current organization.",
+      "mode": "read",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Use this before cross-brand analysis to discover the current organization's live brand ids, slugs, names, and active status. Organization scope always comes from the sandbox token.",
+      "input_params": [],
+      "output_shape": "{brands: [{id, slug, name, status}], count: integer}"
+    },
+    {
       "id": "action:posthog/list_projects",
       "namespace": "posthog",
       "action": "list_projects",
