@@ -2145,9 +2145,9 @@
         {
           "name": "name",
           "type": "string",
-          "required": false,
-          "description": "Meta only (required): the ad name. Required by the registry and by Meta's Ad node create contract. Source: user-provided ad name. ChatGPT Ads: Optional authored Ad name.",
-          "example": "QA create_ad smoke",
+          "required": true,
+          "description": "Meta only (required): the ad name. Required by the registry and by Meta's Ad node create contract. Source: user-provided ad name. ChatGPT Ads: Required non-empty authored Ad name used for provider persistence and reconciliation.",
+          "example": "Research_workflow_01",
           "platform": [
             "meta",
             "chatgpt_ads"
@@ -3011,9 +3011,10 @@
           "name": "ads",
           "type": "list",
           "required": false,
-          "description": "Authored Ads for a manual group. Each object requires headline, copy, cta, and landing_page; create forces every Ad to paused. Omit for generative groups.",
+          "description": "Authored Ads for a manual group. Each object requires name, headline, copy, cta, and landing_page; create forces every Ad to paused. Omit for generative groups.",
           "example": [
             {
+              "name": "Research_workflow_01",
               "headline": "Approved headline",
               "copy": "Approved body copy.",
               "cta": "Learn more",
@@ -4499,6 +4500,7 @@
               "brand_name": "Example",
               "ads": [
                 {
+                  "name": "Research_workflow_01",
                   "headline": "Approved headline",
                   "copy": "Approved body copy.",
                   "cta": "Learn more",
@@ -11626,7 +11628,7 @@
         "action:ads/get_ad_group",
         "action:_batch/submit"
       ],
-      "long_description": "Primary use:\nPerform an explicit, idempotent HITL migration from caller-supplied legacy Ad Unit records into paused manual Ad Groups and Ads without changing legacy resources.\n\nUse when:\n- The user approved migration for a known Campaign and supplied complete legacy records.\n\nDo not use when:\n- The caller expects automatic legacy discovery, deletion, archival, or activation.\n- Any prior result is ambiguous and has not been reconciled.\n\nWorkflow:\n1. Supply stable ad_unit_id identities and approved content for every record.\n2. Submit one migration through HITL review.\n3. Inspect records[] and require materialization_verified=true for full success.\n4. Reconcile existing/created/ambiguous/failed records before retry.\n\nOutput semantics:\n- Success returns ordered records[], ad_group_ids, ad_ids, materialization_verified=true, and legacy_resources_modified=false.\n- A blocked, partial_failure, or unknown outcome returns per-record status and reconcile_required=true; known ids are retained.\n\nSide effects:\n- May create paused Ad Groups and authored Ads.\n- Never modifies, archives, or deletes the supplied legacy resources.",
+      "long_description": "Primary use:\nPerform an explicit, idempotent HITL migration from caller-supplied legacy Ad Unit records into paused manual Ad Groups and Ads without changing legacy resources.\n\nUse when:\n- The user approved migration for a known Campaign and supplied complete legacy records.\n\nDo not use when:\n- The caller expects automatic legacy discovery, deletion, archival, or activation.\n- The caller wants to repair existing Ad names; the separate guarded runner is plan-only by default, pauses and reads back active targets, orders by canonical ad_id, and never activates or submits review.\n- Any prior result is ambiguous and has not been reconciled.\n\nWorkflow:\n1. Supply stable ad_unit_id identities and approved content for every record.\n2. Submit one migration through HITL review.\n3. Inspect records[] and require materialization_verified=true for full success.\n4. Reconcile existing/created/ambiguous/failed records before retry.\n\nOutput semantics:\n- Success returns ordered records[], ad_group_ids, ad_ids, materialization_verified=true, and legacy_resources_modified=false.\n- A blocked, partial_failure, or unknown outcome returns per-record status and reconcile_required=true; known ids are retained.\n\nSide effects:\n- May create paused Ad Groups and authored Ads.\n- Never modifies, archives, or deletes the supplied legacy resources.",
       "input_params": [
         {
           "name": "platform",
@@ -11666,10 +11668,11 @@
           "name": "legacy_ad_units",
           "type": "list",
           "required": true,
-          "description": "Non-empty explicit records. Every record requires stable ad_unit_id, headline, static_ad_text, static_cta, landing_page, and brand_name; optional fields include description, ad_name, image_url, and utm_params.",
+          "description": "Non-empty explicit records. Every record requires stable ad_unit_id, headline, static_ad_text, static_cta, landing_page, and brand_name; optional fields include description, ad_name, image_url, and utm_params. When ad_name is omitted, migration derives 'Legacy migration <ad_unit_id> Ad'; explicit null or blank is rejected.",
           "example": [
             {
               "ad_unit_id": "legacy_123",
+              "ad_name": "Legacy migration legacy_123 Ad",
               "headline": "Approved headline",
               "static_ad_text": "Approved body copy.",
               "static_cta": "Learn more",
@@ -14311,7 +14314,7 @@
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "Meta only: new name for the ad (renames the Ad node). Google only: not applicable. Source: user-provided ad name. ChatGPT Ads: Optional authored Ad name.",
+          "description": "Meta only: new name for the ad (renames the Ad node). Google only: not applicable. Source: user-provided ad name. ChatGPT Ads: Optional replacement authored Ad name.",
           "example": "Summer sale - v2",
           "platform": [
             "google",
@@ -15298,7 +15301,7 @@
         "action:_batch/submit",
         "action:ads/list_operation_records"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Read action:ads/get_account_info first. Its activation_preflight is conservative and non-authoritative; the activation PATCH is the final authority.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Creation still sends the server-owned network_mode=openai under the private account-capability contract. A public generic advertiser-dashboard contract that describes server-managed allocation does not prove or replace that private contract.\n- Read action:ads/get_account_info first. Its activation_preflight is conservative and non-authoritative. Immediately before PATCH, Soku reads the exact Campaign and requires the same id, an explicitly non-active state, and literal network_mode=openai. Missing, conflicting, identity-mismatched, or failed readback stops with no activation PATCH.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.",
       "input_params": [
         {
           "name": "platform",
@@ -15338,7 +15341,7 @@
           "name": "status",
           "type": "string",
           "required": false,
-          "description": "Provider-specific lifecycle state (no global enum because the shared action has different provider vocabularies). TikTok: ENABLED, PAUSED, or REMOVED, mapped to ENABLE, DISABLE, or DELETE. ChatGPT Ads: DRAFT, ACTIVE, or PAUSED. Google/Meta follow their provider contracts. REMOVED is allowed only for update where supported.",
+          "description": "Provider-specific lifecycle state (no global enum because the shared action has different provider vocabularies). TikTok: ENABLED, PAUSED, or REMOVED, mapped to ENABLE, DISABLE, or DELETE. ChatGPT Ads: DRAFT, ACTIVE, or PAUSED. Google/Meta follow their provider contracts. For ChatGPT Ads ACTIVE, exact Campaign GET must prove the same id, non-active state, and literal network_mode=openai; omitted or conflicting evidence and read failures send no activation PATCH. REMOVED is allowed only for update where supported.",
           "example": "PAUSED",
           "source": "constant"
         },
