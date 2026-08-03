@@ -6,7 +6,7 @@ import test from 'node:test'
 
 import { Command } from 'commander'
 
-import { buildUploadImages, registerAdsEntities, resolveBudgetMicros } from './ads.js'
+import { buildUploadImages, registerAdsEntities, resolveBudgetMicros, resolveJsonArray } from './ads.js'
 
 function findCommand(root: Command, ...path: string[]): Command {
   let current = root
@@ -289,4 +289,139 @@ test('ads meta audience create-custom and create-lookalike expose their core fla
     assert.ok(lookalikeFlags.includes(flag), `create-lookalike missing ${flag}`)
   }
   assert.equal(lookalikeFlags.includes('--platform'), false)
+})
+
+test('ads chatgpt command tree exposes account/campaign/ad-group/ad groups', () => {
+  const program = new Command()
+  const ads = program.command('ads').description('ads data capabilities')
+  registerAdsEntities(ads)
+  const chatgpt = findCommand(ads, 'chatgpt')
+
+  const groups = chatgpt.commands.map((cmd) => cmd.name())
+  for (const group of ['account', 'campaign', 'ad-group', 'ad']) {
+    assert.ok(groups.includes(group), `chatgpt missing group ${group}`)
+  }
+
+  assert.ok(findCommand(chatgpt, 'account', 'info'))
+  const campaignVerbs = findCommand(chatgpt, 'campaign').commands.map((cmd) => cmd.name())
+  for (const verb of [
+    'list',
+    'get',
+    'create',
+    'update',
+    'remove',
+    'migrate-legacy',
+    'activate',
+    'pause',
+  ]) {
+    assert.ok(campaignVerbs.includes(verb), `chatgpt campaign missing ${verb}`)
+  }
+  const adGroupVerbs = findCommand(chatgpt, 'ad-group').commands.map((cmd) => cmd.name())
+  for (const verb of ['list', 'get', 'create', 'update', 'archive', 'activate', 'pause']) {
+    assert.ok(adGroupVerbs.includes(verb), `chatgpt ad-group missing ${verb}`)
+  }
+  const adVerbs = findCommand(chatgpt, 'ad').commands.map((cmd) => cmd.name())
+  for (const verb of ['create', 'update', 'archive']) {
+    assert.ok(adVerbs.includes(verb), `chatgpt ad missing ${verb}`)
+  }
+  // No legacy deprecated ad-unit commands in the ergonomic tree.
+  assert.equal(groups.includes('ad-unit'), false)
+})
+
+test('ads chatgpt campaign create exposes inline ad-groups and required chatgpt fields', () => {
+  const program = new Command()
+  const ads = program.command('ads').description('ads data capabilities')
+  registerAdsEntities(ads)
+  const create = findCommand(ads, 'chatgpt', 'campaign', 'create')
+
+  const flags = create.options.map((o) => o.long)
+  for (const flag of [
+    '--account-id',
+    '--name',
+    '--landing-page',
+    '--objective',
+    '--budget-daily',
+    '--budget-daily-micros',
+    '--ad-groups',
+    '--ad-groups-file',
+    '--summary',
+  ]) {
+    assert.ok(flags.includes(flag), `chatgpt campaign create missing ${flag}`)
+  }
+  assert.equal(flags.includes('--platform'), false)
+})
+
+test('ads chatgpt ad create requires authored-ad content fields', () => {
+  const program = new Command()
+  const ads = program.command('ads').description('ads data capabilities')
+  registerAdsEntities(ads)
+  const create = findCommand(ads, 'chatgpt', 'ad', 'create')
+
+  const required = create.options.filter((o) => o.mandatory).map((o) => o.long)
+  for (const flag of [
+    '--account-id',
+    '--ad-group-id',
+    '--name',
+    '--headline',
+    '--copy',
+    '--cta',
+    '--landing-page',
+    '--summary',
+  ]) {
+    assert.ok(required.includes(flag), `chatgpt ad create should require ${flag}`)
+  }
+})
+
+test('ads chatgpt activate/pause use lowercase statuses and require account id', () => {
+  const program = new Command()
+  const ads = program.command('ads').description('ads data capabilities')
+  registerAdsEntities(ads)
+  for (const path of [
+    ['chatgpt', 'campaign'],
+    ['chatgpt', 'ad-group'],
+  ]) {
+    const group = findCommand(ads, ...path)
+    for (const verb of ['activate', 'pause']) {
+      const cmd = findCommand(group, verb)
+      const accountOpt = cmd.options.find((o) => o.long === '--account-id')
+      assert.ok(accountOpt, `${path.join(' ')} ${verb} missing --account-id`)
+      assert.equal(accountOpt!.mandatory, true, `${path.join(' ')} ${verb} --account-id optional`)
+    }
+    assert.ok(
+      findCommand(group, 'activate').description().includes('active'),
+      `${path.join(' ')} activate should reference lowercase active status`,
+    )
+    assert.ok(
+      findCommand(group, 'pause').description().includes('paused'),
+      `${path.join(' ')} pause should reference lowercase paused status`,
+    )
+  }
+})
+
+test('ads google/meta activate-pause keep uppercase status literals after helper generalization', () => {
+  const program = new Command()
+  const ads = program.command('ads').description('ads data capabilities')
+  registerAdsEntities(ads)
+  assert.ok(findCommand(ads, 'google', 'campaign', 'pause').description().includes('PAUSED'))
+  assert.ok(findCommand(ads, 'meta', 'campaign', 'pause').description().includes('PAUSED'))
+  const googleAccountOpt = findCommand(ads, 'google', 'campaign', 'pause').options.find(
+    (o) => o.long === '--account-id',
+  )
+  assert.ok(googleAccountOpt)
+  assert.equal(googleAccountOpt!.mandatory, false)
+})
+
+test('resolveJsonArray accepts inline JSON arrays and file sources', () => {
+  const inline = resolveJsonArray('ad_groups', '--ad-groups', '--ad-groups-file', [{ a: 1 }], undefined)
+  assert.deepEqual(inline, [{ a: 1 }])
+
+  const dir = mkdtempSync(join(tmpdir(), 'soku-cli-chatgpt-'))
+  try {
+    const file = join(dir, 'groups.json')
+    writeFileSync(file, JSON.stringify([{ name: 'AG 1' }]))
+    const fromFile = resolveJsonArray('ad_groups', '--ad-groups', '--ad-groups-file', undefined, file)
+    assert.deepEqual(fromFile, [{ name: 'AG 1' }])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })

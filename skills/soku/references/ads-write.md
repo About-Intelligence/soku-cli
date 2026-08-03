@@ -157,32 +157,61 @@ The command path determines platform. Do not add `--platform`; the CLI injects
 
 ## ChatGPT Ads Writes
 
-ChatGPT Ads uses the generic `ads` action surface. The platform object model is
-ad unit first, campaign second:
-
-1. Create one or more ad units with `ads/create_ad_unit`.
-2. Create the campaign with `ads/create_campaign`, `platform=chatgpt_ads`, and a
-   non-empty `ad_unit_ids` list.
-3. Keep new campaigns paused. The backend forces create to paused; do not submit
-   `update_campaign(status=active)` unless the user explicitly asks for
-   activation and approves that exact review.
-
-Use `soku call` when a typed command is not obvious:
+Use:
 
 ```bash
-soku call ads create_ad_unit \
-  --payload '{"platform":"chatgpt_ads","account_id":"<account_id>","platform_extras":{"description":"Ad unit description","landing_page":"https://example.com/?utm_source=chatgpt_ads","static_ad_text":"Primary text","static_cta":"Learn more"}}' \
-  --summary "Create paused ChatGPT Ads ad unit input"
-
-soku call ads create_campaign \
-  --payload '{"platform":"chatgpt_ads","account_id":"<account_id>","name":"Launch Test","budget_daily_micros":300000000,"platform_extras":{"landing_page":"https://example.com/?utm_source=chatgpt_ads","campaign_objective":"clicks","ad_unit_ids":["<ad_unit_id>"]}}' \
-  --summary "Create paused ChatGPT Ads campaign Launch Test"
+soku ads chatgpt --help
+soku ads chatgpt account --help
+soku ads chatgpt campaign --help
+soku ads chatgpt ad-group --help
+soku ads chatgpt ad --help
 ```
 
-Available ChatGPT Ads write actions: `create_ad_unit`, `create_campaign`,
-`generate_ad_units`, `add_campaign_ad_units`, `replace_campaign_ad_units`,
-`update_campaign`, and `archive_ad_unit`. Treat `archive_ad_unit` as a toggle:
-verify current state before using it.
+The command path determines platform. Do not add `--platform`; the CLI injects
+`platform=chatgpt_ads`.
+
+The object model is `Campaign → Ad Group → Ad`. `campaign create` requires a
+non-empty inline ad-groups array (`--ad-groups '<json>'` or
+`--ad-groups-file groups.json`); each group is `manual` (with authored `ads`)
+or `generative`. Campaign, ad group, and ad creates are all forced paused by
+the backend; activation is a separate review-gated
+`soku ads chatgpt campaign activate` that the user must explicitly request and
+approve. ChatGPT Ads status literals are lowercase `active` / `paused`, ads
+live under `ad_group_id` (never `adset_id`), and every mutation requires
+`--account-id`.
+
+```bash
+soku ads chatgpt campaign create \
+  --account-id <account_id> --name "Launch Test" \
+  --landing-page "https://example.com/?utm_source=chatgpt_ads" \
+  --objective clicks --budget-daily 300 \
+  --ad-groups '[{"group_type":"manual","name":"AG 1","landing_page":"https://example.com/?utm_source=chatgpt_ads","brand_name":"Example","ads":[{"name":"Ad 1","headline":"Headline","copy":"Body","cta":"Learn more","landing_page":"https://example.com/?utm_source=chatgpt_ads"}]}]' \
+  --summary "Create paused ChatGPT Ads campaign Launch Test"
+
+soku ads chatgpt ad-group create \
+  --account-id <account_id> --campaign-id <campaign_id> \
+  --name "AG 2" --landing-page "https://example.com/?utm_source=chatgpt_ads" \
+  --brand-name "Example" --group-type generative \
+  --summary "Add generative ad group AG 2"
+
+soku ads chatgpt ad create \
+  --account-id <account_id> --ad-group-id <ad_group_id> \
+  --name "Ad 2" --headline "Headline" --copy "Body" --cta "Learn more" \
+  --landing-page "https://example.com/?utm_source=chatgpt_ads" \
+  --summary "Add authored ad Ad 2"
+```
+
+Reads need no `--summary`: `soku ads chatgpt account info` (billing facts plus
+activation/tracking preflight), `campaign list|get`, `ad-group list|get`.
+Archives (`campaign remove`, `ad-group archive`, `ad archive`) are
+provider-side archive toggles — verify current state with a read first.
+
+Legacy ad-unit campaigns (`create_ad_unit`, `generate_ad_units`,
+`add_campaign_ad_units`, `replace_campaign_ad_units`, `archive_ad_unit`) are
+deprecated and stay on the raw `soku call ads <action>` surface for existing
+campaigns only; do not use them for new deployments. Migrate a legacy campaign
+with `soku ads chatgpt campaign migrate-legacy` (moves ad units into paused Ad
+Groups and authored Ads).
 
 ## Review Gate
 

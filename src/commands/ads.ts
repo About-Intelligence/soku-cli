@@ -21,7 +21,7 @@ import { Command } from 'commander'
 import { emitError, ExitCode } from '../output/envelope.js'
 import { buildGeneratedCommands, callTypedAction, loadManifest } from './generated.js'
 
-type AdsPlatform = 'google' | 'meta'
+type AdsPlatform = 'google' | 'meta' | 'chatgpt_ads'
 
 /** Collect repeatable `-p key=value` into a payload object; values are parsed as
  * JSON when possible (so numbers/booleans/arrays work), else kept as strings. */
@@ -49,6 +49,14 @@ function parseIntFlag(flag: string, raw: string): number {
   const n = Number(raw)
   if (!Number.isInteger(n)) {
     emitError('usage', `${flag} must be an integer, got: ${raw}`, ExitCode.USAGE)
+  }
+  return n
+}
+
+function parseNumberFlag(flag: string, raw: string): number {
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 0) {
+    emitError('usage', `${flag} must be a non-negative number, got: ${raw}`, ExitCode.USAGE)
   }
   return n
 }
@@ -242,7 +250,10 @@ export async function buildUploadImages(
 
 /** Add `activate` / `pause` convenience verbs to a platform-specific entity
  * group. The public command tree already determines the platform; the helper
- * only injects the right active status and payload id field. */
+ * only injects the right active/paused status literals and payload id field.
+ * ChatGPT Ads uses lowercase `active`/`paused` and requires `account_id` on
+ * every mutation, so callers can override the paused literal and make the
+ * account flag required. */
 function addActivatePause(
   group: Command,
   platform: AdsPlatform,
@@ -252,12 +263,18 @@ function addActivatePause(
   action: string,
   entity: string,
   activeStatus: string,
+  pausedStatus = 'PAUSED',
+  accountIdRequired = false,
 ): void {
-  group
-    .command('activate')
-    .description(`Start serving the ${entity} (sets status ${activeStatus})`)
-    .requiredOption(`${idFlag} <id>`, `${entity} id`)
-    .option(...ACCOUNT_ID_OPT)
+  const addAccountIdOption = (cmd: Command): Command =>
+    accountIdRequired ? cmd.requiredOption(...ACCOUNT_ID_OPT) : cmd.option(...ACCOUNT_ID_OPT)
+
+  addAccountIdOption(
+    group
+      .command('activate')
+      .description(`Start serving the ${entity} (sets status ${activeStatus})`)
+      .requiredOption(`${idFlag} <id>`, `${entity} id`),
+  )
     .requiredOption(...SUMMARY_OPT)
     .option(...PARAM_OPT, collectParam, {})
     .action(async (opts: { accountId?: string; summary: string; param: Record<string, unknown> } & Record<string, string>) => {
@@ -269,18 +286,19 @@ function addActivatePause(
       )
     })
 
-  group
-    .command('pause')
-    .description(`Stop serving the ${entity} (sets status PAUSED)`)
-    .requiredOption(`${idFlag} <id>`, `${entity} id`)
-    .option(...ACCOUNT_ID_OPT)
+  addAccountIdOption(
+    group
+      .command('pause')
+      .description(`Stop serving the ${entity} (sets status ${pausedStatus})`)
+      .requiredOption(`${idFlag} <id>`, `${entity} id`),
+  )
     .requiredOption(...SUMMARY_OPT)
     .option(...PARAM_OPT, collectParam, {})
     .action(async (opts: { accountId?: string; summary: string; param: Record<string, unknown> } & Record<string, string>) => {
       await runAdsWrite(
         platform,
         action,
-        { [payloadKey]: opts[optionKey], status: 'PAUSED' },
+        { [payloadKey]: opts[optionKey], status: pausedStatus },
         { ...opts, accountId: opts.accountId },
       )
     })
@@ -1345,6 +1363,590 @@ function registerGoogleKeywordCommands(google: Command): void {
     )
 }
 
+/** Read a non-empty JSON array for ChatGPT Ads inline structures from either an
+ * inline JSON flag or a file flag; exactly one source must be provided. */
+export function resolveJsonArray(
+  label: string,
+  inlineFlag: string,
+  fileFlag: string,
+  inline: unknown,
+  file: string | undefined,
+): unknown[] {
+  if ((inline === undefined) === (file === undefined)) {
+    emitError('usage', `Provide exactly one of ${inlineFlag} or ${fileFlag}.`, ExitCode.USAGE)
+  }
+  let parsed = inline
+  if (file !== undefined) {
+    try {
+      parsed = JSON.parse(readFileSync(file, 'utf8'))
+    } catch (err) {
+      return emitError(
+        'usage',
+        `${fileFlag} must be readable JSON: ${file}`,
+        ExitCode.USAGE,
+        (err as Error).message,
+      )
+    }
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    emitError('usage', `${label} must be a non-empty JSON array.`, ExitCode.USAGE)
+  }
+  return parsed
+}
+
+function runChatgptRead(action: string, fields: Record<string, unknown>): Promise<never> {
+  const payload: Record<string, unknown> = { platform: 'chatgpt_ads' }
+  for (const [k, v] of Object.entries(fields)) {
+    if (v !== undefined) payload[k] = v
+  }
+  return callTypedAction('ads', action, payload)
+}
+
+function registerChatgptAccountCommands(chatgpt: Command): void {
+  const account = chatgpt.command('account').description('Read ChatGPT Ads account resources')
+
+  account
+    .command('info')
+    .description(
+      'Read ChatGPT Ads account health, billing facts, and activation/tracking preflight',
+    )
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .option(...PARAM_OPT, collectParam, {})
+    .action(async (opts: { accountId: string; param: Record<string, unknown> }) => {
+      await runChatgptRead('get_account_info', { ...opts.param, account_id: opts.accountId })
+    })
+}
+
+function registerChatgptCampaignCommands(chatgpt: Command): void {
+  const campaign = chatgpt
+    .command('campaign')
+    .description('Create and manage ChatGPT Ads campaigns')
+
+  campaign
+    .command('list')
+    .description('List ChatGPT Ads campaigns in an account')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .option(...PARAM_OPT, collectParam, {})
+    .action(async (opts: { accountId: string; param: Record<string, unknown> }) => {
+      await runChatgptRead('list_campaigns', { ...opts.param, account_id: opts.accountId })
+    })
+
+  campaign
+    .command('get')
+    .description('Read one ChatGPT Ads campaign by id')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--campaign-id <id>', 'Campaign id')
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: { accountId: string; campaignId: string; param: Record<string, unknown> }) => {
+        await runChatgptRead('get_campaign', {
+          ...opts.param,
+          account_id: opts.accountId,
+          campaign_id: opts.campaignId,
+        })
+      },
+    )
+
+  campaign
+    .command('create')
+    .description(
+      'Create a ChatGPT Ads campaign with inline ad groups (created paused; ' +
+        'activation is a separate approved update)',
+    )
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--name <name>', 'Campaign name')
+    .requiredOption('--landing-page <url>', 'Campaign landing page URL')
+    .requiredOption('--objective <objective>', 'clicks | reach | conversions | leads')
+    .option('--budget-daily-micros <micros>', 'Daily budget in micros')
+    .option('--budget-daily <amount>', 'Daily budget in account currency')
+    .option('--ad-groups <json>', 'Inline JSON array of ad groups', (v) =>
+      parseJsonValue('--ad-groups', v),
+    )
+    .option('--ad-groups-file <file>', 'File containing the JSON array of ad groups')
+    .option('--billing-model <model>', 'cpm | cpc | cpa')
+    .option('--max-cpc <amount>', 'Max cost per click')
+    .option('--start-time <iso>', 'Campaign start time (ISO 8601)')
+    .option('--end-time <iso>', 'Campaign end time (ISO 8601)')
+    .option('--allowed-countries <list>', 'Comma-separated country codes')
+    .option('--allowed-devices <list>', 'Comma-separated device types')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        name: string
+        landingPage: string
+        objective: string
+        budgetDailyMicros?: string
+        budgetDaily?: string
+        adGroups?: unknown
+        adGroupsFile?: string
+        billingModel?: string
+        maxCpc?: string
+        startTime?: string
+        endTime?: string
+        allowedCountries?: string
+        allowedDevices?: string
+      } & WriteOpts) => {
+        const budgetMicros = resolveBudgetMicros(opts.budgetDaily, opts.budgetDailyMicros)
+        if (budgetMicros === undefined) {
+          emitError(
+            'usage',
+            'chatgpt campaigns require --budget-daily-micros (or --budget-daily)',
+            ExitCode.USAGE,
+          )
+        }
+        const adGroups = resolveJsonArray(
+          'ad_groups',
+          '--ad-groups',
+          '--ad-groups-file',
+          opts.adGroups,
+          opts.adGroupsFile,
+        )
+        await runAdsWrite(
+          'chatgpt_ads',
+          'create_campaign',
+          {
+            account_id: opts.accountId,
+            name: opts.name,
+            landing_page: opts.landingPage,
+            campaign_objective: opts.objective,
+            budget_daily_micros: budgetMicros,
+            ad_groups: adGroups,
+            billing_model: opts.billingModel,
+            max_cpc: opts.maxCpc ? parseNumberFlag('--max-cpc', opts.maxCpc) : undefined,
+            start_time: opts.startTime,
+            end_time: opts.endTime,
+            allowed_countries: splitCommaList(opts.allowedCountries),
+            allowed_devices: splitCommaList(opts.allowedDevices),
+          },
+          opts,
+        )
+      },
+    )
+
+  campaign
+    .command('update')
+    .description('Update a ChatGPT Ads campaign (status accepts lowercase active | paused)')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--campaign-id <id>', 'Campaign id')
+    .option('--name <name>', 'New campaign name')
+    .option('--status <status>', 'active | paused')
+    .option('--daily-budget <amount>', 'Daily budget in account currency')
+    .option('--landing-page <url>', 'Campaign landing page URL')
+    .option('--objective <objective>', 'clicks | reach | conversions | leads')
+    .option('--end-time <iso>', 'Campaign end time (ISO 8601)')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        campaignId: string
+        name?: string
+        status?: string
+        dailyBudget?: string
+        landingPage?: string
+        objective?: string
+        endTime?: string
+      } & WriteOpts) => {
+        await runAdsWrite(
+          'chatgpt_ads',
+          'update_campaign',
+          {
+            account_id: opts.accountId,
+            campaign_id: opts.campaignId,
+            name: opts.name,
+            status: opts.status,
+            daily_budget: opts.dailyBudget
+              ? parseNumberFlag('--daily-budget', opts.dailyBudget)
+              : undefined,
+            landing_page: opts.landingPage,
+            campaign_objective: opts.objective,
+            end_time: opts.endTime,
+          },
+          opts,
+        )
+      },
+    )
+
+  campaign
+    .command('remove')
+    .description('Archive a ChatGPT Ads campaign (provider-side archive toggle)')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--campaign-id <id>', 'Campaign id')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(async (opts: { accountId: string; campaignId: string } & WriteOpts) => {
+      await runAdsWrite(
+        'chatgpt_ads',
+        'remove_campaign',
+        { account_id: opts.accountId, campaign_id: opts.campaignId },
+        opts,
+      )
+    })
+
+  campaign
+    .command('migrate-legacy')
+    .description(
+      'Migrate legacy ChatGPT Ads ad units on a campaign into paused Ad Groups and Ads',
+    )
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--campaign-id <id>', 'Campaign id')
+    .option('--legacy-ad-units <json>', 'Inline JSON array of legacy ad unit descriptors', (v) =>
+      parseJsonValue('--legacy-ad-units', v),
+    )
+    .option('--legacy-ad-units-file <file>', 'File containing the JSON array of legacy ad units')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        campaignId: string
+        legacyAdUnits?: unknown
+        legacyAdUnitsFile?: string
+      } & WriteOpts) => {
+        const legacyAdUnits = resolveJsonArray(
+          'legacy_ad_units',
+          '--legacy-ad-units',
+          '--legacy-ad-units-file',
+          opts.legacyAdUnits,
+          opts.legacyAdUnitsFile,
+        )
+        await runAdsWrite(
+          'chatgpt_ads',
+          'migrate_legacy_ad_units',
+          {
+            account_id: opts.accountId,
+            campaign_id: opts.campaignId,
+            legacy_ad_units: legacyAdUnits,
+          },
+          opts,
+        )
+      },
+    )
+
+  addActivatePause(
+    campaign,
+    'chatgpt_ads',
+    '--campaign-id',
+    'campaignId',
+    'campaign_id',
+    'update_campaign',
+    'campaign',
+    'active',
+    'paused',
+    true,
+  )
+}
+
+function registerChatgptAdGroupCommands(chatgpt: Command): void {
+  const adGroup = chatgpt
+    .command('ad-group')
+    .description('Create and manage ChatGPT Ads ad groups')
+
+  adGroup
+    .command('list')
+    .description('List ChatGPT Ads ad groups, optionally scoped to one campaign')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .option('--campaign-id <id>', 'Scope to one campaign')
+    .option('--include-archived', 'Include archived ad groups')
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        campaignId?: string
+        includeArchived?: boolean
+        param: Record<string, unknown>
+      }) => {
+        await runChatgptRead('list_ad_groups', {
+          ...opts.param,
+          account_id: opts.accountId,
+          campaign_id: opts.campaignId,
+          include_archived: opts.includeArchived,
+        })
+      },
+    )
+
+  adGroup
+    .command('get')
+    .description('Read one ChatGPT Ads ad group and its embedded ads')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--ad-group-id <id>', 'Ad group id')
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: { accountId: string; adGroupId: string; param: Record<string, unknown> }) => {
+        await runChatgptRead('get_ad_group', {
+          ...opts.param,
+          account_id: opts.accountId,
+          ad_group_id: opts.adGroupId,
+        })
+      },
+    )
+
+  adGroup
+    .command('create')
+    .description('Create a ChatGPT Ads ad group under a campaign (created paused)')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--campaign-id <id>', 'Parent campaign id')
+    .requiredOption('--name <name>', 'Ad group name')
+    .requiredOption('--landing-page <url>', 'Ad group landing page URL')
+    .requiredOption('--brand-name <name>', 'Brand name shown with the ads')
+    .option('--group-type <type>', 'manual | generative')
+    .option('--context <text>', 'Ad group targeting context')
+    .option('--negative-context <text>', 'Context to avoid')
+    .option('--ad-prompt <text>', 'Prompt for generative ads')
+    .option('--image-url <url>', 'Ad group image URL')
+    .option('--daily-budget <amount>', 'Daily budget in account currency')
+    .option('--max-cpc <amount>', 'Max cost per click')
+    .option('--example-query <text>', 'Example user query the ads should match')
+    .option('--allowed-countries <list>', 'Comma-separated country codes')
+    .option('--allowed-devices <list>', 'Comma-separated device types')
+    .option('--ads <json>', 'Inline JSON array of authored ads (manual groups)', (v) =>
+      parseJsonValue('--ads', v),
+    )
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        campaignId: string
+        name: string
+        landingPage: string
+        brandName: string
+        groupType?: string
+        context?: string
+        negativeContext?: string
+        adPrompt?: string
+        imageUrl?: string
+        dailyBudget?: string
+        maxCpc?: string
+        exampleQuery?: string
+        allowedCountries?: string
+        allowedDevices?: string
+        ads?: unknown
+      } & WriteOpts) => {
+        await runAdsWrite(
+          'chatgpt_ads',
+          'create_ad_group',
+          {
+            account_id: opts.accountId,
+            campaign_id: opts.campaignId,
+            name: opts.name,
+            landing_page: opts.landingPage,
+            brand_name: opts.brandName,
+            group_type: opts.groupType,
+            context: opts.context,
+            negative_context: opts.negativeContext,
+            ad_prompt: opts.adPrompt,
+            image_url: opts.imageUrl,
+            daily_budget: opts.dailyBudget
+              ? parseNumberFlag('--daily-budget', opts.dailyBudget)
+              : undefined,
+            max_cpc: opts.maxCpc ? parseNumberFlag('--max-cpc', opts.maxCpc) : undefined,
+            example_query: opts.exampleQuery,
+            allowed_countries: splitCommaList(opts.allowedCountries),
+            allowed_devices: splitCommaList(opts.allowedDevices),
+            ads: opts.ads,
+          },
+          opts,
+        )
+      },
+    )
+
+  adGroup
+    .command('update')
+    .description('Update a ChatGPT Ads ad group (status accepts lowercase active | paused)')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--ad-group-id <id>', 'Ad group id')
+    .option('--name <name>', 'New ad group name')
+    .option('--status <status>', 'active | paused')
+    .option('--context <text>', 'Ad group targeting context')
+    .option('--landing-page <url>', 'Ad group landing page URL')
+    .option('--brand-name <name>', 'Brand name shown with the ads')
+    .option('--image-url <url>', 'Ad group image URL')
+    .option('--daily-budget <amount>', 'Daily budget in account currency')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        adGroupId: string
+        name?: string
+        status?: string
+        context?: string
+        landingPage?: string
+        brandName?: string
+        imageUrl?: string
+        dailyBudget?: string
+      } & WriteOpts) => {
+        await runAdsWrite(
+          'chatgpt_ads',
+          'update_ad_group',
+          {
+            account_id: opts.accountId,
+            ad_group_id: opts.adGroupId,
+            name: opts.name,
+            status: opts.status,
+            context: opts.context,
+            landing_page: opts.landingPage,
+            brand_name: opts.brandName,
+            image_url: opts.imageUrl,
+            daily_budget: opts.dailyBudget
+              ? parseNumberFlag('--daily-budget', opts.dailyBudget)
+              : undefined,
+          },
+          opts,
+        )
+      },
+    )
+
+  adGroup
+    .command('archive')
+    .description('Archive a ChatGPT Ads ad group and the ads inside it')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--ad-group-id <id>', 'Ad group id')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(async (opts: { accountId: string; adGroupId: string } & WriteOpts) => {
+      await runAdsWrite(
+        'chatgpt_ads',
+        'archive_ad_group',
+        { account_id: opts.accountId, ad_group_id: opts.adGroupId },
+        opts,
+      )
+    })
+
+  addActivatePause(
+    adGroup,
+    'chatgpt_ads',
+    '--ad-group-id',
+    'adGroupId',
+    'ad_group_id',
+    'update_ad_group',
+    'ad group',
+    'active',
+    'paused',
+    true,
+  )
+}
+
+function registerChatgptAdCommands(chatgpt: Command): void {
+  const ad = chatgpt.command('ad').description('Create and manage ChatGPT Ads authored ads')
+
+  ad
+    .command('create')
+    .description('Create an authored ad in a manual ChatGPT Ads ad group (created paused)')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--ad-group-id <id>', 'Parent ad group id')
+    .requiredOption('--name <name>', 'Ad name')
+    .requiredOption('--headline <text>', 'Ad headline')
+    .requiredOption('--copy <text>', 'Ad body copy')
+    .requiredOption('--cta <text>', 'Call to action')
+    .requiredOption('--landing-page <url>', 'Ad landing page URL')
+    .option('--description <text>', 'Ad description')
+    .option('--image-url <url>', 'Ad image URL')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        adGroupId: string
+        name: string
+        headline: string
+        copy: string
+        cta: string
+        landingPage: string
+        description?: string
+        imageUrl?: string
+      } & WriteOpts) => {
+        await runAdsWrite(
+          'chatgpt_ads',
+          'create_ad',
+          {
+            account_id: opts.accountId,
+            ad_group_id: opts.adGroupId,
+            name: opts.name,
+            headline: opts.headline,
+            copy: opts.copy,
+            cta: opts.cta,
+            landing_page: opts.landingPage,
+            description: opts.description,
+            image_url: opts.imageUrl,
+          },
+          opts,
+        )
+      },
+    )
+
+  ad
+    .command('update')
+    .description('Update an authored ad in a manual ChatGPT Ads ad group')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--ad-group-id <id>', 'Parent ad group id')
+    .requiredOption('--ad-id <id>', 'Ad id')
+    .option('--name <name>', 'New ad name')
+    .option('--headline <text>', 'Ad headline')
+    .option('--copy <text>', 'Ad body copy')
+    .option('--cta <text>', 'Call to action')
+    .option('--landing-page <url>', 'Ad landing page URL')
+    .option('--description <text>', 'Ad description')
+    .option('--image-url <url>', 'Ad image URL')
+    .option('--status <status>', 'active | paused')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(
+      async (opts: {
+        accountId: string
+        adGroupId: string
+        adId: string
+        name?: string
+        headline?: string
+        copy?: string
+        cta?: string
+        landingPage?: string
+        description?: string
+        imageUrl?: string
+        status?: string
+      } & WriteOpts) => {
+        await runAdsWrite(
+          'chatgpt_ads',
+          'update_ad',
+          {
+            account_id: opts.accountId,
+            ad_group_id: opts.adGroupId,
+            ad_id: opts.adId,
+            name: opts.name,
+            headline: opts.headline,
+            copy: opts.copy,
+            cta: opts.cta,
+            landing_page: opts.landingPage,
+            description: opts.description,
+            image_url: opts.imageUrl,
+            status: opts.status,
+          },
+          opts,
+        )
+      },
+    )
+
+  ad
+    .command('archive')
+    .description('Archive an authored ad in a manual ChatGPT Ads ad group')
+    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
+    .requiredOption('--ad-group-id <id>', 'Parent ad group id')
+    .requiredOption('--ad-id <id>', 'Ad id')
+    .requiredOption(...SUMMARY_OPT)
+    .option(...PARAM_OPT, collectParam, {})
+    .action(async (opts: { accountId: string; adGroupId: string; adId: string } & WriteOpts) => {
+      await runAdsWrite(
+        'chatgpt_ads',
+        'archive_ad',
+        { account_id: opts.accountId, ad_group_id: opts.adGroupId, ad_id: opts.adId },
+        opts,
+      )
+    })
+}
+
 /** Attach platform-first Tier-2 entity sub-groups to the shared `ads` group. */
 export function registerAdsEntities(ads: Command): void {
   const meta = ads.command('meta').description('Meta Ads write commands')
@@ -1362,6 +1964,12 @@ export function registerAdsEntities(ads: Command): void {
   registerGoogleAdGroupCommands(google)
   registerGoogleAdCommands(google)
   registerGoogleKeywordCommands(google)
+
+  const chatgpt = ads.command('chatgpt').description('ChatGPT Ads read and write commands')
+  registerChatgptAccountCommands(chatgpt)
+  registerChatgptCampaignCommands(chatgpt)
+  registerChatgptAdGroupCommands(chatgpt)
+  registerChatgptAdCommands(chatgpt)
 }
 
 /** Register the `ads` command group: Tier-1 generated data actions (read +
