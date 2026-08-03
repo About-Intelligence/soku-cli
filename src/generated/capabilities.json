@@ -581,6 +581,90 @@
       "output_shape": "{\"success\": true, \"message\": \"Added 5 campaign negative keyword(s)\", \"results\": [...]}"
     },
     {
+      "id": "action:ads/add_campaign_webpage_exclusion",
+      "namespace": "ads",
+      "action": "add_campaign_webpage_exclusion",
+      "description": "Exclude webpages (URL paths, page titles, content) from a Google campaign via negative WEBPAGE criteria; review-gated.",
+      "mode": "risk",
+      "platforms": [
+        "google"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/update_campaign",
+        "action:ads/add_campaign_negative_keywords",
+        "action:ads/gaql_search",
+        "action:_batch/submit"
+      ],
+      "long_description": "Primary use:\nCreate negative WEBPAGE campaign criteria so Google will not send traffic to the given pages of the advertiser's own site. This is the prevention side of final URL expansion: with expansion enabled, Google may pick any page on the domain as the landing page, including one that is factually wrong for the campaign (documented failure: a livestock-vaccine campaign expanded onto pet-vaccine pages on the same domain — the ad copy looks perfectly correct and only the link is wrong).\n\nUse when:\n- A Performance Max / Search campaign has final URL expansion ON and only part of the site is appropriate for it.\n- The user wants specific URL paths, page titles, or content off-limits as landing pages.\n\nDo not use when:\n- The goal is to switch expansion off entirely. Use action:ads/update_campaign with asset_automation={'final_url_expansion': 'OPTED_OUT'} (a cleaner, campaign-wide control) — exclusions only narrow which pages expansion may use.\n- The goal is to block search queries rather than landing pages. Use action:ads/add_campaign_negative_keywords.\n- The platform is Meta or TikTok. Neither has WEBPAGE criteria.\n\nWorkflow:\n1. Identify the URL paths to exclude (from the site structure or the campaign's expansion behaviour).\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/gaql_search on campaign_criterion where type = 'WEBPAGE'.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.message reports the count created; raw.exclusions echoes the resolved criterion_name + conditions per criterion.\n\nSide effects:\n- One campaign_criterion_operation.create per exclusion, negative=True, all in one mutate.\n- Conditions WITHIN one exclusion are AND-ed by Google. To express alternatives, pass several entries in 'exclusions' (one criterion each).\n- An empty condition list is rejected: to Google it means the entire site, which as a negative criterion would exclude every page.\n- Reversible only via the Google Ads UI or a raw criterion remove; this capability set has no WEBPAGE remove handler.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: google.",
+          "example": "google",
+          "enum": [
+            "google"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Account id from ads.list_ad_accounts.rows[].account_id. For Google, digits only without dashes.",
+          "example": "1234567890",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "example": "123456",
+          "source": "upstream:action:ads/list_campaigns"
+        },
+        {
+          "name": "conditions",
+          "type": "list",
+          "required": false,
+          "description": "Single-criterion shorthand: list (or JSON string) of conditions, AND-ed together. Each entry is either a bare string (shorthand for operand=URL, operator=CONTAINS) or an object {operand, operator, argument}. operand one of URL, CATEGORY, PAGE_TITLE, PAGE_CONTENT, CUSTOM_LABEL; operator one of EQUALS, CONTAINS (omit operator for non-string operands). Supply either this or 'exclusions'.",
+          "example": [
+            "/pet-vaccines"
+          ],
+          "one_of_group": "webpage_exclusion_shape",
+          "source": "user"
+        },
+        {
+          "name": "exclusions",
+          "type": "list",
+          "required": false,
+          "description": "Multi-criterion form: list (or JSON string) of {criterion_name, conditions} objects, one negative WEBPAGE criterion each. Use this when the exclusions are alternatives rather than a single AND-ed condition set. Supply either this or 'conditions'.",
+          "example": [
+            {
+              "criterion_name": "Pet pages",
+              "conditions": [
+                "/pet-vaccines"
+              ]
+            }
+          ],
+          "one_of_group": "webpage_exclusion_shape",
+          "source": "user"
+        },
+        {
+          "name": "criterion_name",
+          "type": "string",
+          "required": false,
+          "description": "Optional label for the criterion built from the 'conditions' shorthand. Google requires a name on create; one is derived from the conditions when omitted.",
+          "example": "Pet vaccine pages",
+          "source": "user"
+        }
+      ],
+      "output_shape": "{\"success\": true, \"message\": \"Added 1 campaign webpage exclusion(s)\", \"exclusions\": [{\"criterion_name\": \"Pet pages\", \"conditions\": [{\"operand\": \"URL\", \"operator\": \"CONTAINS\", \"argument\": \"/pet-vaccines\"}]}], \"results\": [{\"campaignCriterionResult\": {\"resourceName\": \"...\"}}]}"
+    },
+    {
       "id": "action:ads/add_conversion_group_rule",
       "namespace": "ads",
       "action": "add_conversion_group_rule",
@@ -1273,6 +1357,146 @@
         }
       ],
       "output_shape": "{\"success\": true}"
+    },
+    {
+      "id": "action:ads/audit_ad_automation_inventory",
+      "namespace": "ads",
+      "action": "audit_ad_automation_inventory",
+      "description": "Read-only paginated TikTok, Google, Meta, or ChatGPT Ads audit of every automation baseline currently tracked for one brand-scoped ad account.",
+      "mode": "read",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/list_ad_accounts",
+        "action:ads/enable_ad_automation_audits"
+      ],
+      "long_description": "Primary use:\nAudit every stored automation baseline in a brand-scoped ad account against fresh Google, Meta, TikTok, or ChatGPT Ads provider state.\n\nUse when:\n- A scheduled or manual audit needs full current-state coverage.\n- New baselines must be discovered without editing an existing Automation.\n\nDo not use when:\n- Establishing or changing an approved baseline; use preview_automation_baseline followed by establish_automation_baseline.\n- Mutating provider settings. This action is strictly read-only.\n\nWorkflow:\n1. Resolve the brand-scoped account and page its current snapshot inventory.\n2. Fresh-read every entity through its platform adapter and compare it with the authoritative baseline.\n3. Continue with next_after_id when returned. Scheduled brand-wide runs handle this pagination internally.\n4. If audit_schedule_required is true, submit enable_ad_automation_audits for HITL approval.\n\nOutput semantics:\n- account_disconnected means the account is no longer connected; entity_deleted means the provider returned not found. Neither state deletes the stored baseline.\n- results contains per-entity OK, DRIFTED, or NO_BASELINE findings; next_after_id is the stable continuation cursor.\n- audit_schedule_required reports whether either canonical recurring schedule is missing.\n\nSide effects:\n- None. The action performs provider reads and local baseline reads only.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "google, meta, tiktok, or chatgpt_ads.",
+          "example": "google",
+          "enum": [
+            "google",
+            "meta",
+            "tiktok",
+            "chatgpt_ads"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Brand-scoped ad account id from list_ad_accounts.",
+          "example": "1234567890",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "after_id",
+          "type": "integer",
+          "required": false,
+          "description": "Stable snapshot cursor returned as next_after_id.",
+          "example": 100,
+          "source": "upstream:action:ads/audit_ad_automation_inventory"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Snapshot page size from 1 through 500; defaults to 100.",
+          "example": 100,
+          "source": "constant"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"account_status\":\"connected|account_disconnected\",\"results\":[{\"entity_id\":\"...\",\"findings\":[...]}],\"next_after_id\":123|null,\"read_only\":true,\"audit_schedule_required\":true|false,\"audit_schedule_recovery_action\":{\"action\":\"enable_ad_automation_audits\"}|null}\nTikTok output: uses the same account-scoped inventory envelope."
+    },
+    {
+      "id": "action:ads/audit_creative_automation",
+      "namespace": "ads",
+      "action": "audit_creative_automation",
+      "description": "Read-only drift audit: compare a Meta creative's or Google campaign's live AI-automation settings against the approved intent baseline.",
+      "mode": "read",
+      "platforms": [
+        "google",
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/update_campaign",
+        "action:ads/create_ad_creative",
+        "action:ads/get_campaign"
+      ],
+      "long_description": "Primary use:\nDetect platform AI-automation settings that no longer match what was approved — toggles that flipped back on, or settings reset by duplicating a campaign/placement.\n\nUse when:\n- The user asks whether AI enhancements / asset automation are still configured the way they were approved.\n- A campaign or placement was duplicated (duplication resets automation settings on the copy).\n- A periodic re-check is due. Settings can change after a correct write, so a single check at write time does not stay true.\n\nDo not use when:\n- The user wants to CHANGE a setting. This action never writes; use action:ads/update_campaign (google asset_automation) or action:ads/create_ad_creative (meta creative_features) instead.\n- The user wants Meta's own recommendations. Use action:ads/get_opportunity_score.\n\nWorkflow:\n1. platform=meta: pass creative_id (from action:ads/list_ad_creatives or action:ads/get_ad_creatives). platform=google: pass campaign_id (from action:ads/list_campaigns).\n2. Pass the recorded intent baseline for that entity as `baseline` ({expected, source, captured_at}). Omit it only when no baseline exists.\n3. Read findings[]: act on status=DRIFTED, and treat status=NO_BASELINE as 'establish a baseline first', NOT as a violation.\n\nOutput semantics:\n- freshness=realtime: the read goes straight to the platform, so findings reflect the current value, not a synced snapshot.\n- STRICTLY READ-ONLY. No platform write is issued on any path, so it is safe to re-run on live spending accounts as often as needed.\n- findings[].status is one of OK | DRIFTED | NO_BASELINE. NO_BASELINE is reported SEPARATELY from DRIFTED on purpose: without a recorded baseline nothing can be said about whether the value changed, and reporting such assets as drifted would false-alarm on all pre-existing inventory.\n- findings[] covers EVERY feature/automation type the platform returned, not only the three Meta features Soku opts out of by default. Do not conclude from a short list that 'everything is disabled' — most features keep their platform default (usually ON) unless explicitly opted out.\n- An expected feature the platform did not return appears with actual=null; a disappeared setting matters as much as a flipped one.\n- baseline_source=soku_write is authoritative (Soku performed the write, so the baseline IS the approved configuration). baseline_source=human_baseline is NOT: an operator confirmed the CURRENT state was acceptable at baseline_captured_at, on inventory Soku did not write. That asset may already have drifted before the baseline was taken and the original intent is unknowable, so those findings carry baseline_disclaimer and baseline_authoritative=false. Never report a human_baseline finding to the user as if it were the originally approved state.\n- meta: standard_enhancements / standard_enhancements_catalog appear in GET responses even though writing them fails since Graph v22 (read/write asymmetry). Seeing them in this audit is normal, NOT an anomaly; they are listed under read_write_asymmetric_features.\n- meta: music is not part of creative_features_spec at all. music_opt_out_observed reads asset_feed_spec.audios instead (true = empty audios = opted out, null = no asset_feed_spec, so unknown).\n- google: unrecognized_types lists automation types the platform returned that this build does not model; they are reported rather than hidden.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: google, meta.",
+          "example": "meta",
+          "enum": [
+            "google",
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Ad account id (Meta) / customer id (Google) from ads.list_ad_accounts.rows[].account_id.",
+          "example": "1234567890",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "creative_id",
+          "type": "string",
+          "required": false,
+          "description": "Meta only, required when platform=meta: AdCreative id to audit. Source: output of action:ads/list_ad_creatives or action:ads/get_ad_creatives.",
+          "example": "120210000000000000",
+          "source": "upstream:action:ads/list_ad_creatives,action:ads/get_ad_creatives",
+          "platform": [
+            "meta"
+          ]
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": false,
+          "description": "Google only, required when platform=google: campaign id whose asset_automation_settings are audited. Source: output of action:ads/list_campaigns.",
+          "example": "12345678901",
+          "source": "upstream:action:ads/list_campaigns",
+          "platform": [
+            "google"
+          ]
+        },
+        {
+          "name": "baseline",
+          "type": "object",
+          "required": false,
+          "description": "The approved intent this audit diffs the live state against: {'expected': {...}, 'source': 'soku_write'|'human_baseline', 'captured_at': ISO-8601}. `expected` is the platform-native shape — Meta: the creative_features_spec map (or the whole degrees_of_freedom_spec wrapper); Google: the asset_automation_settings list or a type->status map. Omitting it means NO baseline: every observed feature is reported NO_BASELINE and nothing is reported as DRIFTED, so the audit can only say what the current state is, not whether it changed. Source: the ad automation intent snapshot recorded for this entity.",
+          "example": {
+            "expected": {
+              "image_touchups": {
+                "enroll_status": "OPT_OUT"
+              }
+            },
+            "source": "soku_write",
+            "captured_at": "2026-07-29T10:00:00Z"
+          }
+        }
+      ],
+      "output_shape": "{\"success\": true, \"platform\": \"meta\", \"entity_type\": \"creative\", \"entity_id\": \"...\", \"baseline_source\": \"soku_write|human_baseline|null\", \"baseline_captured_at\": \"...|null\", \"baseline_authoritative\": true, \"read_only\": true, \"findings\": [{\"feature\": \"image_touchups\", \"expected\": {\"enroll_status\": \"OPT_OUT\"}, \"actual\": {\"enroll_status\": \"OPT_IN\"}, \"status\": \"DRIFTED\", \"baseline_source\": \"soku_write\", \"baseline_captured_at\": \"...\", \"baseline_authoritative\": true}], \"summary\": {\"ok\": 1, \"drifted\": 1, \"no_baseline\": 3, \"observed_features\": 5}}  // status=NO_BASELINE findings carry `note` instead of baseline_* fields; human_baseline findings additionally carry `baseline_disclaimer` (the baseline is an operator-confirmed CURRENT state, not the originally approved one). meta adds creative_name / unrecognized_features / read_write_asymmetric_features / default_opt_out_features / music_opt_out_observed; google adds campaign_level_enum_names / unrecognized_types. No platform write is issued on any path."
     },
     {
       "id": "action:ads/bind_conversion_group_goal",
@@ -2689,6 +2913,29 @@
             ]
           },
           "source": "user"
+        },
+        {
+          "name": "creative_features",
+          "type": "object",
+          "required": false,
+          "description": "Meta only: opt in/out of Meta's AI creative enhancements, mapping feature name -> OPT_IN | OPT_OUT (or {'enroll_status': 'OPT_OUT'}). 69 features are accepted. THREE are OPTED OUT BY DEFAULT even when this parameter is omitted, because Meta enables them silently and they rewrite approved creative: add_text_overlay, image_touchups, text_optimizations. Pass OPT_IN explicitly to re-enable one. The other 66 are controllable but inherit Meta's own default, so omitting them is NOT the same as disabling them. Feature names carry three confidence tiers: 42 appear in both Meta's reference page and its SDK, 4 only in the docs (generate_cta, text_extraction_for_headline, text_extraction_for_tap_target, translate_voiceover), and 23 only in the SDK (e.g. image_enhancement, video_auto_crop, text_generation) — for those last two tiers per-account availability is unverified, so a platform-side rejection is expected rather than a bug. REJECTED here: music_generation (Meta implements music via asset_feed_spec.audios — use disable_music) and standard_enhancements / standard_enhancements_catalog (Marketing API v22+ fails writes carrying them, though a GET still returns them). Features Meta marks AI-generated (image_animation, image_background_gen, image_templates, image_uncrop, video_uncrop) additionally require creating the ad with status=PAUSED and previewing before activation. Ineligible OPT_IN features are silently removed by Meta rather than erroring, so read the creative back to confirm what actually applied. Source: user/agent decision.",
+          "example": {
+            "image_enhancement": "OPT_OUT",
+            "video_auto_crop": "OPT_OUT"
+          },
+          "platform": [
+            "meta"
+          ]
+        },
+        {
+          "name": "disable_music",
+          "type": "boolean",
+          "required": false,
+          "description": "Meta only: when true, suppresses Meta's automatically added background music by writing an empty asset_feed_spec.audios. Music is the one enhancement creative_features cannot control — Meta implements it through asset_feed_spec, so passing music_generation to creative_features is rejected and routed here. Only valid on the asset_feed_spec path: a single-asset creative (image_hash / image_url / video_id / child_attachments / object_story_id) cannot carry audios at all, and the call is rejected with that reason rather than silently having no effect. When no asset_feed_spec is supplied, an audios-only spec is created alongside the page-identity object_story_spec, matching Meta's own documented music sample. Optional. Source: user/agent decision boolean.",
+          "example": true,
+          "platform": [
+            "meta"
+          ]
         }
       ],
       "output_shape": "{\"id\": \"creative_id\"}"
@@ -5686,6 +5933,18 @@
           "example": true
         },
         {
+          "name": "asset_automation",
+          "type": "object",
+          "required": false,
+          "description": "Google only: opt in/out of Google's automatically generated ad assets at create time. Object mapping automation type -> OPTED_IN | OPTED_OUT, e.g. {'text_asset_automation': 'OPTED_OUT'}. Campaign-level types: text_asset_automation, final_url_expansion, generate_enhanced_youtube_videos, generate_image_enhancement, generate_image_extraction — all five are ON by default for Performance Max, so omitting this parameter leaves Google free to generate assets. Ad-level Demand Gen types are rejected here. Supersedes url_expansion_opt_out, which remains accepted for backward compatibility and covers only final_url_expansion. Trap: with final_url_expansion left OPTED_IN, Google still generates text for expanded URLs and that generation cannot be opted out, so OPTED_OUT on text_asset_automation alone does not stop all text generation. Source: user/agent decision.",
+          "example": {
+            "text_asset_automation": "OPTED_OUT"
+          },
+          "platform": [
+            "google"
+          ]
+        },
+        {
           "name": "contains_eu_political_advertising",
           "type": "string",
           "required": false,
@@ -6795,6 +7054,114 @@
         }
       ],
       "output_shape": "{\"success\":true,\"raw\":{}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+    },
+    {
+      "id": "action:ads/enable_ad_automation_audits",
+      "namespace": "ads",
+      "action": "enable_ad_automation_audits",
+      "description": "HITL provision or recover the current brand's 48-hour and weekly full-current-state Google, Meta, TikTok, and ChatGPT Ads automation audits.",
+      "mode": "risk",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/audit_ad_automation_inventory"
+      ],
+      "long_description": "Primary use:\nProvision or recover the canonical 48-hour and weekly full-current-state ads automation audits across the current brand's Google, Meta, TikTok, and ChatGPT Ads accounts.\n\nUse when:\n- audit_ad_automation_inventory reports audit_schedule_required.\n- A current authorized user needs to take ownership after the former owner lost organization membership.\n\nDo not use when:\n- Running a one-time audit; call audit_ad_automation_inventory instead.\n- The user has not approved recurring task creation. This action requires HITL review.\n\nWorkflow:\n1. Submit the action through action:_batch/submit.\n2. Review the server-bound brand, owner, and both cadence definitions.\n3. Approve to atomically create, reuse, or recover the two Automations.\n4. Each run rediscovers current accounts and Meta Pages, then internally pages audit_ad_automation_inventory for every account.\n\nOutput semantics:\n- automations contains exactly the canonical 48-hour interval and weekly cron tasks, including stable client_request_id and lifecycle status.\n- Active semantic matches are returned idempotently. Paused/error tasks are reactivated and same-owner soft-deleted tasks are restored; semantic conflicts fail closed.\n\nSide effects:\n- Creates or reactivates two user-owned Automation rows for the brand.\n- Does not mutate ad provider settings or start ad spend.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Connected ads platform that anchors capability routing. Provisioning always creates both brand-wide schedules and audits every currently connected Google, Meta, TikTok, and ChatGPT Ads account.",
+          "example": "google",
+          "enum": [
+            "google",
+            "meta",
+            "tiktok",
+            "chatgpt_ads"
+          ],
+          "source": "constant"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"created_via\":\"ads_automation_audit\",\"brand_id\":\"...\",\"owner_user_id\":\"...\",\"automations\":[{\"automation_id\":\"...\",\"client_request_id\":\"...\",\"status\":\"active\",\"schedule_type\":\"interval|cron\",\"schedule_config\":{...}}]}\nTikTok output: uses the same brand-scoped provisioning envelope."
+    },
+    {
+      "id": "action:ads/establish_automation_baseline",
+      "namespace": "ads",
+      "action": "establish_automation_baseline",
+      "description": "HITL Google, Meta, TikTok, or ChatGPT Ads confirmation of a fresh provider state as a human baseline.",
+      "mode": "risk",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/preview_automation_baseline"
+      ],
+      "long_description": "Primary use:\nConfirm a freshly previewed Google, Meta, TikTok, or ChatGPT Ads provider state as a human baseline for a pre-existing entity.\n\nUse when:\n- preview_automation_baseline returned the digest the user is approving.\n\nDo not use when:\n- The preview is stale or belongs to another identity; preview again.\n- Replacing an authoritative Soku-write baseline. Soku-write authority always wins the atomic conflict.\n\nWorkflow:\n1. Submit the identity and preview_digest through action:_batch/submit.\n2. Review the observed automation state and approve it.\n3. Execution revalidates ownership and fresh-reads provider state.\n4. If the identity-bound digest still matches, atomically store the human baseline; otherwise the action rejects and requires a new preview.\n\nOutput semantics:\n- baseline_status is established for a new write or idempotent for the same already-confirmed observation.\n- baseline_source is human_baseline, which is explicitly less authoritative than an original Soku write.\n\nSide effects:\n- Inserts or updates the local human automation baseline after HITL approval.\n- Does not mutate provider automation settings.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "google, meta, tiktok, or chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "google",
+            "meta",
+            "tiktok",
+            "chatgpt_ads"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Brand-scoped ad account id from ads.list_ad_accounts.",
+          "example": "adv_123",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "entity_type",
+          "type": "string",
+          "required": true,
+          "description": "Audited entity type: meta=creative; google/tiktok=campaign; chatgpt_ads=campaign or ad_group.",
+          "example": "campaign",
+          "enum": [
+            "campaign",
+            "creative",
+            "ad_group"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "entity_id",
+          "type": "string",
+          "required": true,
+          "description": "Same provider entity id used for the preview.",
+          "example": "campaign_123"
+        },
+        {
+          "name": "preview_digest",
+          "type": "string",
+          "required": true,
+          "description": "Identity-bound digest returned by preview_automation_baseline.",
+          "example": "6f1a...",
+          "source": "upstream:action:ads/preview_automation_baseline"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"baseline_source\":\"human_baseline\",\"baseline_status\":\"established|idempotent\",\"observation\":{...},\"observed_at\":\"...\"}\nTikTok output: the same human-baseline result envelope."
     },
     {
       "id": "action:ads/estimate_audience_size",
@@ -11691,6 +12058,70 @@
       "output_shape": "{\"success\": true|false, \"campaign_id\": \"campaign_123\", \"records\": [{\"index\": 0, \"ad_unit_id\": \"legacy_123\", \"status\": \"existing|created|ambiguous|failed\", \"ad_group_id\": \"ag_123\", \"ad_ids\": [\"ad_123\"]}], \"materialization_verified\": true, \"legacy_resources_modified\": false}"
     },
     {
+      "id": "action:ads/preview_automation_baseline",
+      "namespace": "ads",
+      "action": "preview_automation_baseline",
+      "description": "Read-only Google, Meta, TikTok, or ChatGPT Ads automation observation and identity-bound approval digest.",
+      "mode": "read",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/establish_automation_baseline"
+      ],
+      "long_description": "Primary use:\nRead a provider entity's current automation state and prepare an identity-bound digest for human baseline approval.\n\nUse when:\n- A pre-existing Google, Meta, TikTok, or ChatGPT Ads entity has no authoritative Soku-written baseline.\n\nDo not use when:\n- The entity already has an authoritative Soku-write baseline that should be preserved.\n- The caller wants to provide expected state, source, or provenance; those fields are server-derived.\n\nWorkflow:\n1. Resolve the brand-scoped account and provider entity.\n2. Fresh-read and canonicalize its automation state.\n3. Present observation and preview_digest to the user.\n4. Submit establish_automation_baseline with the unchanged identity and digest for HITL approval.\n\nOutput semantics:\n- observation is fresh provider state; observed_at records read time.\n- preview_digest binds organization, account, platform, entity identity, observation, and schema version and cannot be replayed across identities.\n\nSide effects:\n- None. This action reads provider state and does not persist a baseline.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "google, meta, tiktok, or chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "google",
+            "meta",
+            "tiktok",
+            "chatgpt_ads"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Brand-scoped ad account id from ads.list_ad_accounts.",
+          "example": "adv_123",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "entity_type",
+          "type": "string",
+          "required": true,
+          "description": "Audited entity type: meta=creative; google/tiktok=campaign; chatgpt_ads=campaign or ad_group.",
+          "example": "campaign",
+          "enum": [
+            "campaign",
+            "creative",
+            "ad_group"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "entity_id",
+          "type": "string",
+          "required": true,
+          "description": "Provider entity id in the selected account and entity type.",
+          "example": "campaign_123"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"platform\":\"...\",\"account_id\":\"...\",\"entity_type\":\"...\",\"entity_id\":\"...\",\"observation\":{...},\"observed_at\":\"...\",\"schema_version\":1,\"preview_digest\":\"...\",\"read_only\":true}\nTikTok output: the same canonical baseline preview envelope."
+    },
+    {
       "id": "action:ads/query_multi_dimension",
       "namespace": "ads",
       "action": "query_multi_dimension",
@@ -11860,6 +12291,78 @@
         }
       ],
       "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"dimension\": \"campaign\", \"data_basis\": {\"view\": \"...\", \"parquet_table\": \"...\", \"selected_scope\": \"campaign\", \"cg_fan_out_available\": true}, \"scope_caveat\": \"...\", \"row_count\": 128, \"truncated\": false, \"warning\": null, \"columns\": {\"campaign_id\": [...], \"spend_micros\": [...], \"ctr\": [...], \"cg.qualified-new-user.all_conv\": [...]}, \"summary\": null, \"readiness\": null | {\"partial\": true, \"readiness\": {...}, \"fallback\": {...}}}"
+    },
+    {
+      "id": "action:ads/register_automation_copy",
+      "namespace": "ads",
+      "action": "register_automation_copy",
+      "description": "HITL register a Google, Meta, TikTok, or ChatGPT Ads copy from one authoritative automation intent.",
+      "mode": "risk",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/preview_automation_baseline",
+        "action:ads/audit_creative_automation"
+      ],
+      "long_description": "Primary use:\nRegister the verified lineage of an externally copied Google, Meta, TikTok, or ChatGPT Ads entity and inherit the source entity's authoritative Soku-written automation intent.\n\nUse when:\n- A provider UI or external tool created a new entity ID from a source with an authoritative Soku-write baseline.\n\nDo not use when:\n- The source has only a human baseline or no baseline.\n- Source and copied identities are in different accounts, platforms, or entity types.\n- The caller is guessing lineage, expected state, or source authority.\n\nWorkflow:\n1. Submit source and new identities through action:_batch/submit.\n2. Review preparation resolves source authority and injects a digest bound to both identities.\n3. After approval, execution revalidates account scope and both provider identities, then reloads source authority.\n4. Inherit the intent atomically and fresh-read the copy for an immediate canonical diff.\n\nOutput semantics:\n- registration_status confirms inheritance; expected is copied from the authoritative source and current comes from provider readback.\n- findings immediately report OK or DRIFTED for the copied entity.\n\nSide effects:\n- Inserts the copied entity's local authoritative intent baseline after HITL approval.\n- Does not mutate either provider entity.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "google, meta, tiktok, or chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "google",
+            "meta",
+            "tiktok",
+            "chatgpt_ads"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Brand-scoped ad account id from ads.list_ad_accounts.",
+          "example": "adv_123",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "entity_type",
+          "type": "string",
+          "required": true,
+          "description": "Audited entity type: meta=creative; google/tiktok=campaign; chatgpt_ads=campaign or ad_group.",
+          "example": "campaign",
+          "enum": [
+            "campaign",
+            "creative",
+            "ad_group"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "source_entity_id",
+          "type": "string",
+          "required": true,
+          "description": "Provider id with an authoritative Soku-written baseline.",
+          "example": "campaign_source"
+        },
+        {
+          "name": "new_entity_id",
+          "type": "string",
+          "required": true,
+          "description": "Copied provider entity id in the same account and entity type.",
+          "example": "campaign_copy"
+        }
+      ],
+      "output_shape": "{\"success\":true,\"registration_status\":\"registered\",\"source_entity_id\":\"...\",\"new_entity_id\":\"...\",\"expected\":{...},\"current\":{...},\"findings\":[...],\"summary\":{\"ok\":N,\"drifted\":N,\"no_baseline\":0}}\nTikTok output: the same canonical immediate-diff envelope."
     },
     {
       "id": "action:ads/remove_account_negative_keywords",
@@ -15301,7 +15804,7 @@
         "action:_batch/submit",
         "action:ads/list_operation_records"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Creation still sends the server-owned network_mode=openai under the private account-capability contract. A public generic advertiser-dashboard contract that describes server-managed allocation does not prove or replace that private contract.\n- Read action:ads/get_account_info first. Its activation_preflight is conservative and non-authoritative. Immediately before PATCH, Soku reads the exact Campaign and requires the same id, an explicitly non-active state, and literal network_mode=openai. Missing, conflicting, identity-mismatched, or failed readback stops with no activation PATCH.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros, asset_automation). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- When asset_automation is supplied, raw.asset_automation_settings is the COMPLETE merged list that was written (including entries you did not name), so it can be snapshotted as the approved intent.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Google asset_automation adds a third read (the campaign's current asset_automation_settings) before the mutate, and writes the merged list back under the bare 'asset_automation_settings' mask path. Two invariants are asserted before the mutate is sent: no automation type you did not name changes status, and no type appears twice; either failure returns success=false without touching the platform.\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Creation still sends the server-owned network_mode=openai under the private account-capability contract. A public generic advertiser-dashboard contract that describes server-managed allocation does not prove or replace that private contract.\n- Read action:ads/get_account_info first. Its activation_preflight is conservative and non-authoritative. Immediately before PATCH, Soku reads the exact Campaign and requires the same id, an explicitly non-active state, and literal network_mode=openai. Missing, conflicting, identity-mismatched, or failed readback stops with no activation PATCH.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.",
       "input_params": [
         {
           "name": "platform",
@@ -15434,6 +15937,18 @@
           "required": false,
           "description": "Google only: optional CPC bid ceiling for MAXIMIZE_CLICKS / TARGET_SPEND. Ignored with a warning for other bidding strategies.",
           "example": 2500000,
+          "platform": [
+            "google"
+          ]
+        },
+        {
+          "name": "asset_automation",
+          "type": "object",
+          "required": false,
+          "description": "Google only: opt in/out of Google's automatically generated ad assets. Object mapping automation type -> OPTED_IN | OPTED_OUT, e.g. {'text_asset_automation': 'OPTED_OUT', 'final_url_expansion': 'OPTED_OUT'}. Campaign-level types: text_asset_automation, final_url_expansion, generate_enhanced_youtube_videos, generate_image_enhancement, generate_image_extraction (all five are ON by default for Performance Max; the two text ones are also supported on Search, where they default OFF). Ad-level Demand Gen types are rejected here. Read-modify-write: the campaign's current settings are read and merged first, because the underlying repeated field can only be written as a whole list — types you do not name keep their status. Trap: with final_url_expansion left OPTED_IN, Google still generates text for expanded URLs and that generation cannot be opted out, so OPTED_OUT on text_asset_automation alone does not stop all text generation. Source: user/agent decision.",
+          "example": {
+            "text_asset_automation": "OPTED_OUT"
+          },
           "platform": [
             "google"
           ]
