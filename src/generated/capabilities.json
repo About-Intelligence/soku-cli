@@ -19887,6 +19887,164 @@
       "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shoplazza OpenAPI response body ({products: [...], cursor, pre_cursor})"
     },
     {
+      "id": "action:sprout/list_profiles",
+      "namespace": "sprout",
+      "action": "list_profiles",
+      "description": "List a Sprout Social customer's social profiles and tags (LinkedIn, Facebook, Instagram, X, ...).",
+      "mode": "read",
+      "platforms": [
+        "sprout"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns the connected customer's owned social profiles (customer_profile_id, network_type, name, native_name, link) and the customer's tags. START HERE for any Sprout Social task: the analytics actions filter by the customer_profile_id values this action returns. When exactly one customer is connected, customer_id may be omitted and is auto-resolved. Read live from the Sprout Social Public API (read-only; costs 2 upstream requests against the shared per-token quota).",
+      "input_params": [
+        {
+          "name": "customer_id",
+          "type": "string",
+          "required": false,
+          "description": "Sprout Social customer id. Optional when the brand has exactly one connected customer; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "2881331"
+        }
+      ],
+      "output_shape": "data.{customer_id, profiles[].{customer_profile_id, network_type, name, native_name, link, native_id, groups[]}, tags[].{tag_id, text, type, active}}"
+    },
+    {
+      "id": "action:sprout/post_analytics",
+      "namespace": "sprout",
+      "action": "post_analytics",
+      "description": "Per-post analytics (impressions, reactions, clicks per published post) for a time range.",
+      "mode": "read",
+      "platforms": [
+        "sprout"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Queries Sprout Social post analytics: one row per published post created in the selected time range, with lifetime metrics and descriptive fields (text, perma_link, created_time). start/end accept YYYY-MM-DD or an ISO datetime such as 2026-07-01T00:00:00 (created_time filtering supports datetime precision). Results are paged — the response `paging` object carries current_page/total_pages; pass `page` to fetch more. The handler constructs all Sprout filter strings from these structured parameters — do not pass raw filter syntax. Post metric keys are `lifetime.`-prefixed. Commonly valid across LinkedIn / Facebook / Instagram / X: lifetime.impressions, lifetime.reactions, lifetime.likes, lifetime.comments_count, lifetime.shares_count, lifetime.post_content_clicks, lifetime.video_views; Facebook additionally lifetime.impressions_unique and lifetime.post_link_clicks. IMPORTANT: unknown metrics are silently dropped upstream — Sprout returns no error for a wrong metric key, the key is just absent from every row. Always check `missing_metrics` in the response; a non-empty value means those requested keys came back in no row (wrong key, or a metric this network does not support). When the data array is empty, missing_metrics is [] — an empty result cannot distinguish a bad metric key from a range with no posts.",
+      "input_params": [
+        {
+          "name": "customer_id",
+          "type": "string",
+          "required": false,
+          "description": "Sprout Social customer id. Optional when the brand has exactly one connected customer; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "2881331"
+        },
+        {
+          "name": "profile_ids",
+          "type": "list",
+          "required": false,
+          "description": "customer_profile_id values to query (from sprout/list_profiles). Omitted = all of the customer's profiles (auto-enumerated, which costs one extra upstream request against the shared quota).",
+          "example": [
+            7662736
+          ],
+          "source": "upstream:action:sprout/list_profiles"
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "required": true,
+          "description": "Range start, inclusive — YYYY-MM-DD or ISO datetime (post_analytics supports datetime precision).",
+          "example": "2026-07-01"
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "required": true,
+          "description": "Range end, inclusive — YYYY-MM-DD or ISO datetime (post_analytics supports datetime precision).",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": true,
+          "description": "Post metric keys to return (`lifetime.`-prefixed; unknown keys are silently dropped upstream).",
+          "example": [
+            "lifetime.impressions",
+            "lifetime.reactions"
+          ]
+        },
+        {
+          "name": "fields",
+          "type": "list",
+          "required": false,
+          "description": "Descriptive post fields to include alongside metrics (e.g. text, perma_link, created_time, internal.tags.id).",
+          "example": [
+            "text",
+            "perma_link",
+            "created_time"
+          ]
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "Result page to fetch (1-based; see response paging).",
+          "example": 1
+        }
+      ],
+      "output_shape": "data.{customer_id, profile_ids[], start, end, data[].{<requested fields>, metrics.{...}}, paging.{current_page, total_pages}, missing_metrics[]}"
+    },
+    {
+      "id": "action:sprout/profile_analytics",
+      "namespace": "sprout",
+      "action": "profile_analytics",
+      "description": "Daily owned-profile analytics (impressions, engagement, follower growth) for a date range.",
+      "mode": "read",
+      "platforms": [
+        "sprout"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Queries Sprout Social profile analytics for the selected profiles over an inclusive date range, grouped daily (the response dimension key is literally `reporting_period.by(day)`). Dates are YYYY-MM-DD. The handler constructs all Sprout filter strings from these structured parameters — do not pass raw filter syntax. Commonly valid profile metrics by network — LinkedIn (linkedin_company): impressions, reactions, comments_count, shares_count, post_content_clicks, net_follower_growth, lifetime_snapshot.followers_count; Facebook: impressions, impressions_unique, post_content_clicks, reactions, comments_count, shares_count, net_follower_growth, lifetime_snapshot.followers_count, video_views; Instagram: impressions, engagements_other, comments_count, likes, saves, net_follower_growth, lifetime_snapshot.followers_count, video_views; X (Twitter): impressions, likes, comments_count, shares_count, post_content_clicks, net_follower_growth, lifetime_snapshot.followers_count. Note the followers count key is `lifetime_snapshot.followers_count` — a bare `followers_count` is silently dropped. IMPORTANT: unknown metrics are silently dropped upstream — Sprout returns no error for a wrong metric key, the key is just absent from every row. Always check `missing_metrics` in the response; a non-empty value means those requested keys came back in no row (wrong key, or a metric this network does not support). When the data array is empty, missing_metrics is [] — an empty result cannot distinguish a bad metric key from a range with no data.",
+      "input_params": [
+        {
+          "name": "customer_id",
+          "type": "string",
+          "required": false,
+          "description": "Sprout Social customer id. Optional when the brand has exactly one connected customer; required to disambiguate when several are connected (the error lists the choices).",
+          "example": "2881331"
+        },
+        {
+          "name": "profile_ids",
+          "type": "list",
+          "required": false,
+          "description": "customer_profile_id values to query (from sprout/list_profiles). Omitted = all of the customer's profiles (auto-enumerated, which costs one extra upstream request against the shared quota).",
+          "example": [
+            7662736
+          ],
+          "source": "upstream:action:sprout/list_profiles"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Range start, inclusive, format YYYY-MM-DD.",
+          "example": "2026-07-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Range end, inclusive, format YYYY-MM-DD.",
+          "example": "2026-07-31"
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": true,
+          "description": "Profile metric keys to return (see the network lists in the action description; unknown keys are silently dropped upstream).",
+          "example": [
+            "impressions",
+            "lifetime_snapshot.followers_count"
+          ]
+        }
+      ],
+      "output_shape": "data.{customer_id, profile_ids[], start_date, end_date, data[].{dimensions.{customer_profile_id, 'reporting_period.by(day)'}, metrics.{...}}, missing_metrics[]}"
+    },
+    {
       "id": "action:stripe/list_accounts",
       "namespace": "stripe",
       "action": "list_accounts",
