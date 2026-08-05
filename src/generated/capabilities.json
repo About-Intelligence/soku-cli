@@ -295,7 +295,8 @@
           "name": "ad_group_id",
           "type": "string",
           "required": true,
-          "description": "Ad group id from action:ads/gaql_search."
+          "description": "Ad group id from action:ads/gaql_search.",
+          "source": "upstream:action:ads/create_ad_group,action:ads/gaql_search"
         },
         {
           "name": "criterion_type",
@@ -369,7 +370,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "callouts",
@@ -481,7 +483,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from list_campaigns or gaql_search."
+          "description": "Campaign id from list_campaigns or gaql_search.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "criterion_type",
@@ -563,7 +566,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "keywords",
@@ -777,7 +781,8 @@
           "type": "string",
           "required": true,
           "description": "Ad group id from action:ads/gaql_search.",
-          "example": "987654"
+          "example": "987654",
+          "source": "upstream:action:ads/create_ad_group,action:ads/gaql_search"
         },
         {
           "name": "keywords",
@@ -861,7 +866,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "sitelinks",
@@ -922,7 +928,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "header",
@@ -986,7 +993,8 @@
           "name": "ad_group_id",
           "type": "string",
           "required": true,
-          "description": "Ad group id from action:ads/gaql_search."
+          "description": "Ad group id from action:ads/gaql_search.",
+          "source": "upstream:action:ads/create_ad_group,action:ads/gaql_search"
         },
         {
           "name": "label_id",
@@ -1038,7 +1046,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "label_id",
@@ -1436,7 +1445,7 @@
         "action:ads/create_ad_creative",
         "action:ads/get_campaign"
       ],
-      "long_description": "Primary use:\nDetect platform AI-automation settings that no longer match what was approved — toggles that flipped back on, or settings reset by duplicating a campaign/placement.\n\nUse when:\n- The user asks whether AI enhancements / asset automation are still configured the way they were approved.\n- A campaign or placement was duplicated (duplication resets automation settings on the copy).\n- A periodic re-check is due. Settings can change after a correct write, so a single check at write time does not stay true.\n\nDo not use when:\n- The user wants to CHANGE a setting. This action never writes; use action:ads/update_campaign (google asset_automation) or action:ads/create_ad_creative (meta creative_features) instead.\n- The user wants Meta's own recommendations. Use action:ads/get_opportunity_score.\n\nWorkflow:\n1. platform=meta: pass creative_id (from action:ads/list_ad_creatives or action:ads/get_ad_creatives). platform=google: pass campaign_id (from action:ads/list_campaigns).\n2. Pass the recorded intent baseline for that entity as `baseline` ({expected, source, captured_at}). Omit it only when no baseline exists.\n3. Read findings[]: act on status=DRIFTED, and treat status=NO_BASELINE as 'establish a baseline first', NOT as a violation.\n\nOutput semantics:\n- freshness=realtime: the read goes straight to the platform, so findings reflect the current value, not a synced snapshot.\n- STRICTLY READ-ONLY. No platform write is issued on any path, so it is safe to re-run on live spending accounts as often as needed.\n- findings[].status is one of OK | DRIFTED | NO_BASELINE. NO_BASELINE is reported SEPARATELY from DRIFTED on purpose: without a recorded baseline nothing can be said about whether the value changed, and reporting such assets as drifted would false-alarm on all pre-existing inventory.\n- findings[] covers EVERY feature/automation type the platform returned, not only the three Meta features Soku opts out of by default. Do not conclude from a short list that 'everything is disabled' — most features keep their platform default (usually ON) unless explicitly opted out.\n- An expected feature the platform did not return appears with actual=null; a disappeared setting matters as much as a flipped one.\n- baseline_source=soku_write is authoritative (Soku performed the write, so the baseline IS the approved configuration). baseline_source=human_baseline is NOT: an operator confirmed the CURRENT state was acceptable at baseline_captured_at, on inventory Soku did not write. That asset may already have drifted before the baseline was taken and the original intent is unknowable, so those findings carry baseline_disclaimer and baseline_authoritative=false. Never report a human_baseline finding to the user as if it were the originally approved state.\n- meta: standard_enhancements / standard_enhancements_catalog appear in GET responses even though writing them fails since Graph v22 (read/write asymmetry). Seeing them in this audit is normal, NOT an anomaly; they are listed under read_write_asymmetric_features.\n- meta: music is not part of creative_features_spec at all. music_opt_out_observed reads asset_feed_spec.audios instead (true = empty audios = opted out, null = no asset_feed_spec, so unknown).\n- google: unrecognized_types lists automation types the platform returned that this build does not model; they are reported rather than hidden.",
+      "long_description": "Primary use:\nDetect platform AI-automation settings that no longer match what was approved — toggles that flipped back on, or settings reset by duplicating a campaign/placement.\n\nUse when:\n- The user asks whether AI enhancements / asset automation are still configured the way they were approved.\n- A campaign or placement was duplicated (duplication resets automation settings on the copy).\n- A periodic re-check is due. Settings can change after a correct write, so a single check at write time does not stay true.\n\nDo not use when:\n- The user wants to CHANGE a setting. This action never writes; use action:ads/update_campaign (google asset_automation) or action:ads/create_ad_creative (meta creative_features) instead.\n- The user wants Meta's own recommendations. Use action:ads/get_opportunity_score.\n\nWorkflow:\n1. platform=meta: pass creative_id (from action:ads/list_ad_creatives or action:ads/get_ad_creatives). platform=google: pass campaign_id (from action:ads/list_campaigns).\n2. The service loads the account-scoped recorded intent baseline; callers must not supply baseline state or authority.\n3. Read findings[]: act on status=DRIFTED, and treat status=NO_BASELINE as 'establish a baseline first', NOT as a violation.\n\nOutput semantics:\n- freshness=realtime: the read goes straight to the platform, so findings reflect the current value, not a synced snapshot.\n- STRICTLY READ-ONLY. No platform write is issued on any path, so it is safe to re-run on live spending accounts as often as needed.\n- findings[].status is one of OK | DRIFTED | NO_BASELINE. NO_BASELINE is reported SEPARATELY from DRIFTED on purpose: without a recorded baseline nothing can be said about whether the value changed, and reporting such assets as drifted would false-alarm on all pre-existing inventory.\n- findings[] covers EVERY feature/automation type the platform returned, not only the three Meta features Soku opts out of by default. Do not conclude from a short list that 'everything is disabled' — most features keep their platform default (usually ON) unless explicitly opted out.\n- An expected feature the platform did not return appears with actual=null; a disappeared setting matters as much as a flipped one.\n- baseline_source=soku_write is authoritative (Soku performed the write, so the baseline IS the approved configuration). baseline_source=human_baseline is NOT: an operator confirmed the CURRENT state was acceptable at baseline_captured_at, on inventory Soku did not write. That asset may already have drifted before the baseline was taken and the original intent is unknowable, so those findings carry baseline_disclaimer and baseline_authoritative=false. Never report a human_baseline finding to the user as if it were the originally approved state.\n- meta: standard_enhancements / standard_enhancements_catalog appear in GET responses even though writing them fails since Graph v22 (read/write asymmetry). Seeing them in this audit is normal, NOT an anomaly; they are listed under read_write_asymmetric_features.\n- meta: music is not part of creative_features_spec at all. music_opt_out_observed reads asset_feed_spec.audios instead (true = empty audios = opted out, null = no asset_feed_spec, so unknown).\n- google: unrecognized_types lists automation types the platform returned that this build does not model; they are reported rather than hidden.",
       "input_params": [
         {
           "name": "platform",
@@ -1479,21 +1488,6 @@
           "platform": [
             "google"
           ]
-        },
-        {
-          "name": "baseline",
-          "type": "object",
-          "required": false,
-          "description": "The approved intent this audit diffs the live state against: {'expected': {...}, 'source': 'soku_write'|'human_baseline', 'captured_at': ISO-8601}. `expected` is the platform-native shape — Meta: the creative_features_spec map (or the whole degrees_of_freedom_spec wrapper); Google: the asset_automation_settings list or a type->status map. Omitting it means NO baseline: every observed feature is reported NO_BASELINE and nothing is reported as DRIFTED, so the audit can only say what the current state is, not whether it changed. Source: the ad automation intent snapshot recorded for this entity.",
-          "example": {
-            "expected": {
-              "image_touchups": {
-                "enroll_status": "OPT_OUT"
-              }
-            },
-            "source": "soku_write",
-            "captured_at": "2026-07-29T10:00:00Z"
-          }
         }
       ],
       "output_shape": "{\"success\": true, \"platform\": \"meta\", \"entity_type\": \"creative\", \"entity_id\": \"...\", \"baseline_source\": \"soku_write|human_baseline|null\", \"baseline_captured_at\": \"...|null\", \"baseline_authoritative\": true, \"read_only\": true, \"findings\": [{\"feature\": \"image_touchups\", \"expected\": {\"enroll_status\": \"OPT_OUT\"}, \"actual\": {\"enroll_status\": \"OPT_IN\"}, \"status\": \"DRIFTED\", \"baseline_source\": \"soku_write\", \"baseline_captured_at\": \"...\", \"baseline_authoritative\": true}], \"summary\": {\"ok\": 1, \"drifted\": 1, \"no_baseline\": 3, \"observed_features\": 5}}  // status=NO_BASELINE findings carry `note` instead of baseline_* fields; human_baseline findings additionally carry `baseline_disclaimer` (the baseline is an operator-confirmed CURRENT state, not the originally approved one). meta adds creative_name / unrecognized_features / read_write_asymmetric_features / default_opt_out_features / music_opt_out_observed; google adds campaign_level_enum_names / unrecognized_types. No platform write is issued on any path."
@@ -2360,6 +2354,7 @@
           "required": false,
           "description": "Provider-native parent id for Google, Meta, and TikTok. Do not send this field for ChatGPT Ads; send ad_group_id instead.",
           "example": "23...",
+          "source": "upstream:action:ads/create_ad_group,action:ads/gaql_search,action:ads/create_adset,action:ads/list_adsets",
           "platform": [
             "google",
             "meta",
@@ -2626,7 +2621,7 @@
           "required": false,
           "description": "ChatGPT Ads canonical Ad Group id. Required for ChatGPT Ads, which does not accept adset_id.",
           "example": "ag_123",
-          "source": "upstream:action:ads/list_ad_groups",
+          "source": "upstream:action:ads/create_ad_group,action:ads/list_ad_groups,action:ads/gaql_search",
           "platform": [
             "chatgpt_ads"
           ]
@@ -2637,6 +2632,7 @@
           "required": false,
           "description": "TikTok adgroup id.",
           "example": "value",
+          "source": "upstream:action:ads/create_adset,action:ads/list_adsets",
           "platform": [
             "tiktok"
           ]
@@ -2984,7 +2980,8 @@
           "type": "string",
           "required": true,
           "description": "Parent campaign id from action:ads/list_campaigns.",
-          "example": "123456"
+          "example": "123456",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "name",
@@ -3639,7 +3636,8 @@
           "type": "string",
           "required": true,
           "description": "Parent Meta campaign id from action:ads/list_campaigns. Required when platform=tiktok.",
-          "example": "23..."
+          "example": "23...",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "name",
@@ -10277,7 +10275,7 @@
         "action:ads/update_ad_rule",
         "action:ads/remove_ad_rule"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nInventory of automated rules on a Meta ad account, including their evaluation filters and execution actions.\n\nUse when:\n- The user asks which automated rules are active.\n- An audit needs to confirm no rule will fight a planned mutation.\n\nDo not use when:\n- The platform is Google.\n\nWorkflow:\n1. Call this action.\n2. Inspect rules with status=ENABLED before mutating related objects.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph paged response; status values include ENABLED, PAUSED, DELETED.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Output-contract status enum is wrong: capability doc says status values are 'ENABLED, PAUSED, DELETED' but the official Meta AdRule enum is ENABLED, DISABLED, DELETED, HAS_ISSUES. An agent that filters/branches on status==PAUSED or expects DISABLED/HAS_ISSUES will misjudge rule state. Also note: No mention that results are capped at one page (default 100, no cursor support), so an agent auditing 'all active rules' on a large account may silently believe it has the complete inventory. Capability gap: after / pagination cursor: the handler never reads or forwards a cursor, so results beyond a single page (limit, default 100) are unreachable. For accounts with >100 ad rules the agent cannot enumerate the rest. This is a genuine capability gap (the official edge supports paging.cursors.after).",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nInventory of automated rules on a Meta ad account, including their evaluation filters and execution actions.\n\nUse when:\n- The user asks which automated rules are active.\n- An audit needs to confirm no rule will fight a planned mutation.\n\nDo not use when:\n- The platform is Google.\n\nWorkflow:\n1. Call this action.\n2. Inspect rules with status=ENABLED before mutating related objects.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph paged response; Meta status values include ENABLED, DISABLED, DELETED, HAS_ISSUES. Follow paging.cursors.after until absent when a complete Meta inventory is required.",
       "input_params": [
         {
           "name": "platform",
@@ -10308,6 +10306,15 @@
           ]
         },
         {
+          "name": "after",
+          "type": "string",
+          "required": false,
+          "description": "Meta only: pagination cursor from paging.cursors.after.",
+          "platform": [
+            "meta"
+          ]
+        },
+        {
           "name": "page",
           "type": "integer",
           "required": false,
@@ -10328,7 +10335,7 @@
           ]
         }
       ],
-      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"evaluation_spec\": {...}, \"execution_spec\": {...}, \"schedule_spec\": {...}, \"status\": \"ENABLED|PAUSED|DELETED\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
+      "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"evaluation_spec\": {...}, \"execution_spec\": {...}, \"schedule_spec\": {...}, \"status\": \"ENABLED|DISABLED|DELETED|HAS_ISSUES\"}], \"paging\": {\"cursors\": {\"after\": \"...\"}}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/list_ads",
@@ -14116,7 +14123,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "schedules",
@@ -14174,7 +14182,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "device",
@@ -14301,7 +14310,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "suffix",
@@ -14353,7 +14363,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "location_ids",
@@ -14436,7 +14447,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "language_ids",
@@ -14497,7 +14509,8 @@
           "name": "campaign_id",
           "type": "string",
           "required": true,
-          "description": "Campaign id from action:ads/list_campaigns."
+          "description": "Campaign id from action:ads/list_campaigns.",
+          "source": "upstream:action:ads/create_campaign,action:ads/list_campaigns"
         },
         {
           "name": "search_partners",
