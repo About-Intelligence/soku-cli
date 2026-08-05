@@ -108,12 +108,10 @@ export function registerAuthCommands(program: Command): void {
     })
 }
 
-/** `/api/cli/me` response. `is_platform_admin` is optional so the CLI stays
- * compatible with servers that predate the field. */
+/** `/api/cli/me` response. */
 export interface AuthStatusMe {
   owner_id: string
   scope_type: string
-  is_platform_admin?: boolean
 }
 
 /** JSON envelope payload for `auth status`; passes server fields through. */
@@ -123,8 +121,7 @@ export function authStatusPayload(me: AuthStatusMe): { signed_in: true } & AuthS
 
 /** Human (TTY) renderer for `auth status`. */
 export function renderAuthStatus(d: AuthStatusMe): string {
-  const scope = d.is_platform_admin ? `${d.scope_type} — platform admin` : d.scope_type
-  return `${green('✓')} Signed in ${dim(`(${scope})`)}\n  owner: ${cyan(d.owner_id)}`
+  return `${green('✓')} Signed in ${dim(`(${d.scope_type})`)}\n  owner: ${cyan(d.owner_id)}`
 }
 
 async function pollAndStore(opts: {

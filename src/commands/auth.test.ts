@@ -44,48 +44,17 @@ test('storeTokenWorkspace ignores missing workspace metadata', () => {
   assert.deepEqual(loadConfig(), {})
 })
 
-test('auth status marks platform admins and passes the flag through the envelope', () => {
-  // Mocked `/api/cli/me` response for an active platform admin.
+test('auth status passes session identity through the envelope', () => {
   const me: AuthStatusMe = {
     owner_id: 'user-1',
     scope_type: 'user',
-    is_platform_admin: true,
   }
 
   assert.deepEqual(authStatusPayload(me), {
     signed_in: true,
     owner_id: 'user-1',
     scope_type: 'user',
-    is_platform_admin: true,
   })
   // Colors are no-ops when stdout is not a TTY, so the render is plain text.
-  assert.equal(renderAuthStatus(me), '✓ Signed in (user — platform admin)\n  owner: user-1')
-})
-
-test('auth status renders non-admins unchanged and keeps the envelope flag false', () => {
-  // Mocked `/api/cli/me` response for a regular user.
-  const me: AuthStatusMe = {
-    owner_id: 'user-2',
-    scope_type: 'user',
-    is_platform_admin: false,
-  }
-
-  assert.deepEqual(authStatusPayload(me), {
-    signed_in: true,
-    owner_id: 'user-2',
-    scope_type: 'user',
-    is_platform_admin: false,
-  })
-  assert.equal(renderAuthStatus(me), '✓ Signed in (user)\n  owner: user-2')
-})
-
-test('auth status tolerates older servers that omit is_platform_admin', () => {
-  const me: AuthStatusMe = { owner_id: 'user-3', scope_type: 'user' }
-
-  assert.deepEqual(authStatusPayload(me), {
-    signed_in: true,
-    owner_id: 'user-3',
-    scope_type: 'user',
-  })
-  assert.equal(renderAuthStatus(me), '✓ Signed in (user)\n  owner: user-3')
+  assert.equal(renderAuthStatus(me), '✓ Signed in (user)\n  owner: user-1')
 })
