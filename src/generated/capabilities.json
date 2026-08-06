@@ -19948,7 +19948,7 @@
           "name": "profile_ids",
           "type": "list",
           "required": false,
-          "description": "customer_profile_id values to query (from sprout/list_profiles). Omitted = all of the customer's profiles (auto-enumerated, which costs one extra upstream request against the shared quota).",
+          "description": "customer_profile_id values to query (from sprout/list_profiles). Omitted = all of the customer's profiles (auto-enumerated, which costs one extra upstream request against the shared quota). At most 100 profiles per request (Sprout's limit): for a customer with more, pass profile_ids explicitly and query them in batches of 100 or fewer — omitting it would exceed the cap and be rejected.",
           "example": [
             7662736
           ],
@@ -20011,7 +20011,7 @@
       "requires_review": false,
       "freshness_kind": "realtime",
       "see_also": [],
-      "long_description": "Queries Sprout Social profile analytics for the selected profiles over an inclusive date range, grouped daily (the response dimension key is literally `reporting_period.by(day)`). Dates are YYYY-MM-DD. The handler constructs all Sprout filter strings from these structured parameters — do not pass raw filter syntax. Commonly valid profile metrics by network — LinkedIn (linkedin_company): impressions, reactions, comments_count, shares_count, post_content_clicks, net_follower_growth, lifetime_snapshot.followers_count; Facebook: impressions, impressions_unique, post_content_clicks, reactions, comments_count, shares_count, net_follower_growth, lifetime_snapshot.followers_count, video_views; Instagram: impressions, engagements_other, comments_count, likes, saves, net_follower_growth, lifetime_snapshot.followers_count, video_views; X (Twitter): impressions, likes, comments_count, shares_count, post_content_clicks, net_follower_growth, lifetime_snapshot.followers_count. Note the followers count key is `lifetime_snapshot.followers_count` — a bare `followers_count` is silently dropped. IMPORTANT: unknown metrics are silently dropped upstream — Sprout returns no error for a wrong metric key, the key is just absent from every row. Always check `missing_metrics` in the response; a non-empty value means those requested keys came back in no row (wrong key, or a metric this network does not support). When the data array is empty, missing_metrics is [] — an empty result cannot distinguish a bad metric key from a range with no data.",
+      "long_description": "Queries Sprout Social profile analytics for the selected profiles over an inclusive date range, grouped daily (the response dimension key is literally `reporting_period.by(day)`). Dates are YYYY-MM-DD. The handler constructs all Sprout filter strings from these structured parameters — do not pass raw filter syntax. At most 100 profiles per request: for a customer with more, pass profile_ids in batches of 100 or fewer (an over-large set, including an auto-enumerated one, is rejected — never silently truncated). Commonly valid profile metrics by network — LinkedIn (linkedin_company): impressions, reactions, comments_count, shares_count, post_content_clicks, net_follower_growth, lifetime_snapshot.followers_count; Facebook: impressions, impressions_unique, post_content_clicks, reactions, comments_count, shares_count, net_follower_growth, lifetime_snapshot.followers_count, video_views; Instagram: impressions, engagements_other, comments_count, likes, saves, net_follower_growth, lifetime_snapshot.followers_count, video_views; X (Twitter): impressions, likes, comments_count, shares_count, post_content_clicks, net_follower_growth, lifetime_snapshot.followers_count. Note the followers count key is `lifetime_snapshot.followers_count` — a bare `followers_count` is silently dropped. IMPORTANT: unknown metrics are silently dropped upstream — Sprout returns no error for a wrong metric key, the key is just absent from every row. Always check `missing_metrics` in the response; a non-empty value means those requested keys came back in no row (wrong key, or a metric this network does not support). When the data array is empty, missing_metrics is [] — an empty result cannot distinguish a bad metric key from a range with no data.",
       "input_params": [
         {
           "name": "customer_id",
@@ -20024,7 +20024,7 @@
           "name": "profile_ids",
           "type": "list",
           "required": false,
-          "description": "customer_profile_id values to query (from sprout/list_profiles). Omitted = all of the customer's profiles (auto-enumerated, which costs one extra upstream request against the shared quota).",
+          "description": "customer_profile_id values to query (from sprout/list_profiles). Omitted = all of the customer's profiles (auto-enumerated, which costs one extra upstream request against the shared quota). At most 100 profiles per request (Sprout's limit): for a customer with more, pass profile_ids explicitly and query them in batches of 100 or fewer — omitting it would exceed the cap and be rejected.",
           "example": [
             7662736
           ],
