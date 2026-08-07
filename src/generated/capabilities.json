@@ -2314,7 +2314,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -2325,19 +2326,20 @@
         "action:ads/create_ad_creative",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEvery inline creative is created with operation_status=DISABLE by default. Only an explicitly approved top-level status=ENABLED applies ENABLE to every creative; a per-creative operation_status value cannot bypass the reviewed status. Choose one compatible creative route: SINGLE_VIDEO uses video_id or tiktok_item_id; an uploaded video_id may include exactly one image_id as a cover. SINGLE_IMAGE/CAROUSEL_ADS use image_ids. AUTH_CODE requires tiktok_item_id. TT_USER and BC_AUTH_TT accept a discovered post, an uploaded video pushed through the linked identity, or CAROUSEL_ADS image_ids; BC_AUTH_TT additionally requires identity_authorized_bc_id. Call get_account_pages once to list identities, then again with identity_id and identity_type to discover Spark tiktok_item_id values. References are verified before write.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nEvery inline creative is created with operation_status=DISABLE by default. Only an explicitly approved top-level status=ENABLED applies ENABLE to every creative; a per-creative operation_status value cannot bypass the reviewed status. Choose one compatible creative route: SINGLE_VIDEO uses video_id or tiktok_item_id; an uploaded video_id may include exactly one image_id as a cover. SINGLE_IMAGE/CAROUSEL_ADS use image_ids. AUTH_CODE requires tiktok_item_id. TT_USER and BC_AUTH_TT accept a discovered post, an uploaded video pushed through the linked identity, or CAROUSEL_ADS image_ids; BC_AUTH_TT additionally requires identity_authorized_bc_id. Call get_account_pages once to list identities, then again with identity_id and identity_type to discover Spark tiktok_item_id values. References are verified before write.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a new ad. On Google this is a Responsive Search Ad (RSA) requiring at least 3 headlines and 2 descriptions. On Meta it uses an existing creative_id. Meta lead-gen creatives are semantically preflighted before the create call. Always force-paused at create.\n\nUse when:\n- The user wants to add an ad to an ad group (Google) or ad set (Meta).\n- A workflow needs to register a new RSA or creative-based ad.\n\nDo not use when:\n- The Meta creative does not exist yet. Use action:ads/create_ad_creative first.\n- The Meta creative is an inline lead-gen spec with lead_gen_form_id. Use create_ad_creative first and pass creative_id so the handler can validate the existing creative, adset, campaign, page, and form before creating the ad.\n- The user wants to update an existing ad's URLs or creative. Use action:ads/update_ad.\n- The Google RSA's headlines or descriptions need to change later. RSA creative fields are immutable; use remove_ad then create_ad.\n\nWorkflow:\n1. (Google) Choose ad_group_id via action:ads/gaql_search; build headlines (>=3) and descriptions (>=2). (Meta) Choose adset_id via list_adsets and creative_id via list_ads or create_ad_creative.\n2. (Meta lead-gen) Confirm the creative uses the same page as the lead form; the handler then checks destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n3. Submit via action:_batch/submit for HITL review.\n4. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_id is the new ad's numeric id; ad_group_ad_resource_name is the composite path needed for later remove_ad.\n- Meta raw.id is the new ad id.\n- Google returns {success: false, error: '...'} (no platform call) on RSA validation failure (fewer than 3 headlines or 2 descriptions).\n\n- Meta lead-gen semantic failures return success=false with META_LEADGEN_* error_code before the create-ad write.\n\nSide effects:\n- Creates an AdGroupAd (Google) or Ad (Meta).\n- Status is force-paused on both platforms regardless of caller input.\n- No immediate spend; activation requires update_ad with status=ENABLED/ACTIVE.\n- Reversible via action:ads/remove_ad (Google REMOVED terminal; Meta archives).",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin.",
           "example": "google",
           "enum": [
             "google",
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -2533,6 +2535,24 @@
           "required": false,
           "description": "Provider-specific create lifecycle value with no global enum: Google and Meta force paused; TikTok maps omitted/PAUSED to operation_status=DISABLE and an explicitly approved status=ENABLED to operation_status=ENABLE; ChatGPT Ads accepts only omitted or lowercase paused.",
           "source": "constant"
+        },
+        {
+          "name": "content",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: creative content union, e.g. a post reference {\"reference\": \"urn:li:ugcPost:123\"}.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "inline_content",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: full inline post payload (createInline action) used instead of content when sponsoring a new post in one call.",
+          "platform": [
+            "linkedin"
+          ]
         },
         {
           "name": "creatives",
@@ -4182,7 +4202,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -4194,19 +4215,20 @@
         "action:ads/get_ad_group",
         "action:ads/update_campaign"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a new advertising campaign. For ChatGPT Ads, the default source is an inline Campaign -> Ad Group -> Ad hierarchy; Campaign, groups, and authored Ads are created paused, and the Campaign is explicitly inactive. Every ChatGPT Ads Campaign create uses the server-owned OpenAI-only allocation; callers must not send network_mode, network_type, or network_config. The connected advertiser account must already be enabled for OpenAI-only campaigns by the advertising platform. TikTok defaults to operation_status=DISABLE; explicitly approved status=ENABLED is sent as ENABLE.\n\nUse when:\n- The user approved a new campaign, budget, objective, targeting, and creative hierarchy.\n- For ChatGPT Ads, you have a non-empty ad_groups list built from approved media-plan rows.\n\nDo not use when:\n- The user wants immediate activation. Activation is a separate approved update_campaign.\n- The campaign already exists. Use update_campaign and the Ad Group/Ad actions.\n- For ChatGPT Ads, do not use deprecated ad_unit_ids unless legacy compatibility was explicit.\n\nWorkflow:\n1. Resolve account_id and review current campaigns.\n2. For ChatGPT Ads, submit exactly one source: default ad_groups or deprecated ad_unit_ids.\n3. Submit the create through HITL review.\n4. Require the returned materialization proof and perform the documented readback.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Inline ChatGPT Ads success includes campaign_id, ad_group_ids, ad_ids, creation_success=true, materialization_verified=true, campaign_status=paused, is_active=false, campaign_field_verification, and separate POST/GET lifecycle observations. materialization_verified proves the hierarchy and readable fields; never claim create-only Campaign fields persisted when they appear under campaign_field_verification.unverifiable_fields.\n- Review/deployment observations never imply activation or billing readiness.\n- Legacy compatibility success instead includes binding_verified=true and exact ad_unit_ids.\n\nSide effects:\n- Creates provider resources only after approval.\n- ChatGPT Ads inline create writes the complete paused hierarchy and then performs readback.\n- ChatGPT Ads sends the server-owned network_mode=openai. Provider network_mode read metadata is unfinished, so create verification does not treat it as provider proof.\n- A partial or unknown result may represent completed provider writes; reconcile known ids before any retry.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nCreate a new advertising campaign. For ChatGPT Ads, the default source is an inline Campaign -> Ad Group -> Ad hierarchy; Campaign, groups, and authored Ads are created paused, and the Campaign is explicitly inactive. Every ChatGPT Ads Campaign create uses the server-owned OpenAI-only allocation; callers must not send network_mode, network_type, or network_config. The connected advertiser account must already be enabled for OpenAI-only campaigns by the advertising platform. TikTok defaults to operation_status=DISABLE; explicitly approved status=ENABLED is sent as ENABLE.\n\nUse when:\n- The user approved a new campaign, budget, objective, targeting, and creative hierarchy.\n- For ChatGPT Ads, you have a non-empty ad_groups list built from approved media-plan rows.\n\nDo not use when:\n- The user wants immediate activation. Activation is a separate approved update_campaign.\n- The campaign already exists. Use update_campaign and the Ad Group/Ad actions.\n- For ChatGPT Ads, do not use deprecated ad_unit_ids unless legacy compatibility was explicit.\n\nWorkflow:\n1. Resolve account_id and review current campaigns.\n2. For ChatGPT Ads, submit exactly one source: default ad_groups or deprecated ad_unit_ids.\n3. Submit the create through HITL review.\n4. Require the returned materialization proof and perform the documented readback.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Inline ChatGPT Ads success includes campaign_id, ad_group_ids, ad_ids, creation_success=true, materialization_verified=true, campaign_status=paused, is_active=false, campaign_field_verification, and separate POST/GET lifecycle observations. materialization_verified proves the hierarchy and readable fields; never claim create-only Campaign fields persisted when they appear under campaign_field_verification.unverifiable_fields.\n- Review/deployment observations never imply activation or billing readiness.\n- Legacy compatibility success instead includes binding_verified=true and exact ad_unit_ids.\n\nSide effects:\n- Creates provider resources only after approval.\n- ChatGPT Ads inline create writes the complete paused hierarchy and then performs readback.\n- ChatGPT Ads sends the server-owned network_mode=openai. Provider network_mode read metadata is unfinished, so create verification does not treat it as provider proof.\n- A partial or unknown result may represent completed provider writes; reconcile known ids before any retry.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin.",
           "example": "chatgpt_ads",
           "enum": [
             "google",
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -4477,6 +4499,185 @@
           "platform": [
             "google",
             "meta"
+          ]
+        },
+        {
+          "name": "campaignGroup",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: sponsoredCampaignGroup URN to attach the campaign to; omitted -> a per-account 'Soku Default' group is found or created.",
+          "example": "urn:li:sponsoredCampaignGroup:635137195",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "costType",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: bid cost type.",
+          "example": "CPC",
+          "enum": [
+            "CPM",
+            "CPC",
+            "CPV"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "creativeSelection",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: creative rotation strategy.",
+          "enum": [
+            "ROUND_ROBIN",
+            "OPTIMIZED"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "dailyBudget",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: daily budget as a decimal-string MoneyAmount in the account currency, e.g. {\"amount\": \"25\", \"currencyCode\": \"USD\"}. Amounts are strings, never floats.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "totalBudget",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: lifetime budget MoneyAmount (decimal-string amount).",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "unitCost",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: bid amount MoneyAmount (decimal-string amount).",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "locale",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: campaign locale, e.g. {\"country\": \"US\", \"language\": \"en\"}.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "objectiveType",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: campaign objective.",
+          "enum": [
+            "BRAND_AWARENESS",
+            "ENGAGEMENT",
+            "JOB_APPLICANTS",
+            "LEAD_GENERATION",
+            "WEBSITE_CONVERSIONS",
+            "WEBSITE_VISITS",
+            "VIDEO_VIEWS"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "offsiteDeliveryEnabled",
+          "type": "boolean",
+          "required": false,
+          "description": "LinkedIn only: serve on the LinkedIn Audience Network beyond the feed.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "runSchedule",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: epoch-ms schedule, e.g. {\"start\": 1755000000000}; start is required by LinkedIn even when end is open.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "targetingCriteria",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: AND/OR targeting expression over adTargetingFacet URNs (include/exclude clauses).",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: campaign format type.",
+          "enum": [
+            "TEXT_AD",
+            "SPONSORED_UPDATES",
+            "SPONSORED_INMAILS",
+            "DYNAMIC"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "audienceExpansionEnabled",
+          "type": "boolean",
+          "required": false,
+          "description": "LinkedIn only: enable audience expansion for the targeting criteria.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "optimizationTargetType",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: spend optimization target; default NONE.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "pacingStrategy",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: budget pacing.",
+          "enum": [
+            "LIFETIME",
+            "ACCELERATED"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "politicalIntent",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: political-advertising declaration; defaults to NOT_POLITICAL. EU-targeted campaigns must surface the non-political confirmation to the human during HITL review and pass their answer here.",
+          "enum": [
+            "POLITICAL",
+            "NOT_POLITICAL",
+            "NOT_DECLARED"
+          ],
+          "platform": [
+            "linkedin"
           ]
         },
         {
@@ -7661,7 +7862,8 @@
       "platforms": [
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -7670,18 +7872,19 @@
         "action:ads/get_insights",
         "action:ads/list_ad_accounts"
       ],
-      "long_description": "Supported platforms: meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nSnapshot of provider-native account health. For ChatGPT Ads, combines account and billing/pixel reads and returns conservative activation and tracking preflights.\n\nUse when:\n- The user asks for the account's currency, total spend, or balance.\n- A Meta workflow needs to confirm account_status before issuing any write.\n- A ChatGPT Ads workflow needs billing and pixel readiness facts before a separately approved activation.\n- A Meta workflow needs to confirm an account-level spend cap (ad sets have NO spend_cap field; campaign-level caps come from action:ads/get_campaign).\n\nDo not use when:\n- The user wants per-campaign or per-ad metrics. Use action:ads/get_insights.\n- The platform is Google. Use action:ads/list_customers or get_tree_structure.\n\nWorkflow:\n1. Call this action.\n2. For Meta, interpret account_status. For TikTok, read the advertiser row in raw.data.list. For ChatGPT Ads, inspect raw.activation_preflight and raw.tracking_preflight separately, but never treat either as activation authorization.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Meta raw is the Graph API body: id, name, account_status (1=ACTIVE, 2=DISABLED, ...), currency, timezone_name, amount_spent (cents string, total lifetime), balance (cents string), spend_cap, disable_reason, min_daily_budget.\n- Meta spend_cap: account-level maximum total spend (minor-units string, same unit as amount_spent); delivery stops account-wide when reached. '0' means NO spend cap is set — never infer a cap (or its absence) from a missing field.\n- Meta disable_reason: int enum — 0=NONE, 1=ADS_INTEGRITY_POLICY, 2=ADS_IP_REVIEW, 3=RISK_PAYMENT, 4=GRAY_ACCOUNT_SHUT_DOWN, 5=ADS_AFC_REVIEW, 6=BUSINESS_INTEGRITY_RAR, 7=PERMANENT_CLOSE, 8=UNUSED_RESELLER_ACCOUNT, 9=UNUSED_ACCOUNT, 10=UMBRELLA_AD_ACCOUNT, 11=BUSINESS_MANAGER_INTEGRITY_POLICY, 12=MISREPRESENTED_AD_ACCOUNT, 13=AOAB_DESHARE_LEGAL_ENTITY, 14=CTX_THREAD_REVIEW, 15=COMPROMISED_AD_ACCOUNT. Meaningful when account_status=2 (DISABLED); 0 on healthy accounts.\n- Meta min_daily_budget: minimum daily budget for this account (int, minor units of the account currency). Source: Meta Marketing API AdAccount reference.\n- TikTok raw is the advertiser-info response. Read raw.data.list advertiser rows and do not apply Meta account_status, balance, or spend_cap semantics.\n- ChatGPT Ads raw.account, raw.billing, and raw.pixels preserve provider facts. raw.activation_preflight.status is ready only when both reads succeed and billing_enabled is exactly true; false means billing_required, while missing, malformed, or unavailable facts mean unknown. Credits and Soku funding do not imply readiness. raw.tracking_preflight is ready only when the ChatGPT Ads platform returns an active pixel with is_functional=true; null is pending, no functional pixel is pixel_required, and unavailable/malformed facts are unknown. The campaign activation PATCH remains authoritative.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs mark account_id required=True, but the executor auto-fills account_id from the bound/resolved account when it is omitted (executor.py:51-52). The agent is told it must supply account_id even though a single-account context works without it. Minor over-statement of requiredness. Also note: long_description maps account_status integers partially (1=ACTIVE, 2=DISABLED, ) and tells the agent to 'surface an error if account_status != 1' but does not enumerate the other meaningful states (3=UNSETTLED, 7=PENDING_RISK_REVIEW, 8=PENDING_SETTLEMENT, 9=IN_GRACE_PERIOD, 100=PENDING_CLOSURE, 101=CLOSED, 201=ANY_ACTIVE, 202=ANY_CLOSED). An UNSETTLED or IN_GRACE_PERIOD account may still accept reads/writes, so a blanket 'block all writes unless status==1' rule the doc implies is overly strict and could cause the agent to wrongly refuse valid operations. Capability gap: No agent-facing way to request additional AdAccount fields beyond the 10 hard-coded ones (e.g. funding_source_details, business, capabilities, is_prepay_account, tos_accepted, age, account_id). spend_cap, disable_reason and min_daily_budget are now in the hard-coded list, closing the former account-health gap. This is a coverage limitation, not a break.",
+      "long_description": "Supported platforms: meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nSnapshot of provider-native account health. For ChatGPT Ads, combines account and billing/pixel reads and returns conservative activation and tracking preflights.\n\nUse when:\n- The user asks for the account's currency, total spend, or balance.\n- A Meta workflow needs to confirm account_status before issuing any write.\n- A ChatGPT Ads workflow needs billing and pixel readiness facts before a separately approved activation.\n- A Meta workflow needs to confirm an account-level spend cap (ad sets have NO spend_cap field; campaign-level caps come from action:ads/get_campaign).\n\nDo not use when:\n- The user wants per-campaign or per-ad metrics. Use action:ads/get_insights.\n- The platform is Google. Use action:ads/list_customers or get_tree_structure.\n\nWorkflow:\n1. Call this action.\n2. For Meta, interpret account_status. For TikTok, read the advertiser row in raw.data.list. For ChatGPT Ads, inspect raw.activation_preflight and raw.tracking_preflight separately, but never treat either as activation authorization.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Meta raw is the Graph API body: id, name, account_status (1=ACTIVE, 2=DISABLED, ...), currency, timezone_name, amount_spent (cents string, total lifetime), balance (cents string), spend_cap, disable_reason, min_daily_budget.\n- Meta spend_cap: account-level maximum total spend (minor-units string, same unit as amount_spent); delivery stops account-wide when reached. '0' means NO spend cap is set — never infer a cap (or its absence) from a missing field.\n- Meta disable_reason: int enum — 0=NONE, 1=ADS_INTEGRITY_POLICY, 2=ADS_IP_REVIEW, 3=RISK_PAYMENT, 4=GRAY_ACCOUNT_SHUT_DOWN, 5=ADS_AFC_REVIEW, 6=BUSINESS_INTEGRITY_RAR, 7=PERMANENT_CLOSE, 8=UNUSED_RESELLER_ACCOUNT, 9=UNUSED_ACCOUNT, 10=UMBRELLA_AD_ACCOUNT, 11=BUSINESS_MANAGER_INTEGRITY_POLICY, 12=MISREPRESENTED_AD_ACCOUNT, 13=AOAB_DESHARE_LEGAL_ENTITY, 14=CTX_THREAD_REVIEW, 15=COMPROMISED_AD_ACCOUNT. Meaningful when account_status=2 (DISABLED); 0 on healthy accounts.\n- Meta min_daily_budget: minimum daily budget for this account (int, minor units of the account currency). Source: Meta Marketing API AdAccount reference.\n- TikTok raw is the advertiser-info response. Read raw.data.list advertiser rows and do not apply Meta account_status, balance, or spend_cap semantics.\n- ChatGPT Ads raw.account, raw.billing, and raw.pixels preserve provider facts. raw.activation_preflight.status is ready only when both reads succeed and billing_enabled is exactly true; false means billing_required, while missing, malformed, or unavailable facts mean unknown. Credits and Soku funding do not imply readiness. raw.tracking_preflight is ready only when the ChatGPT Ads platform returns an active pixel with is_functional=true; null is pending, no functional pixel is pixel_required, and unavailable/malformed facts are unknown. The campaign activation PATCH remains authoritative.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs mark account_id required=True, but the executor auto-fills account_id from the bound/resolved account when it is omitted (executor.py:51-52). The agent is told it must supply account_id even though a single-account context works without it. Minor over-statement of requiredness. Also note: long_description maps account_status integers partially (1=ACTIVE, 2=DISABLED, ) and tells the agent to 'surface an error if account_status != 1' but does not enumerate the other meaningful states (3=UNSETTLED, 7=PENDING_RISK_REVIEW, 8=PENDING_SETTLEMENT, 9=IN_GRACE_PERIOD, 100=PENDING_CLOSURE, 101=CLOSED, 201=ANY_ACTIVE, 202=ANY_CLOSED). An UNSETTLED or IN_GRACE_PERIOD account may still accept reads/writes, so a blanket 'block all writes unless status==1' rule the doc implies is overly strict and could cause the agent to wrongly refuse valid operations. Capability gap: No agent-facing way to request additional AdAccount fields beyond the 10 hard-coded ones (e.g. funding_source_details, business, capabilities, is_prepay_account, tos_accepted, age, account_id). spend_cap, disable_reason and min_daily_budget are now in the hard-coded list, closing the former account-health gap. This is a coverage limitation, not a break.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: meta, tiktok, chatgpt_ads, linkedin.",
           "example": "chatgpt_ads",
           "enum": [
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -7823,7 +8026,8 @@
       "mode": "read",
       "platforms": [
         "meta",
-        "tiktok"
+        "tiktok",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -7833,17 +8037,18 @@
         "action:ads/bulk_create_ads",
         "action:ads/update_ad"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nRealtime single-ad verification after create_ad or bulk_create_ads. Use this when the workflow already has an ad_id and needs current delivery state or creative linkage without paging through list_ads.\n\nUse when:\n- A write just returned a Meta ad id and the agent needs to verify status.\n- The user asks for one ad's current creative, adset, campaign, or tracking specs.\n\nDo not use when:\n- The platform is Google. Use action:ads/gaql_search or list_ads.\n- The user needs a page of ads. Use action:ads/list_ads.\n\nWorkflow:\n1. Obtain account_id from list_ad_accounts and ad_id from create_ad, bulk_create_ads, or list_ads.\n2. Call this action directly; no HITL review is required.\n3. Use raw.status / raw.effective_status to confirm PAUSED / ACTIVE / IN_PROCESS / DISAPPROVED state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body with id, name, adset_id, campaign_id, status, effective_status, creative{id,...}, tracking_specs, conversion_specs, created_time, and updated_time.\n\nSide effects:\n- None. Read-only Graph API call.",
+      "long_description": "Supported platforms: meta, tiktok, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nRealtime single-ad verification after create_ad or bulk_create_ads. Use this when the workflow already has an ad_id and needs current delivery state or creative linkage without paging through list_ads.\n\nUse when:\n- A write just returned a Meta ad id and the agent needs to verify status.\n- The user asks for one ad's current creative, adset, campaign, or tracking specs.\n\nDo not use when:\n- The platform is Google. Use action:ads/gaql_search or list_ads.\n- The user needs a page of ads. Use action:ads/list_ads.\n\nWorkflow:\n1. Obtain account_id from list_ad_accounts and ad_id from create_ad, bulk_create_ads, or list_ads.\n2. Call this action directly; no HITL review is required.\n3. Use raw.status / raw.effective_status to confirm PAUSED / ACTIVE / IN_PROCESS / DISAPPROVED state.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph API body with id, name, adset_id, campaign_id, status, effective_status, creative{id,...}, tracking_specs, conversion_specs, created_time, and updated_time.\n\nSide effects:\n- None. Read-only Graph API call.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: meta, tiktok.",
+          "description": "Supported platforms: meta, tiktok, linkedin.",
           "example": "meta",
           "enum": [
             "meta",
-            "tiktok"
+            "tiktok",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -8116,7 +8321,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -8125,19 +8331,20 @@
         "action:ads/create_campaign",
         "action:ads/update_campaign"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nRealtime read-back for a known Google, Meta, or ChatGPT Ads campaign id, or a TikTok campaign id, especially after a create/update approval returns a campaign_id.\n\nUse when:\n- You already know a campaign_id and need the current platform state.\n- You need to confirm status after a write.\n- You need one campaign's budget, bidding targets, targeting, landing page, objective, or timestamps without paging through list_campaigns.\n\nDo not use when:\n- The campaign id is unknown. Use action:ads/list_campaigns first.\n- You need cached analytics or KPI data. Use action:ads/query_single_dimension.\nWorkflow:\n1. Obtain account_id from list_ad_accounts and campaign_id from a create result, review result, or list_campaigns.\n2. Call this action with platform, account_id, and campaign_id.\n3. Read raw.campaign for Google, or the platform-native delivery fields for Meta and ChatGPT Ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaign includes status, budget, flight dates, bidding strategy and targets, network settings, language ids, and geo target ids.\n- Meta, TikTok, and ChatGPT Ads raw values are their platform-native campaign objects. For ChatGPT Ads, determine campaign review only from the campaign object's own review_status and deployment_status. A nested ad unit review_status=not_submitted does not mean the campaign itself is unsubmitted, and there is no separate submit-review action in this capability.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nPrimary use:\nRealtime read-back for a known Google, Meta, or ChatGPT Ads campaign id, or a TikTok campaign id, especially after a create/update approval returns a campaign_id.\n\nUse when:\n- You already know a campaign_id and need the current platform state.\n- You need to confirm status after a write.\n- You need one campaign's budget, bidding targets, targeting, landing page, objective, or timestamps without paging through list_campaigns.\n\nDo not use when:\n- The campaign id is unknown. Use action:ads/list_campaigns first.\n- You need cached analytics or KPI data. Use action:ads/query_single_dimension.\nWorkflow:\n1. Obtain account_id from list_ad_accounts and campaign_id from a create result, review result, or list_campaigns.\n2. Call this action with platform, account_id, and campaign_id.\n3. Read raw.campaign for Google, or the platform-native delivery fields for Meta and ChatGPT Ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaign includes status, budget, flight dates, bidding strategy and targets, network settings, language ids, and geo target ids.\n- Meta, TikTok, and ChatGPT Ads raw values are their platform-native campaign objects. For ChatGPT Ads, determine campaign review only from the campaign object's own review_status and deployment_status. A nested ad unit review_status=not_submitted does not mean the campaign itself is unsubmitted, and there is no separate submit-review action in this capability.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin.",
           "example": "google",
           "enum": [
             "google",
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -8809,7 +9016,8 @@
       "mode": "read",
       "platforms": [
         "meta",
-        "tiktok"
+        "tiktok",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -8818,17 +9026,18 @@
         "action:ads/query_multi_dimension",
         "action:ads/gaql_search"
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nRealtime Meta Marketing Insights API. Returns metrics and action breakdowns by level (account, campaign, adset, ad) and optional breakdown dimensions. Distinct from cached business-layer ads analytics.\n\nUse when:\n- The user wants up-to-the-minute Meta performance numbers.\n- A workflow needs Meta-native breakdowns (age, gender, country, placement, ...).\n\nDo not use when:\n- The user is fine with cached, cross-platform business metrics. Use action:ads/query_single_dimension or action:ads/query_multi_dimension.\n- The user needs CPA / ROAS via Nex conversion-mapping groups. Use action:ads/query_single_dimension with cg.* columns.\n- The platform is Google. Use action:ads/gaql_search or action:ads/gaql_search.\n\nWorkflow:\n1. Identify object_id (ad account, campaign, ad set, or ad id).\n2. Pick date_preset or time_range, optional breakdown, optional fields.\n3. Call this action.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph paged response.\n- raw.data[].actions is a list of {action_type, value}, e.g. {\"action_type\": \"link_click\", \"value\": \"123\"} or {\"action_type\": \"offsite_conversion.fb_pixel_purchase\", \"value\": \"45\"}.\n- raw.data[].action_values mirrors actions with monetary value.",
+      "long_description": "Supported platforms: meta, tiktok, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nRealtime Meta Marketing Insights API. Returns metrics and action breakdowns by level (account, campaign, adset, ad) and optional breakdown dimensions. Distinct from cached business-layer ads analytics.\n\nUse when:\n- The user wants up-to-the-minute Meta performance numbers.\n- A workflow needs Meta-native breakdowns (age, gender, country, placement, ...).\n\nDo not use when:\n- The user is fine with cached, cross-platform business metrics. Use action:ads/query_single_dimension or action:ads/query_multi_dimension.\n- The user needs CPA / ROAS via Nex conversion-mapping groups. Use action:ads/query_single_dimension with cg.* columns.\n- The platform is Google. Use action:ads/gaql_search or action:ads/gaql_search.\n\nWorkflow:\n1. Identify object_id (ad account, campaign, ad set, or ad id).\n2. Pick date_preset or time_range, optional breakdown, optional fields.\n3. Call this action.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph paged response.\n- raw.data[].actions is a list of {action_type, value}, e.g. {\"action_type\": \"link_click\", \"value\": \"123\"} or {\"action_type\": \"offsite_conversion.fb_pixel_purchase\", \"value\": \"45\"}.\n- raw.data[].action_values mirrors actions with monetary value.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: meta, tiktok.",
+          "description": "Supported platforms: meta, tiktok, linkedin.",
           "example": "meta",
           "enum": [
             "meta",
-            "tiktok"
+            "tiktok",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -8902,7 +9111,8 @@
           "required": false,
           "description": "Comma-separated field list. Default 'campaign_id,campaign_name,adset_id,adset_name,ad_id,ad_name,impressions,clicks,spend,actions,action_values'.",
           "platform": [
-            "meta"
+            "meta",
+            "linkedin"
           ]
         },
         {
@@ -9002,6 +9212,54 @@
           "example": "MAZDZD",
           "platform": [
             "meta"
+          ]
+        },
+        {
+          "name": "pivot",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: analytics grouping pivot; default CAMPAIGN.",
+          "enum": [
+            "ACCOUNT",
+            "CAMPAIGN_GROUP",
+            "CAMPAIGN",
+            "CREATIVE"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "time_granularity",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: bucket granularity; default DAILY.",
+          "enum": [
+            "ALL",
+            "DAILY",
+            "MONTHLY",
+            "YEARLY"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "date_range",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only (required): date objects, e.g. {\"start\": {\"year\": 2026, \"month\": 7, \"day\": 1}, \"end\": {...}}.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "campaign_ids",
+          "type": "array",
+          "required": false,
+          "description": "LinkedIn only: restrict to these campaign ids; omitted -> whole account.",
+          "platform": [
+            "linkedin"
           ]
         },
         {
@@ -10346,7 +10604,8 @@
       "platforms": [
         "google",
         "meta",
-        "tiktok"
+        "tiktok",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -10357,18 +10616,19 @@
         "action:ads/remove_ad",
         "action:ads/query_single_dimension"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nLive ad inventory under an account, campaign, ad group, or ad set. Use this to discover ad_id values for updates, removes, creative inspection, or lead retrieval.\n\nUse when:\n- You need an ad_id for action:ads/update_ad, remove_ad, get_ad_creatives, or get_leads.\n- The user asks what ads are running.\n\nDo not use when:\n- The user needs cached analytics by ad. Use action:ads/query_single_dimension with dimension=ad.\n- The user needs ad strength or policy approval. Use action:ads/gaql_search.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Optionally narrow by campaign_id, ad_group_id (Google), or adset_id (Meta).\n3. Call this action.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.ads[] uses snake_case; RSAs include headlines[] and descriptions[]; ad_group_ad_resource_name is required for remove_ad.\n- Meta raw.data[] is the Graph response; creative is a nested object with id, name, title, body, image_url, thumbnail_url.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: limit semantics: capability doc says 'Page size; Google default 100' but on Google there is no paging cursor and limit is a one-shot GAQL LIMIT (truncation), not a page size. Calling it 'page size' may mislead the agent into expecting an 'after'-style continuation on Google, which does not exist. Also note: No guidance that list_ads only returns non-REMOVED ads and only fully decodes RSA creatives; an agent auditing 'all ad copy' on a mixed-ad-type ad group could wrongly conclude ads have empty headlines/descriptions. Capability gap: No status_filter parameter: the handler hard-codes status != 'REMOVED' and exposes no way to filter by ENABLED/PAUSED only, or to include REMOVED. Google list_campaigns DOES expose status_filter; list_ads does not. The agent cannot list only paused/enabled ads or audit removed ads without falling back to gaql_search.",
+      "long_description": "Supported platforms: google, meta, tiktok, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nLive ad inventory under an account, campaign, ad group, or ad set. Use this to discover ad_id values for updates, removes, creative inspection, or lead retrieval.\n\nUse when:\n- You need an ad_id for action:ads/update_ad, remove_ad, get_ad_creatives, or get_leads.\n- The user asks what ads are running.\n\nDo not use when:\n- The user needs cached analytics by ad. Use action:ads/query_single_dimension with dimension=ad.\n- The user needs ad strength or policy approval. Use action:ads/gaql_search.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Optionally narrow by campaign_id, ad_group_id (Google), or adset_id (Meta).\n3. Call this action.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.ads[] uses snake_case; RSAs include headlines[] and descriptions[]; ad_group_ad_resource_name is required for remove_ad.\n- Meta raw.data[] is the Graph response; creative is a nested object with id, name, title, body, image_url, thumbnail_url.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: limit semantics: capability doc says 'Page size; Google default 100' but on Google there is no paging cursor and limit is a one-shot GAQL LIMIT (truncation), not a page size. Calling it 'page size' may mislead the agent into expecting an 'after'-style continuation on Google, which does not exist. Also note: No guidance that list_ads only returns non-REMOVED ads and only fully decodes RSA creatives; an agent auditing 'all ad copy' on a mixed-ad-type ad group could wrongly conclude ads have empty headlines/descriptions. Capability gap: No status_filter parameter: the handler hard-codes status != 'REMOVED' and exposes no way to filter by ENABLED/PAUSED only, or to include REMOVED. Google list_campaigns DOES expose status_filter; list_ads does not. The agent cannot list only paused/enabled ads or audit removed ads without falling back to gaql_search.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok.",
+          "description": "Supported platforms: google, meta, tiktok, linkedin.",
           "example": "google",
           "enum": [
             "google",
             "meta",
-            "tiktok"
+            "tiktok",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -10800,7 +11060,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -10810,19 +11071,20 @@
         "action:ads/update_campaign",
         "action:ads/query_single_dimension"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nLive campaign inventory directly from Google Ads or Meta Marketing API. Use this to confirm what exists on the platform before mutating, or to pick a campaign_id for a downstream write.\n\nUse when:\n- You need the current status, budget, or platform-side metadata of campaigns.\n- You are about to call update_campaign, remove_campaign, list_adsets, or set_geo_targeting and need a campaign_id.\n- The user asks what campaigns exist on the platform right now.\n\nDo not use when:\n- The user needs cached business-layer analytics or KPIs. Use action:ads/query_single_dimension instead.\n- The user needs Nex-side audit of agent actions. Use action:ads/list_operation_records instead.\n- The user needs platform-side change history. Use action:ads/get_change_history instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Call this action with platform and account_id.\n3. Use status_filter (Google or Meta) or objective_filter (Meta) to narrow.\n4. Pick a campaign_id for the next mutation.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaigns[] uses snake_case with budget_amount_micros (micros).\n- Meta raw.data[] is the Graph API body with daily_budget in cents and string IDs; effective_status reflects platform-side delivery state (WITH_ISSUES, IN_REVIEW, etc.) and may differ from status.\n- Google excludes REMOVED by default; pass status_filter to include it.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Docs do not state status_filter REMOVED returns only removed campaigns; no single call for all-including-removed Also note: Docs do not state ENABLED PAUSED REMOVED are the only accepted values; validate_status hard-errors otherwise Capability gap: No agent-facing limit or pagination for Google: returns all non-REMOVED campaigns, no SELECT LIMIT, no page token; relies on SDK implicit 10k-row paging with no cursor surfaced\n- meta: Guidance: Capability doc for status_filter says only 'Meta: effective_status filter' without enumerating allowed values; official effective_status enum is ACTIVE, PAUSED, ARCHIVED, DELETED, IN_PROCESS, WITH_ISSUES. Agent must guess valid strings. Also note: Doc does not state status_filter accepts only ONE value (single-element array), so an agent may try a comma list or array and get unexpected results. Capability gap: before cursor (reverse pagination) is not supported (handler only reads after); agents cannot page backward.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nLive campaign inventory directly from Google Ads or Meta Marketing API. Use this to confirm what exists on the platform before mutating, or to pick a campaign_id for a downstream write.\n\nUse when:\n- You need the current status, budget, or platform-side metadata of campaigns.\n- You are about to call update_campaign, remove_campaign, list_adsets, or set_geo_targeting and need a campaign_id.\n- The user asks what campaigns exist on the platform right now.\n\nDo not use when:\n- The user needs cached business-layer analytics or KPIs. Use action:ads/query_single_dimension instead.\n- The user needs Nex-side audit of agent actions. Use action:ads/list_operation_records instead.\n- The user needs platform-side change history. Use action:ads/get_change_history instead.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Call this action with platform and account_id.\n3. Use status_filter (Google or Meta) or objective_filter (Meta) to narrow.\n4. Pick a campaign_id for the next mutation.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.campaigns[] uses snake_case with budget_amount_micros (micros).\n- Meta raw.data[] is the Graph API body with daily_budget in cents and string IDs; effective_status reflects platform-side delivery state (WITH_ISSUES, IN_REVIEW, etc.) and may differ from status.\n- Google excludes REMOVED by default; pass status_filter to include it.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Docs do not state status_filter REMOVED returns only removed campaigns; no single call for all-including-removed Also note: Docs do not state ENABLED PAUSED REMOVED are the only accepted values; validate_status hard-errors otherwise Capability gap: No agent-facing limit or pagination for Google: returns all non-REMOVED campaigns, no SELECT LIMIT, no page token; relies on SDK implicit 10k-row paging with no cursor surfaced\n- meta: Guidance: Capability doc for status_filter says only 'Meta: effective_status filter' without enumerating allowed values; official effective_status enum is ACTIVE, PAUSED, ARCHIVED, DELETED, IN_PROCESS, WITH_ISSUES. Agent must guess valid strings. Also note: Doc does not state status_filter accepts only ONE value (single-element array), so an agent may try a comma list or array and get unexpected results. Capability gap: before cursor (reverse pagination) is not supported (handler only reads after); agents cannot page backward.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin.",
           "example": "chatgpt_ads",
           "enum": [
             "google",
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -12430,7 +12692,8 @@
       "platforms": [
         "google",
         "meta",
-        "tiktok"
+        "tiktok",
+        "linkedin"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -12439,18 +12702,19 @@
         "action:ads/update_ad",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action sends operation_status=DELETE through TikTok's ad status-update endpoint. It is a soft delete in storage (the resource remains queryable), but its status can no longer change, so treat it as irreversible and recreate the resource to restore delivery. The returned resource_id is the deleted TikTok resource id.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nTerminate or archive an ad. On Google this is a terminal mutate (status=REMOVED); on Meta it sets status=ARCHIVED.\n\nUse when:\n- The user wants to retire a specific ad without touching the rest of the ad group / ad set.\n\nDo not use when:\n- The user wants to retire the whole ad group / ad set. Use action:ads/remove_ad_group or action:ads/remove_adset.\n- The user wants to pause temporarily. Use action:ads/update_ad with status=PAUSED.\n\nWorkflow:\n1. Call action:ads/list_ads to confirm ad_id (Google also needs ad_group_ad_resource_name which the dispatcher auto-synthesizes from customer_id, ad_group_id, ad_id).\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed ad_group_ad resource path.\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: terminal mutate(remove); not reversible.\n- Meta: POSTs status=ARCHIVED; can be un-archived to PAUSED via update_ad.\n- Stops spend immediately for that ad. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
+      "long_description": "Supported platforms: google, meta, tiktok, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action sends operation_status=DELETE through TikTok's ad status-update endpoint. It is a soft delete in storage (the resource remains queryable), but its status can no longer change, so treat it as irreversible and recreate the resource to restore delivery. The returned resource_id is the deleted TikTok resource id.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nTerminate or archive an ad. On Google this is a terminal mutate (status=REMOVED); on Meta it sets status=ARCHIVED.\n\nUse when:\n- The user wants to retire a specific ad without touching the rest of the ad group / ad set.\n\nDo not use when:\n- The user wants to retire the whole ad group / ad set. Use action:ads/remove_ad_group or action:ads/remove_adset.\n- The user wants to pause temporarily. Use action:ads/update_ad with status=PAUSED.\n\nWorkflow:\n1. Call action:ads/list_ads to confirm ad_id (Google also needs ad_group_ad_resource_name which the dispatcher auto-synthesizes from customer_id, ad_group_id, ad_id).\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed ad_group_ad resource path.\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: terminal mutate(remove); not reversible.\n- Meta: POSTs status=ARCHIVED; can be un-archived to PAUSED via update_ad.\n- Stops spend immediately for that ad. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok.",
+          "description": "Supported platforms: google, meta, tiktok, linkedin.",
           "example": "google",
           "enum": [
             "google",
             "meta",
-            "tiktok"
+            "tiktok",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -12878,7 +13142,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -12888,19 +13153,20 @@
         "action:_batch/submit",
         "action:ads/list_operation_records"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action sends operation_status=DELETE through TikTok's campaign status-update endpoint. It is a soft delete in storage (the resource remains queryable), but its status can no longer change, so treat it as irreversible and recreate the resource to restore delivery. The returned resource_id is the deleted TikTok resource id.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nTerminate or archive a campaign so it stops spending and disappears from default listings. Google/TikTok removal is irreversible; Meta is archive-style. ChatGPT Ads uses a provider toggle guarded by a pre-read, at-most-once mutation, and post-read proof.\n\nUse when:\n- The user wants to permanently retire a Google campaign.\n- The user wants to archive a Meta or ChatGPT Ads campaign.\n\nDo not use when:\n- The user wants to temporarily pause spend. Use action:ads/update_campaign with status=PAUSED instead.\n- The user wants to delete only an ad or ad group. Use action:ads/remove_ad or action:ads/remove_ad_group / remove_adset.\n\nWorkflow:\n1. Call action:ads/list_campaigns to confirm the target campaign_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify removal via action:ads/list_campaigns with status_filter.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed campaign resource name.\n- Meta raw is {success: true}; the campaign moves to ARCHIVED status.\n\nSide effects:\n- Google: terminal — sets status=REMOVED via mutate(remove=resource_name); not reversible.\n- Meta: not a true delete — POSTs status=ARCHIVED. The campaign disappears from default listings; it can be un-archived to PAUSED (not ACTIVE) via action:ads/update_campaign.\n- Stops spend immediately on both platforms.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Capability docs do not state the customer_id is derived from account_id; harmless but the input_params omit customer_id while the handler reads it — an agent reading only handler source could be confused about which key to send. Also note: Docs say Google removal is 'terminal/irreversible' (correct) but do not warn that re-removing an already-REMOVED campaign returns a raw API error rather than an idempotent success; agent may retry and surface a confusing error. Capability gap: validate_only / partial_failure (Google Ads mutate options) are not exposed at this layer; a remove cannot be dry-run via the agent contract (acceptable for a destructive op but worth noting).\n- meta: Guidance: capability docs declare account_id required:True for remove_campaign, but for Meta it is not needed (handler ignores it; archive targets the campaign-id node). This forces the agent to fetch/pass an account_id that has no effect on Meta and risks confusing it about what is load-bearing. Also note: Docs say Meta archive 'can be un-archived to PAUSED (not ACTIVE) via update_campaign' but do not warn about the 50,000 ARCHIVED-objects-per-type-per-account ceiling that can make the operation fail; the agent cannot anticipate this failure mode. Capability gap: No way to perform a TRUE delete (status=DELETED) on Meta via remove_campaign. The handler is hard-coded to ARCHIVED, so the agent cannot evacuate archived objects when an account hits the 50,000-archived-per-type limit, and cannot satisfy a user request to permanently delete a Meta campaign. capability docs even claim Meta is 'archive-style  can be un-archived', acknowledging this gap as intentional. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action sends operation_status=DELETE through TikTok's campaign status-update endpoint. It is a soft delete in storage (the resource remains queryable), but its status can no longer change, so treat it as irreversible and recreate the resource to restore delivery. The returned resource_id is the deleted TikTok resource id.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nTerminate or archive a campaign so it stops spending and disappears from default listings. Google/TikTok removal is irreversible; Meta is archive-style. ChatGPT Ads uses a provider toggle guarded by a pre-read, at-most-once mutation, and post-read proof.\n\nUse when:\n- The user wants to permanently retire a Google campaign.\n- The user wants to archive a Meta or ChatGPT Ads campaign.\n\nDo not use when:\n- The user wants to temporarily pause spend. Use action:ads/update_campaign with status=PAUSED instead.\n- The user wants to delete only an ad or ad group. Use action:ads/remove_ad or action:ads/remove_ad_group / remove_adset.\n\nWorkflow:\n1. Call action:ads/list_campaigns to confirm the target campaign_id.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify removal via action:ads/list_campaigns with status_filter.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.resource_name is the removed campaign resource name.\n- Meta raw is {success: true}; the campaign moves to ARCHIVED status.\n\nSide effects:\n- Google: terminal — sets status=REMOVED via mutate(remove=resource_name); not reversible.\n- Meta: not a true delete — POSTs status=ARCHIVED. The campaign disappears from default listings; it can be un-archived to PAUSED (not ACTIVE) via action:ads/update_campaign.\n- Stops spend immediately on both platforms.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: Capability docs do not state the customer_id is derived from account_id; harmless but the input_params omit customer_id while the handler reads it — an agent reading only handler source could be confused about which key to send. Also note: Docs say Google removal is 'terminal/irreversible' (correct) but do not warn that re-removing an already-REMOVED campaign returns a raw API error rather than an idempotent success; agent may retry and surface a confusing error. Capability gap: validate_only / partial_failure (Google Ads mutate options) are not exposed at this layer; a remove cannot be dry-run via the agent contract (acceptable for a destructive op but worth noting).\n- meta: Guidance: capability docs declare account_id required:True for remove_campaign, but for Meta it is not needed (handler ignores it; archive targets the campaign-id node). This forces the agent to fetch/pass an account_id that has no effect on Meta and risks confusing it about what is load-bearing. Also note: Docs say Meta archive 'can be un-archived to PAUSED (not ACTIVE) via update_campaign' but do not warn about the 50,000 ARCHIVED-objects-per-type-per-account ceiling that can make the operation fail; the agent cannot anticipate this failure mode. Capability gap: No way to perform a TRUE delete (status=DELETED) on Meta via remove_campaign. The handler is hard-coded to ARCHIVED, so the agent cannot evacuate archived objects when an account hits the 50,000-archived-per-type limit, and cannot satisfy a user request to permanently delete a Meta campaign. capability docs even claim Meta is 'archive-style  can be un-archived', acknowledging this gap as intentional. TikTok: soft delete via status/update DELETE — irreversible; the object can no longer change status, though it stays queryable via the get/list action.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin.",
           "example": "google",
           "enum": [
             "google",
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -14661,7 +14927,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -14671,19 +14938,20 @@
         "action:ads/remove_ad",
         "action:_batch/submit"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing ad's status, URLs (Google), or creative wiring (Meta).\n\nUse when:\n- The user wants to activate, pause, or remove an ad.\n- The user wants to update final_urls on a Google RSA.\n- The user wants to swap a Meta ad's creative_id or tracking_specs.\n\nDo not use when:\n- The user wants to update Google RSA headlines or descriptions. These are NOT mutable; use action:ads/remove_ad then action:ads/create_ad.\n- The user wants to update the ad group or ad set. Use action:ads/update_ad_group or action:ads/update_adset.\n\nWorkflow:\n1. Call action:ads/list_ads to capture prior state.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields updated; warnings[] may explain that RSA creative fields were skipped.\n- Google returns success=false with the warning message if only RSA creative fields are supplied (nothing actually mutable).\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: status update targets AdGroupAd; final_urls update targets the Ad. Headlines/descriptions are silently skipped with a warning.\n- Meta: POST {ad_id} with supplied fields. If creative_id is provided it is wrapped as creative={creative_id: ...}.\n- Setting status to ENABLED/ACTIVE resumes spend immediately.\n- Reversible if prior values captured.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing ad's status, URLs (Google), or creative wiring (Meta).\n\nUse when:\n- The user wants to activate, pause, or remove an ad.\n- The user wants to update final_urls on a Google RSA.\n- The user wants to swap a Meta ad's creative_id or tracking_specs.\n\nDo not use when:\n- The user wants to update Google RSA headlines or descriptions. These are NOT mutable; use action:ads/remove_ad then action:ads/create_ad.\n- The user wants to update the ad group or ad set. Use action:ads/update_ad_group or action:ads/update_adset.\n\nWorkflow:\n1. Call action:ads/list_ads to capture prior state.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields updated; warnings[] may explain that RSA creative fields were skipped.\n- Google returns success=false with the warning message if only RSA creative fields are supplied (nothing actually mutable).\n- Meta raw is {success: true}.\n\nSide effects:\n- Google: status update targets AdGroupAd; final_urls update targets the Ad. Headlines/descriptions are silently skipped with a warning.\n- Meta: POST {ad_id} with supplied fields. If creative_id is provided it is wrapped as creative={creative_id: ...}.\n- Setting status to ENABLED/ACTIVE resumes spend immediately.\n- Reversible if prior values captured.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin.",
           "example": "google",
           "enum": [
             "google",
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -14835,7 +15103,8 @@
           "platform": [
             "google",
             "meta",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ]
         },
         {
@@ -15806,7 +16075,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": true,
       "freshness_kind": "synced",
@@ -15817,19 +16087,20 @@
         "action:_batch/submit",
         "action:ads/list_operation_records"
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros, asset_automation). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- When asset_automation is supplied, raw.asset_automation_settings is the COMPLETE merged list that was written (including entries you did not name), so it can be snapshotted as the approved intent.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Google asset_automation adds a third read (the campaign's current asset_automation_settings) before the mutate, and writes the merged list back under the bare 'asset_automation_settings' mask path. Two invariants are asserted before the mutate is sent: no automation type you did not name changes status, and no type appears twice; either failure returns success=false without touching the platform.\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Creation still sends the server-owned network_mode=openai under the private account-capability contract. A public generic advertiser-dashboard contract that describes server-managed allocation does not prove or replace that private contract.\n- Read action:ads/get_account_info first. Its activation_preflight is conservative and non-authoritative. Immediately before PATCH, Soku reads the exact Campaign and requires the same id and an explicitly non-active state. Identity-mismatched, active, or failed readback stops with no activation PATCH. Provider network_mode read metadata is unfinished and does not gate activation.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros, asset_automation). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- When asset_automation is supplied, raw.asset_automation_settings is the COMPLETE merged list that was written (including entries you did not name), so it can be snapshotted as the approved intent.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Google asset_automation adds a third read (the campaign's current asset_automation_settings) before the mutate, and writes the merged list back under the bare 'asset_automation_settings' mask path. Two invariants are asserted before the mutate is sent: no automation type you did not name changes status, and no type appears twice; either failure returns success=false without touching the platform.\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Creation still sends the server-owned network_mode=openai under the private account-capability contract. A public generic advertiser-dashboard contract that describes server-managed allocation does not prove or replace that private contract.\n- Read action:ads/get_account_info first. Its activation_preflight is conservative and non-authoritative. Immediately before PATCH, Soku reads the exact Campaign and requires the same id and an explicitly non-active state. Identity-mismatched, active, or failed readback stops with no activation PATCH. Provider network_mode read metadata is unfinished and does not gate activation.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.",
       "input_params": [
         {
           "name": "platform",
           "type": "string",
           "required": true,
-          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads.",
+          "description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin.",
           "example": "chatgpt_ads",
           "enum": [
             "google",
             "meta",
             "tiktok",
-            "chatgpt_ads"
+            "chatgpt_ads",
+            "linkedin"
           ],
           "source": "constant"
         },
@@ -16060,6 +16331,185 @@
           "platform": [
             "google",
             "meta"
+          ]
+        },
+        {
+          "name": "campaignGroup",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: sponsoredCampaignGroup URN to attach the campaign to; omitted -> a per-account 'Soku Default' group is found or created.",
+          "example": "urn:li:sponsoredCampaignGroup:635137195",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "costType",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: bid cost type.",
+          "example": "CPC",
+          "enum": [
+            "CPM",
+            "CPC",
+            "CPV"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "creativeSelection",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: creative rotation strategy.",
+          "enum": [
+            "ROUND_ROBIN",
+            "OPTIMIZED"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "dailyBudget",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: daily budget as a decimal-string MoneyAmount in the account currency, e.g. {\"amount\": \"25\", \"currencyCode\": \"USD\"}. Amounts are strings, never floats.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "totalBudget",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: lifetime budget MoneyAmount (decimal-string amount).",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "unitCost",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: bid amount MoneyAmount (decimal-string amount).",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "locale",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: campaign locale, e.g. {\"country\": \"US\", \"language\": \"en\"}.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "objectiveType",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: campaign objective.",
+          "enum": [
+            "BRAND_AWARENESS",
+            "ENGAGEMENT",
+            "JOB_APPLICANTS",
+            "LEAD_GENERATION",
+            "WEBSITE_CONVERSIONS",
+            "WEBSITE_VISITS",
+            "VIDEO_VIEWS"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "offsiteDeliveryEnabled",
+          "type": "boolean",
+          "required": false,
+          "description": "LinkedIn only: serve on the LinkedIn Audience Network beyond the feed.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "runSchedule",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: epoch-ms schedule, e.g. {\"start\": 1755000000000}; start is required by LinkedIn even when end is open.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "targetingCriteria",
+          "type": "object",
+          "required": false,
+          "description": "LinkedIn only: AND/OR targeting expression over adTargetingFacet URNs (include/exclude clauses).",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: campaign format type.",
+          "enum": [
+            "TEXT_AD",
+            "SPONSORED_UPDATES",
+            "SPONSORED_INMAILS",
+            "DYNAMIC"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "audienceExpansionEnabled",
+          "type": "boolean",
+          "required": false,
+          "description": "LinkedIn only: enable audience expansion for the targeting criteria.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "optimizationTargetType",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: spend optimization target; default NONE.",
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "pacingStrategy",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: budget pacing.",
+          "enum": [
+            "LIFETIME",
+            "ACCELERATED"
+          ],
+          "platform": [
+            "linkedin"
+          ]
+        },
+        {
+          "name": "politicalIntent",
+          "type": "string",
+          "required": false,
+          "description": "LinkedIn only: political-advertising declaration; defaults to NOT_POLITICAL. EU-targeted campaigns must surface the non-political confirmation to the human during HITL review and pass their answer here.",
+          "enum": [
+            "POLITICAL",
+            "NOT_POLITICAL",
+            "NOT_DECLARED"
+          ],
+          "platform": [
+            "linkedin"
           ]
         },
         {
