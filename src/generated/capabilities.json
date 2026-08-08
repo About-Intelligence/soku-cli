@@ -18125,6 +18125,202 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
     },
     {
+      "id": "action:bigquery/get_table_schema",
+      "namespace": "bigquery",
+      "action": "get_table_schema",
+      "description": "Read one BigQuery table or view's column list (name, type, mode) plus its row and byte counts.",
+      "mode": "read",
+      "platforms": [
+        "bigquery"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:bigquery/query",
+        "action:bigquery/list_tables"
+      ],
+      "long_description": "Primary use:\nThe column vocabulary you must have before writing SQL. Column names and types come from here, never from a guess or from another table's schema.\n\nUse when:\n- You are about to call bigquery/query against this table.\n- A query failed with an unrecognized-name error.\n\nOutput semantics:\n- fields[].type is the upstream spelling verbatim; BigQuery mixes the legacy names (INTEGER / FLOAT / BOOLEAN) with the GoogleSQL ones (INT64 / FLOAT64 / BOOL) in the same response, and both mean the same type.\n- fields[].mode is NULLABLE / REQUIRED / REPEATED.\n- A RECORD/STRUCT column carries a nested fields list, expanded one level deep only.\n- table.num_rows / table.num_bytes are REST string-encoded int64 and are absent (null) for a view.\n- truncated=true means the table has more columns than were returned.\n\nConstraints:\n- Reading a schema does not prove the data is readable; SELECT permission is checked when the query runs.\n\nConnection selection:\n- project_id is the selector. A connection that was granted for exactly that GCP project serves it; otherwise the brand's Google-account connection (which reaches whatever projects that account can see) does.\n- Because of that fallback, a successful call is NOT evidence that the brand was granted the project you named. Do not report reachability as permission, and do not enumerate projects by probing ids.\n- On the three read actions you may omit project_id when the brand has a single connected project — the error message lists the candidates when it is ambiguous. bigquery/query ALWAYS requires it: a human approves the query against a named project, so it is never inferred there.\n- connection_id is only needed to break a tie the error message asks you to break. Copy it verbatim from that message; never invent one.",
+      "input_params": [
+        {
+          "name": "dataset_id",
+          "type": "string",
+          "required": true,
+          "description": "Dataset holding the table, from bigquery/list_datasets.",
+          "example": "sales",
+          "source": "upstream:action:bigquery/list_datasets"
+        },
+        {
+          "name": "table_id",
+          "type": "string",
+          "required": true,
+          "description": "Table or view to describe, from bigquery/list_tables.",
+          "example": "orders",
+          "source": "upstream:action:bigquery/list_tables"
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": false,
+          "description": "GCP project holding the dataset. Required unless the brand has exactly one connected BigQuery project.",
+          "example": "my-analytics-prod",
+          "source": "upstream:action:bigquery/list_datasets"
+        },
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Tie-breaker between several connections that could serve the project. Only pass a value an error message listed.",
+          "source": "user"
+        }
+      ],
+      "output_shape": "{\"table\": {\"project_id\": \"my-analytics-prod\", \"dataset_id\": \"sales\", \"table_id\": \"orders\", \"num_rows\": \"12345\", \"num_bytes\": \"678900\"}, \"fields\": [{\"name\": \"country\", \"type\": \"STRING\", \"mode\": \"NULLABLE\"}], \"truncated\": false, \"connection_source\": \"service_account\"}"
+    },
+    {
+      "id": "action:bigquery/list_datasets",
+      "namespace": "bigquery",
+      "action": "list_datasets",
+      "description": "List the BigQuery datasets in a connected GCP project; returns the dataset_id values the other bigquery.* actions take.",
+      "mode": "read",
+      "platforms": [
+        "bigquery"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:bigquery/list_tables",
+        "action:bigquery/get_table_schema"
+      ],
+      "long_description": "Primary use:\nDataset discovery inside one BigQuery project. This is the entry point of every BigQuery workflow — the ids it returns are the only dataset_id values later bigquery.* calls accept.\n\nUse when:\n- You do not yet know which datasets the connection can read.\n- A previous call failed with not_found on a dataset id you guessed.\n\nDo not use when:\n- You already listed this project's datasets in the same workflow.\n\nWorkflow:\n1. Call this action.\n2. Pick a dataset_id.\n3. Call bigquery/list_tables for that dataset.\n\nOutput semantics:\n- rows[].dataset_id / project_id are the exact ids later calls take.\n- rows[].location is the dataset's region; a query that spans regions fails, and a non-US/EU dataset may need the query's location parameter.\n- truncated=true means the project has more datasets than were returned.\n\nConstraints:\n- Only datasets the connected account itself can read are returned; an empty list means the account has no dataset access in that project, not that the project is empty.\n\nConnection selection:\n- project_id is the selector. A connection that was granted for exactly that GCP project serves it; otherwise the brand's Google-account connection (which reaches whatever projects that account can see) does.\n- Because of that fallback, a successful call is NOT evidence that the brand was granted the project you named. Do not report reachability as permission, and do not enumerate projects by probing ids.\n- On the three read actions you may omit project_id when the brand has a single connected project — the error message lists the candidates when it is ambiguous. bigquery/query ALWAYS requires it: a human approves the query against a named project, so it is never inferred there.\n- connection_id is only needed to break a tie the error message asks you to break. Copy it verbatim from that message; never invent one.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": false,
+          "description": "GCP project to list datasets in. Required unless the brand has exactly one connected BigQuery project.",
+          "example": "my-analytics-prod",
+          "source": "user"
+        },
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Tie-breaker between several connections that could serve the project. Only pass a value an error message listed.",
+          "source": "user"
+        }
+      ],
+      "output_shape": "{\"project_id\": \"my-analytics-prod\", \"connection_source\": \"service_account\", \"rows\": [{\"project_id\": \"my-analytics-prod\", \"dataset_id\": \"sales\", \"location\": \"US\"}], \"truncated\": false}"
+    },
+    {
+      "id": "action:bigquery/list_tables",
+      "namespace": "bigquery",
+      "action": "list_tables",
+      "description": "List the tables and views in one BigQuery dataset; returns table_id values plus each entry's type.",
+      "mode": "read",
+      "platforms": [
+        "bigquery"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:bigquery/get_table_schema",
+        "action:bigquery/query"
+      ],
+      "long_description": "Primary use:\nTable discovery inside one dataset, before reading a schema or writing SQL.\n\nUse when:\n- You have a dataset_id and need the table names in it.\n\nDo not use when:\n- You need column names or types. Use bigquery/get_table_schema.\n\nOutput semantics:\n- rows[].type is reported verbatim: TABLE, VIEW, MATERIALIZED_VIEW or EXTERNAL. A VIEW is queried exactly like a table and is often the curated, intended entry point — do not skip views or prefer tables.\n- truncated=true means the dataset holds more entries than were returned.\n\nConstraints:\n- Listing a table does not prove it is readable; SELECT permission is checked when the query runs.\n\nConnection selection:\n- project_id is the selector. A connection that was granted for exactly that GCP project serves it; otherwise the brand's Google-account connection (which reaches whatever projects that account can see) does.\n- Because of that fallback, a successful call is NOT evidence that the brand was granted the project you named. Do not report reachability as permission, and do not enumerate projects by probing ids.\n- On the three read actions you may omit project_id when the brand has a single connected project — the error message lists the candidates when it is ambiguous. bigquery/query ALWAYS requires it: a human approves the query against a named project, so it is never inferred there.\n- connection_id is only needed to break a tie the error message asks you to break. Copy it verbatim from that message; never invent one.",
+      "input_params": [
+        {
+          "name": "dataset_id",
+          "type": "string",
+          "required": true,
+          "description": "Dataset to list, from bigquery/list_datasets.",
+          "example": "sales",
+          "source": "upstream:action:bigquery/list_datasets"
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": false,
+          "description": "GCP project holding the dataset. Required unless the brand has exactly one connected BigQuery project.",
+          "example": "my-analytics-prod",
+          "source": "upstream:action:bigquery/list_datasets"
+        },
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Tie-breaker between several connections that could serve the project. Only pass a value an error message listed.",
+          "source": "user"
+        }
+      ],
+      "output_shape": "{\"project_id\": \"my-analytics-prod\", \"dataset_id\": \"sales\", \"connection_source\": \"composio\", \"rows\": [{\"project_id\": \"my-analytics-prod\", \"dataset_id\": \"sales\", \"table_id\": \"orders\", \"type\": \"TABLE\"}], \"truncated\": false}"
+    },
+    {
+      "id": "action:bigquery/query",
+      "namespace": "bigquery",
+      "action": "query",
+      "description": "Run one read-only GoogleSQL query against the connected BigQuery project. Always human-reviewed: a person reads the SQL before it runs.",
+      "mode": "risk",
+      "platforms": [
+        "bigquery"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:bigquery/get_table_schema",
+        "action:bigquery/list_tables"
+      ],
+      "long_description": "Primary use:\nAnswering a question from the customer's own warehouse with SQL you wrote. The SQL is forwarded verbatim, so it is also exactly what the reviewing human sees.\n\nHuman review:\n- This action ALWAYS goes through human approval. The first call returns 202 with a pending_review_id and runs nothing; it executes only after a person approves it.\n- Requires chat_id and a _summary describing, in the user's words, what the query answers — that sentence is the card header the reviewer reads.\n- Write one correct query rather than a batch of exploratory ones: every attempt costs a human interruption.\n\nUse when:\n- You already read the relevant schema with bigquery/get_table_schema.\n\nDo not use when:\n- You are still exploring what exists. Use list_datasets / list_tables / get_table_schema, which run immediately and need no approval.\n\nCost and limits:\n- Every query is capped server-side at 1 GiB billed bytes; a query that would scan more is killed by BigQuery before it bills. Narrow it (partition filters, explicit columns instead of SELECT *) rather than asking for the cap to be raised.\n- dry_run=true validates the SQL and returns the byte estimate WITHOUT running it or returning rows — use it when a scan looks expensive.\n- The query must finish inside a short synchronous window; a query_timeout error means narrow the query, not retry it unchanged.\n\nOutput semantics:\n- rows are decoded by the response schema: INT64/FLOAT64 columns become numbers, every other type (BOOL, DATE, TIMESTAMP, NUMERIC, ...) keeps BigQuery's string encoding, and a RECORD/REPEATED column keeps BigQuery's raw {\"f\": [...]} / [{\"v\": ...}] wire encoding — unnest or select scalar fields if you want flat values.\n- truncated=true means more rows matched than were returned; raise max_results or aggregate in SQL rather than paging.\n- total_bytes_processed / total_bytes_billed are string int64.\n\nConstraints:\n- Read-only by intent and by the reviewer's judgement: write DML/DDL is not what this action is for, and a reviewer will reject it.\n- Legacy SQL is disabled; write GoogleSQL.\n\nConnection selection:\n- project_id is the selector. A connection that was granted for exactly that GCP project serves it; otherwise the brand's Google-account connection (which reaches whatever projects that account can see) does.\n- Because of that fallback, a successful call is NOT evidence that the brand was granted the project you named. Do not report reachability as permission, and do not enumerate projects by probing ids.\n- On the three read actions you may omit project_id when the brand has a single connected project — the error message lists the candidates when it is ambiguous. bigquery/query ALWAYS requires it: a human approves the query against a named project, so it is never inferred there.\n- connection_id is only needed to break a tie the error message asks you to break. Copy it verbatim from that message; never invent one.",
+      "input_params": [
+        {
+          "name": "sql",
+          "type": "string",
+          "required": true,
+          "description": "The GoogleSQL query, forwarded verbatim. Fully qualify tables as `project`.`dataset`.`table`.",
+          "example": "SELECT country, SUM(revenue) AS revenue FROM `my-analytics-prod`.`sales`.`orders` WHERE order_date >= '2026-01-01' GROUP BY country",
+          "source": "user"
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "GCP project the query job runs in and is billed to. Always required here (unlike the read actions): it is part of what the human approves, so it is never inferred.",
+          "example": "my-analytics-prod",
+          "source": "upstream:action:bigquery/list_datasets"
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "required": false,
+          "description": "Rows to return. Default 100, hard cap 1000.",
+          "example": 100,
+          "source": "constant"
+        },
+        {
+          "name": "dry_run",
+          "type": "boolean",
+          "required": false,
+          "description": "Validate and estimate only: returns the byte estimate, runs no query and returns no rows.",
+          "example": false,
+          "source": "constant"
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "required": false,
+          "description": "Dataset region (from bigquery/list_datasets) when it is neither US nor EU. Omit and BigQuery infers it.",
+          "example": "asia-northeast1",
+          "source": "upstream:action:bigquery/list_datasets"
+        },
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Tie-breaker between several connections that could serve the project. Only pass a value an error message listed.",
+          "source": "user"
+        }
+      ],
+      "output_shape": "{\"project_id\": \"my-analytics-prod\", \"connection_source\": \"service_account\", \"rows\": [{\"country\": \"US\", \"revenue\": 1234.5}], \"truncated\": false, \"total_bytes_processed\": \"2097152\", \"total_bytes_billed\": \"10485760\", \"cache_hit\": false} — or {\"dry_run\": true, \"total_bytes_processed\": \"2097152\", ...} when dry_run was set"
+    },
+    {
       "id": "action:composio/append_doc_from_markdown",
       "namespace": "composio",
       "action": "append_doc_from_markdown",
