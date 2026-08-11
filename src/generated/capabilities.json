@@ -20853,6 +20853,261 @@
         }
       ],
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
+    },
+    {
+      "id": "action:toast/get_order",
+      "namespace": "toast",
+      "action": "get_order",
+      "description": "Get one Toast order in full detail.",
+      "mode": "read",
+      "platforms": [
+        "toast"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "The complete Order object: every check with its line items (selections), applied discounts, service charges, and payments. Use after toast/list_orders or toast/list_checks when you need what was actually ordered rather than totals.",
+      "input_params": [
+        {
+          "name": "restaurant_guid",
+          "type": "string",
+          "required": false,
+          "description": "Toast restaurant GUID, from toast/list_restaurants. Optional when the brand has exactly one granted restaurant (it is resolved automatically); required to disambiguate when several are granted (the error lists the choices). Only granted restaurants are addressable.",
+          "source": "prior_action:toast/list_restaurants"
+        },
+        {
+          "name": "order_guid",
+          "type": "string",
+          "required": true,
+          "description": "Toast order GUID, from toast/list_orders or toast/list_checks. Letters, digits and hyphens only.",
+          "source": "prior_action:toast/list_orders"
+        }
+      ],
+      "output_shape": "{restaurant_guid, order: <full Toast Order object>}"
+    },
+    {
+      "id": "action:toast/list_checks",
+      "namespace": "toast",
+      "action": "list_checks",
+      "description": "List Toast checks (bills) across a business day or time range.",
+      "mode": "read",
+      "platforms": [
+        "toast"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Checks flattened across the selected orders, each carrying its order context. Toast has no standalone checks endpoint — this reads the same orders as toast/list_orders and projects them differently, at the same upstream cost. Use it for split-check analysis, per-check totals, tax and tip breakdowns. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant. has_more is a HEURISTIC: Toast returns a bare array with no total, so it is true whenever the page came back full. A final page that is exactly full reports has_more once too often — stop when the next page is empty.",
+      "input_params": [
+        {
+          "name": "restaurant_guid",
+          "type": "string",
+          "required": false,
+          "description": "Toast restaurant GUID, from toast/list_restaurants. Optional when the brand has exactly one granted restaurant (it is resolved automatically); required to disambiguate when several are granted (the error lists the choices). Only granted restaurants are addressable.",
+          "source": "prior_action:toast/list_restaurants"
+        },
+        {
+          "name": "business_date",
+          "type": "string",
+          "required": false,
+          "description": "Business day in YYYYMMDD form. Use this OR the start_date/end_date pair, not both. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant.",
+          "example": "20260809",
+          "one_of_group": "order_window"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "ISO-8601 instant, INCLUSIVE, and it MUST carry a UTC offset. Filters by order modification time, not business day. Requires end_date. Use this pair for a sub-day window.",
+          "example": "2026-08-09T14:00:00+00:00",
+          "one_of_group": "order_window"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "ISO-8601 instant, EXCLUSIVE, with a UTC offset. Requires start_date. Keep ranges to a month or less — Toast rate-limits wide historical scans.",
+          "example": "2026-08-10T00:00:00+00:00",
+          "one_of_group": "order_window"
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "1-based page number. Default 1.",
+          "example": 1
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "description": "Orders per page, 1-100. Default 100 (Toast's maximum).",
+          "example": 100
+        }
+      ],
+      "output_shape": "{restaurant_guid, business_date?|start_date+end_date, checks: [{check_guid, order_guid, business_date, opened_date, display_number, amount, tax_amount, tip_amount, total_amount, voided, customer_guid, payment_count, payment_guids}], order_count, page, page_size, has_more}"
+    },
+    {
+      "id": "action:toast/list_orders",
+      "namespace": "toast",
+      "action": "list_orders",
+      "description": "List Toast order summaries for a business day or time range.",
+      "mode": "read",
+      "platforms": [
+        "toast"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Order-level summaries: identifiers, open/paid/closed timestamps, business date, dining option, void flag, check count and check GUIDs, and the summed check total. Use toast/get_order for a single order's line items, and toast/list_checks when you want check-level rows across many orders. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant. has_more is a HEURISTIC: Toast returns a bare array with no total, so it is true whenever the page came back full. A final page that is exactly full reports has_more once too often — stop when the next page is empty.",
+      "input_params": [
+        {
+          "name": "restaurant_guid",
+          "type": "string",
+          "required": false,
+          "description": "Toast restaurant GUID, from toast/list_restaurants. Optional when the brand has exactly one granted restaurant (it is resolved automatically); required to disambiguate when several are granted (the error lists the choices). Only granted restaurants are addressable.",
+          "source": "prior_action:toast/list_restaurants"
+        },
+        {
+          "name": "business_date",
+          "type": "string",
+          "required": false,
+          "description": "Business day in YYYYMMDD form. Use this OR the start_date/end_date pair, not both. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant.",
+          "example": "20260809",
+          "one_of_group": "order_window"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "ISO-8601 instant, INCLUSIVE, and it MUST carry a UTC offset. Filters by order modification time, not business day. Requires end_date. Use this pair for a sub-day window.",
+          "example": "2026-08-09T14:00:00+00:00",
+          "one_of_group": "order_window"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "ISO-8601 instant, EXCLUSIVE, with a UTC offset. Requires start_date. Keep ranges to a month or less — Toast rate-limits wide historical scans.",
+          "example": "2026-08-10T00:00:00+00:00",
+          "one_of_group": "order_window"
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "1-based page number. Default 1.",
+          "example": 1
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "description": "Orders per page, 1-100. Default 100 (Toast's maximum).",
+          "example": 100
+        }
+      ],
+      "output_shape": "{restaurant_guid, business_date?|start_date+end_date, orders: [{order_guid, display_number, opened_date, paid_date, closed_date, business_date, voided, source, dining_option_guid, check_count, check_guids, total_amount}], page, page_size, has_more}"
+    },
+    {
+      "id": "action:toast/list_payments",
+      "namespace": "toast",
+      "action": "list_payments",
+      "description": "List Toast payment details for one paid business day.",
+      "mode": "read",
+      "platforms": [
+        "toast"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Payments taken on the given business day, with type, amount, tip, card type, last four digits, status, and refund status. Toast's payments endpoint returns identifiers only, so each payment costs one extra upstream request — bounded by `limit`. Check `truncated` before treating the list as complete. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant.",
+      "input_params": [
+        {
+          "name": "restaurant_guid",
+          "type": "string",
+          "required": false,
+          "description": "Toast restaurant GUID, from toast/list_restaurants. Optional when the brand has exactly one granted restaurant (it is resolved automatically); required to disambiguate when several are granted (the error lists the choices). Only granted restaurants are addressable.",
+          "source": "prior_action:toast/list_restaurants"
+        },
+        {
+          "name": "paid_business_date",
+          "type": "string",
+          "required": true,
+          "description": "Business day the payments were taken, YYYYMMDD. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant.",
+          "example": "20260809"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum payment details to fetch, 1-500. Default 200. Values above 500 are rejected rather than clamped, so a truncated result is never mistaken for a complete one.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{restaurant_guid, paid_business_date, payments: [{payment_guid, type, amount, tip_amount, card_type, last4, paid_date, paid_business_date, payment_status, refund_status, refund: {refund_amount, tip_refund_amount, refund_date, refund_business_date}|null}], payment_ids_found, details_fetched, truncated, quota_limited?, note?}"
+    },
+    {
+      "id": "action:toast/list_refunds",
+      "namespace": "toast",
+      "action": "list_refunds",
+      "description": "List Toast refunds issued on one business day.",
+      "mode": "read",
+      "platforms": [
+        "toast"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Refunded payments for the given refund business day. In Toast a refund is not its own record — it is a field on the payment — so each row is the original payment plus its refund amounts and dates, and payments with refund_status NONE are filtered out. Note the date selector is the REFUND business day, which is often not the day the payment was taken (paid_business_date is returned on every row so you can see both). Same identifier-then-detail cost and `limit` bound as toast/list_payments. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant.",
+      "input_params": [
+        {
+          "name": "restaurant_guid",
+          "type": "string",
+          "required": false,
+          "description": "Toast restaurant GUID, from toast/list_restaurants. Optional when the brand has exactly one granted restaurant (it is resolved automatically); required to disambiguate when several are granted (the error lists the choices). Only granted restaurants are addressable.",
+          "source": "prior_action:toast/list_restaurants"
+        },
+        {
+          "name": "refund_business_date",
+          "type": "string",
+          "required": true,
+          "description": "Business day the refunds were issued, YYYYMMDD. IMPORTANT: business dates are the RESTAURANT'S LOCAL business day, whose boundary is set by the location's closeoutHour (a late-night venue's business day crosses midnight). Do NOT pass today's UTC date. To resolve 'today' or 'yesterday', call toast/list_restaurants first and convert using the returned time_zone and closeout_hour. A wrong business date returns a DIFFERENT day's data with no error — every row echoes its business_date so you can verify you got the day you meant.",
+          "example": "20260809"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum payment details to fetch, 1-500. Default 200. Counts payments examined, not refunds found.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{restaurant_guid, refund_business_date, refunds: [{payment_guid, type, amount, original_amount, tip_amount, card_type, last4, paid_date, paid_business_date, payment_status, refund_status, refund_amount, tip_refund_amount, refund_date, refund_business_date}], payment_ids_found, details_fetched, truncated, quota_limited?, note?}"
+    },
+    {
+      "id": "action:toast/list_restaurants",
+      "namespace": "toast",
+      "action": "list_restaurants",
+      "description": "List the Toast restaurant locations this brand can read.",
+      "mode": "read",
+      "platforms": [
+        "toast"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns every Toast location granted to this brand with its name, address, time zone, and closeout hour. Start here: the time zone and closeout hour are what turn 'today' into the correct business_date for the other actions, and the restaurant_guid is the value they take. Costs one upstream request per location.",
+      "input_params": [
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "0-based offset into this brand's granted restaurants. Default 0. At most 20 are returned per call, so a brand with more than 20 grants needs offset=20, 40, … — read has_more / total_granted to know when to stop.",
+          "example": 0
+        }
+      ],
+      "output_shape": "{restaurants: [{restaurant_guid, name, location_name, time_zone, closeout_hour, management_group_guid, archived, address: {line1, city, state, zip, country}, phone}], offset, returned, total_granted, has_more}"
     }
   ]
 }
