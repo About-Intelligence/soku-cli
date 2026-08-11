@@ -9497,6 +9497,26 @@
       "output_shape": "{\"data\": [{\"id\": \"lead_id\", \"created_time\": \"ISO\", \"field_data\": [{\"name\": \"email\", \"values\": [\"user@example.com\"]}], \"ad_id\": \"...\", \"form_id\": \"...\", \"platform\": \"...\"}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
     },
     {
+      "id": "action:ads/get_offline_conversion_readiness",
+      "namespace": "ads",
+      "action": "get_offline_conversion_readiness",
+      "description": "Read whether this brand's Google Ads conversion actions and Meta pixels are configured to receive offline (in-store) conversions, and what blocks each one.",
+      "mode": "read",
+      "platforms": [
+        "google",
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/list_conversion_actions",
+        "action:ads/list_ad_accounts"
+      ],
+      "long_description": "Primary use:\nAnswer 'can we send this customer's settled in-store orders into their own Google Ads / Meta account yet, and if not, what is missing'. Returns one row per addressable destination with an explicit blocker list.\n\nUse when:\n- The user asks whether offline / in-store conversion upload is set up.\n- You need to tell the user which setup step is outstanding, per account.\n- You need the eligible UPLOAD_CLICKS conversion actions or pixels for a brand.\n\nDo not use when:\n- You want to upload a conversion. This action never sends anything; no upload capability exists in this namespace.\n- You need live platform state. Google eligibility is read from the synced conversion-action snapshot, not from the Google Ads API.\n\nOutput semantics — read these carefully before reporting to a user:\n- ready=true means CONFIGURATION is complete. It does NOT mean an upload would succeed, and it says nothing about whether a conversion would be matched or attributed.\n- status='no_granted_accounts' means the brand holds no ad-account grant at all; status='credential_unavailable' means a grant exists but its connection is deactivated, so tell the user to reconnect rather than to re-grant.\n- google[].capability is the credential verdict: 'platform_setup_required' means Soku has not yet completed Google Data Manager onboarding, so asking the customer to reconnect would NOT help; 'reconnect_required' means the customer's own token predates the scope and reconnecting does help; 'service_account_pending_preflight' means a service-account credential cannot be judged without a live check.\n- google[].data_freshness is the age of the CONVERSION-action snapshot (the conversion sync pipeline), not of the ads hierarchy sync. 'freshness_unknown' means that snapshot has no known age and 'freshness_stale' means it is older than the staleness budget; both clear ready, because an ENABLED row in an old snapshot is not evidence the action is ENABLED now.\n- 'credential_unavailable' means the connection itself is not in a usable state (its verification failed or is still pending), so no destination behind it can receive anything until it is reconnected.\n- meta[] rows appear for every granted Meta account, including one with no pixel linked yet — that row carries 'no_linked_pixel' rather than being omitted, so 'not configured' is never silent.\n- meta[].blockers are per (account, pixel): one account's unresolved cross-Business-Manager binding never blocks a sibling account. 'pixel_permission_missing' means discovery already probed this pair and recorded that the connection cannot address that pixel.\n- meta[].data_freshness exists for the same reason as the Google one: pixel and link rows are snapshots, so an unknown or stale age clears ready rather than passing silently.\n- Destinations are derived from active grants; there is no input parameter that can name an account, conversion action, or pixel.\n- Discovery caveat: when a brand's every Google/Meta connection is deactivated, capability listing stops showing this action even though that is exactly the state it explains. It stays callable by id — invoke it directly if a user reports a broken Google/Meta connection and you do not see it listed.",
+      "input_params": [],
+      "output_shape": "{\"status\": \"ok\", \"google\": [{\"account_id\": \"1234567890\", \"account_name\": \"Acme\", \"credential_id\": 7, \"credential_source\": \"oauth\", \"capability\": \"platform_setup_required\", \"conversion_actions\": [{\"conversion_action_id\": \"987654321\", \"name\": \"In-store purchase\", \"action_type\": \"UPLOAD_CLICKS\", \"status\": \"ENABLED\"}], \"data_freshness\": \"ISO\", \"ready\": false, \"blockers\": [\"platform_setup_required\"]}], \"meta\": [{\"account_id\": \"act_123\", \"account_name\": \"Acme\", \"credential_id\": 8, \"credential_source\": \"oauth\", \"pixel_resource_id\": 4, \"pixel_id\": \"999\", \"pixel_name\": \"Store Pixel\", \"ready\": true, \"blockers\": []}]}"
+    },
+    {
       "id": "action:ads/get_opportunity_score",
       "namespace": "ads",
       "action": "get_opportunity_score",
