@@ -8692,7 +8692,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
@@ -10307,7 +10308,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -10985,7 +10987,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -11522,7 +11525,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -11688,7 +11692,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -12501,7 +12506,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -13869,7 +13875,8 @@
         "google",
         "meta",
         "tiktok",
-        "chatgpt_ads"
+        "chatgpt_ads",
+        "linkedin"
       ],
       "requires_review": false,
       "freshness_kind": "synced",
@@ -18719,6 +18726,380 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{toolkit, endpoint, method, status, data}"
     },
     {
+      "id": "action:doordash/get_sales_summary",
+      "namespace": "doordash",
+      "action": "get_sales_summary",
+      "description": "DoorDash sales aggregates (orders, fees, marketing, net) — no rows.",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "AGGREGATES ONLY over the TRANSACTION_DETAIL report (v4): row count and sums of subtotal, tax, commission, marketing fees, error charges and net total for the selected granted stores and window. Optional group_by='store' or group_by='date' adds per-group aggregates alongside the overall one. Use doordash/list_transactions when you need the underlying rows. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got. start_date and end_date are required ISO dates (YYYY-MM-DD), inclusive on both ends; the window may span at most 366 days counting both ends (so end_date is at most 365 days after start_date). store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores. Money columns are never guessed: a column absent from the CSV is listed under aggregates.missing_columns, a column present but with NO parseable number in any row is listed under aggregates.unreadable_columns and is left OUT of aggregates.sums (a missing sum means 'could not read it', never 'it is zero' — report it as unavailable, do not tell the user it was 0), and per-column cell counts are in aggregates.parsed_values / aggregates.unparsed_values so you can see the coverage behind a partially readable column. Rows are re-checked locally against the queried stores before aggregation. If any come back that do not belong to them, the response carries out_of_scope_rows (a different store's rows) and/or unattributed_rows (no usable store id) plus a scope_note: those rows are in NEITHER the echoed rows nor the sums, so the result is a subset of the report — say so when you report the numbers. store_scope_unverified=true means the report had no store id column and the rows could not be re-checked at all. A report_columns_ambiguous error means the report carried two columns that both read as the same one, so the scope could not be decided: it reproduces on every retry, with any date range and any store list — report it and tell the user to contact support rather than retrying. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores.",
+          "example": [
+            901,
+            902
+          ],
+          "source": "upstream:action:doordash/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Start of the window, ISO date (YYYY-MM-DD), inclusive. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "End of the window, ISO date (YYYY-MM-DD), inclusive. At most 365 days after start_date (366 days counting both ends). Use yesterday to cover 'today' (data is D-1).",
+          "example": "2026-08-10"
+        },
+        {
+          "name": "group_by",
+          "type": "string",
+          "required": false,
+          "description": "Optional grouping: 'store' (per-store aggregates) or 'date' (per-day aggregates). Omit for the overall aggregate only.",
+          "example": "store",
+          "enum": [
+            "store",
+            "date"
+          ]
+        }
+      ],
+      "output_shape": "{store_ids, start_date, end_date, data_freshness, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, group_by?, groups?: [{key, aggregates}], missing_group_column?, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
+      "id": "action:doordash/list_cancelled_orders",
+      "namespace": "doordash",
+      "action": "list_cancelled_orders",
+      "description": "List DoorDash cancelled-order rows with aggregates.",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Cancelled orders from the CANCELLED_ORDERS report across the selected granted stores — cancellation time and category plus the money involved — with aggregate sums. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got. start_date and end_date are required ISO dates (YYYY-MM-DD), inclusive on both ends; the window may span at most 366 days counting both ends (so end_date is at most 365 days after start_date). store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores. Aggregates are computed over the FULL report before any row truncation (check `truncated` and `total_rows`). Money columns are never guessed: a column absent from the CSV is listed under aggregates.missing_columns, a column present but with NO parseable number in any row is listed under aggregates.unreadable_columns and is left OUT of aggregates.sums (a missing sum means 'could not read it', never 'it is zero' — report it as unavailable, do not tell the user it was 0), and per-column cell counts are in aggregates.parsed_values / aggregates.unparsed_values so you can see the coverage behind a partially readable column. Rows are re-checked locally against the queried stores before aggregation. If any come back that do not belong to them, the response carries out_of_scope_rows (a different store's rows) and/or unattributed_rows (no usable store id) plus a scope_note: those rows are in NEITHER the echoed rows nor the sums, so the result is a subset of the report — say so when you report the numbers. store_scope_unverified=true means the report had no store id column and the rows could not be re-checked at all. A report_columns_ambiguous error means the report carried two columns that both read as the same one, so the scope could not be decided: it reproduces on every retry, with any date range and any store list — report it and tell the user to contact support rather than retrying. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores.",
+          "example": [
+            901,
+            902
+          ],
+          "source": "upstream:action:doordash/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Start of the window, ISO date (YYYY-MM-DD), inclusive. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "End of the window, ISO date (YYYY-MM-DD), inclusive. At most 365 days after start_date (366 days counting both ends). Use yesterday to cover 'today' (data is D-1).",
+          "example": "2026-08-10"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum rows echoed back, 1-1000. Default 200. Values above 1000 are rejected rather than clamped. Aggregates always cover the FULL report regardless of limit.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{store_ids, start_date, end_date, data_freshness, cancelled_orders: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
+      "id": "action:doordash/list_orders",
+      "namespace": "doordash",
+      "action": "list_orders",
+      "description": "List DoorDash order rows (ORDER_DETAIL report) with aggregates.",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Order-level rows from the ORDER_DETAIL report across the selected granted stores, plus aggregate sums of the money columns. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got. start_date and end_date are required ISO dates (YYYY-MM-DD), inclusive on both ends; the window may span at most 366 days counting both ends (so end_date is at most 365 days after start_date). store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores. Aggregates are computed over the FULL report before any row truncation (check `truncated` and `total_rows`). Money columns are never guessed: a column absent from the CSV is listed under aggregates.missing_columns, a column present but with NO parseable number in any row is listed under aggregates.unreadable_columns and is left OUT of aggregates.sums (a missing sum means 'could not read it', never 'it is zero' — report it as unavailable, do not tell the user it was 0), and per-column cell counts are in aggregates.parsed_values / aggregates.unparsed_values so you can see the coverage behind a partially readable column. Rows are re-checked locally against the queried stores before aggregation. If any come back that do not belong to them, the response carries out_of_scope_rows (a different store's rows) and/or unattributed_rows (no usable store id) plus a scope_note: those rows are in NEITHER the echoed rows nor the sums, so the result is a subset of the report — say so when you report the numbers. store_scope_unverified=true means the report had no store id column and the rows could not be re-checked at all. A report_columns_ambiguous error means the report carried two columns that both read as the same one, so the scope could not be decided: it reproduces on every retry, with any date range and any store list — report it and tell the user to contact support rather than retrying. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores.",
+          "example": [
+            901,
+            902
+          ],
+          "source": "upstream:action:doordash/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Start of the window, ISO date (YYYY-MM-DD), inclusive. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "End of the window, ISO date (YYYY-MM-DD), inclusive. At most 365 days after start_date (366 days counting both ends). Use yesterday to cover 'today' (data is D-1).",
+          "example": "2026-08-10"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum rows echoed back, 1-1000. Default 200. Values above 1000 are rejected rather than clamped. Aggregates always cover the FULL report regardless of limit.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{store_ids, start_date, end_date, data_freshness, orders: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
+      "id": "action:doordash/list_payouts",
+      "namespace": "doordash",
+      "action": "list_payouts",
+      "description": "List DoorDash payout rows (PAYOUT_SUMMARY report) with aggregates.",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Payout-level rows from the PAYOUT_SUMMARY report (v3) across the selected granted stores — what DoorDash actually paid out, with the commission / marketing / error-charge components — plus aggregate sums. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got. start_date and end_date are required ISO dates (YYYY-MM-DD), inclusive on both ends; the window may span at most 366 days counting both ends (so end_date is at most 365 days after start_date). store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores. Aggregates are computed over the FULL report before any row truncation (check `truncated` and `total_rows`). Money columns are never guessed: a column absent from the CSV is listed under aggregates.missing_columns, a column present but with NO parseable number in any row is listed under aggregates.unreadable_columns and is left OUT of aggregates.sums (a missing sum means 'could not read it', never 'it is zero' — report it as unavailable, do not tell the user it was 0), and per-column cell counts are in aggregates.parsed_values / aggregates.unparsed_values so you can see the coverage behind a partially readable column. Rows are re-checked locally against the queried stores before aggregation. If any come back that do not belong to them, the response carries out_of_scope_rows (a different store's rows) and/or unattributed_rows (no usable store id) plus a scope_note: those rows are in NEITHER the echoed rows nor the sums, so the result is a subset of the report — say so when you report the numbers. store_scope_unverified=true means the report had no store id column and the rows could not be re-checked at all. A report_columns_ambiguous error means the report carried two columns that both read as the same one, so the scope could not be decided: it reproduces on every retry, with any date range and any store list — report it and tell the user to contact support rather than retrying. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores.",
+          "example": [
+            901,
+            902
+          ],
+          "source": "upstream:action:doordash/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Start of the window, ISO date (YYYY-MM-DD), inclusive. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "End of the window, ISO date (YYYY-MM-DD), inclusive. At most 365 days after start_date (366 days counting both ends). Use yesterday to cover 'today' (data is D-1).",
+          "example": "2026-08-10"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum rows echoed back, 1-1000. Default 200. Values above 1000 are rejected rather than clamped. Aggregates always cover the FULL report regardless of limit.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{store_ids, start_date, end_date, data_freshness, payouts: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
+      "id": "action:doordash/list_promotion_performance",
+      "namespace": "doordash",
+      "action": "list_promotion_performance",
+      "description": "List DoorDash promotion performance rows.",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Promotion performance from the PROMOTION_PERFORMANCE report across the selected granted stores — orders, marketing spend and attributed sales per promotion — with aggregate sums. May be legitimately EMPTY for accounts with no such activity: an empty report returns normally with rows=[] and an explanatory note — it is not an error. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got. start_date and end_date are required ISO dates (YYYY-MM-DD), inclusive on both ends; the window may span at most 366 days counting both ends (so end_date is at most 365 days after start_date). store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores. Aggregates are computed over the FULL report before any row truncation (check `truncated` and `total_rows`). Money columns are never guessed: a column absent from the CSV is listed under aggregates.missing_columns, a column present but with NO parseable number in any row is listed under aggregates.unreadable_columns and is left OUT of aggregates.sums (a missing sum means 'could not read it', never 'it is zero' — report it as unavailable, do not tell the user it was 0), and per-column cell counts are in aggregates.parsed_values / aggregates.unparsed_values so you can see the coverage behind a partially readable column. Rows are re-checked locally against the queried stores before aggregation. If any come back that do not belong to them, the response carries out_of_scope_rows (a different store's rows) and/or unattributed_rows (no usable store id) plus a scope_note: those rows are in NEITHER the echoed rows nor the sums, so the result is a subset of the report — say so when you report the numbers. store_scope_unverified=true means the report had no store id column and the rows could not be re-checked at all. A report_columns_ambiguous error means the report carried two columns that both read as the same one, so the scope could not be decided: it reproduces on every retry, with any date range and any store list — report it and tell the user to contact support rather than retrying. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores.",
+          "example": [
+            901,
+            902
+          ],
+          "source": "upstream:action:doordash/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Start of the window, ISO date (YYYY-MM-DD), inclusive. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "End of the window, ISO date (YYYY-MM-DD), inclusive. At most 365 days after start_date (366 days counting both ends). Use yesterday to cover 'today' (data is D-1).",
+          "example": "2026-08-10"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum rows echoed back, 1-1000. Default 200. Values above 1000 are rejected rather than clamped. Aggregates always cover the FULL report regardless of limit.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{store_ids, start_date, end_date, data_freshness, rows: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
+      "id": "action:doordash/list_sponsored_listing_performance",
+      "namespace": "doordash",
+      "action": "list_sponsored_listing_performance",
+      "description": "List DoorDash Sponsored Listing (ads) performance rows.",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Ads performance from the SPONSORED_LISTING_PERFORMANCE report across the selected granted stores — impressions, clicks, orders, ad spend and attributed sales — with aggregate sums. May be legitimately EMPTY for accounts with no such activity: an empty report returns normally with rows=[] and an explanatory note — it is not an error. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got. start_date and end_date are required ISO dates (YYYY-MM-DD), inclusive on both ends; the window may span at most 366 days counting both ends (so end_date is at most 365 days after start_date). store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores. Aggregates are computed over the FULL report before any row truncation (check `truncated` and `total_rows`). Money columns are never guessed: a column absent from the CSV is listed under aggregates.missing_columns, a column present but with NO parseable number in any row is listed under aggregates.unreadable_columns and is left OUT of aggregates.sums (a missing sum means 'could not read it', never 'it is zero' — report it as unavailable, do not tell the user it was 0), and per-column cell counts are in aggregates.parsed_values / aggregates.unparsed_values so you can see the coverage behind a partially readable column. Rows are re-checked locally against the queried stores before aggregation. If any come back that do not belong to them, the response carries out_of_scope_rows (a different store's rows) and/or unattributed_rows (no usable store id) plus a scope_note: those rows are in NEITHER the echoed rows nor the sums, so the result is a subset of the report — say so when you report the numbers. store_scope_unverified=true means the report had no store id column and the rows could not be re-checked at all. A report_columns_ambiguous error means the report carried two columns that both read as the same one, so the scope could not be decided: it reproduces on every retry, with any date range and any store list — report it and tell the user to contact support rather than retrying. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores.",
+          "example": [
+            901,
+            902
+          ],
+          "source": "upstream:action:doordash/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Start of the window, ISO date (YYYY-MM-DD), inclusive. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "End of the window, ISO date (YYYY-MM-DD), inclusive. At most 365 days after start_date (366 days counting both ends). Use yesterday to cover 'today' (data is D-1).",
+          "example": "2026-08-10"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum rows echoed back, 1-1000. Default 200. Values above 1000 are rejected rather than clamped. Aggregates always cover the FULL report regardless of limit.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{store_ids, start_date, end_date, data_freshness, rows: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
+      "id": "action:doordash/list_stores",
+      "namespace": "doordash",
+      "action": "list_stores",
+      "description": "List the DoorDash stores this brand can read.",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns every DoorDash store granted to this brand with its store_id, name, business_id and address, read from the STORE_INFORMATION report and filtered to the brand's grants. Start here: store_id is the value the other actions' store_ids take. A granted store missing from DoorDash's snapshot is listed under missing_from_report (its DoorDash-side authorization may have been revoked). No date parameters. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "Optional subset of granted store ids to describe; omit to list every granted store. An ungranted id is not_found.",
+          "example": [
+            901,
+            902
+          ]
+        }
+      ],
+      "output_shape": "{store_ids, start_date: null, end_date: null, data_freshness, stores: [{store_id, name, business_id, address}], store_count, missing_from_report?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
+      "id": "action:doordash/list_transactions",
+      "namespace": "doordash",
+      "action": "list_transactions",
+      "description": "List DoorDash per-order transaction rows (fees, refunds, marketing).",
+      "mode": "read",
+      "platforms": [
+        "doordash"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Per-order financial transactions from the TRANSACTION_DETAIL report (v4) — subtotal, tax, commission, marketing fees, error charges, refunds and net total per row — with aggregate sums. This is the financial source of truth; use doordash/get_sales_summary when you only need totals. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got. start_date and end_date are required ISO dates (YYYY-MM-DD), inclusive on both ends; the window may span at most 366 days counting both ends (so end_date is at most 365 days after start_date). store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores. Aggregates are computed over the FULL report before any row truncation (check `truncated` and `total_rows`). Money columns are never guessed: a column absent from the CSV is listed under aggregates.missing_columns, a column present but with NO parseable number in any row is listed under aggregates.unreadable_columns and is left OUT of aggregates.sums (a missing sum means 'could not read it', never 'it is zero' — report it as unavailable, do not tell the user it was 0), and per-column cell counts are in aggregates.parsed_values / aggregates.unparsed_values so you can see the coverage behind a partially readable column. Rows are re-checked locally against the queried stores before aggregation. If any come back that do not belong to them, the response carries out_of_scope_rows (a different store's rows) and/or unattributed_rows (no usable store id) plus a scope_note: those rows are in NEITHER the echoed rows nor the sums, so the result is a subset of the report — say so when you report the numbers. store_scope_unverified=true means the report had no store id column and the rows could not be re-checked at all. A report_columns_ambiguous error means the report carried two columns that both read as the same one, so the scope could not be decided: it reproduces on every retry, with any date range and any store list — report it and tell the user to contact support rather than retrying. Reports generate asynchronously (up to ~5 minutes upstream). When a response has status='pending', re-invoke the SAME action with the SAME arguments after retry_after_seconds (~2 minutes): report ids are cached server-side, so an identical re-call RESUMES the same report instead of creating a new one. Changing any argument starts a fresh report.",
+      "input_params": [
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "store_ids is optional: omit it to cover ALL stores granted to this brand (up to 50 per call — more granted stores require an explicit store_ids subset). When provided, every id must be a granted store; an ungranted id is not_found. Get ids from doordash/list_stores.",
+          "example": [
+            901,
+            902
+          ],
+          "source": "upstream:action:doordash/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Start of the window, ISO date (YYYY-MM-DD), inclusive. IMPORTANT: DoorDash report data is D-1 — it refreshes daily around 7pm Pacific with the PREVIOUS day's data, and today's data is never available. To cover 'today', query through YESTERDAY (end_date = yesterday). Every response echoes the actually-queried window and data_freshness so you can verify what you got.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "End of the window, ISO date (YYYY-MM-DD), inclusive. At most 365 days after start_date (366 days counting both ends). Use yesterday to cover 'today' (data is D-1).",
+          "example": "2026-08-10"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum rows echoed back, 1-1000. Default 200. Values above 1000 are rejected rather than clamped. Aggregates always cover the FULL report regardless of limit.",
+          "example": 200
+        }
+      ],
+      "output_shape": "{store_ids, start_date, end_date, data_freshness, transactions: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
+    },
+    {
       "id": "action:ga4/get_conversion_overview",
       "namespace": "ga4",
       "action": "get_conversion_overview",
@@ -21108,6 +21489,204 @@
         }
       ],
       "output_shape": "{restaurants: [{restaurant_guid, name, location_name, time_zone, closeout_hour, management_group_guid, archived, address: {line1, city, state, zip, country}, phone}], offset, returned, total_granted, has_more}"
+    },
+    {
+      "id": "action:ubereats/get_order",
+      "namespace": "ubereats",
+      "action": "get_order",
+      "description": "Get one Uber Eats order in full detail.",
+      "mode": "read",
+      "platforms": [
+        "ubereats"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "The complete order object: current_state (CREATED / ACCEPTED / DENIED / FINISHED / CANCELED / UNKNOWN), placed_at, the owning store, and the charges money breakdown. Works for any order id belonging to a store granted to this brand — including orders that have left the CREATED feed. An order belonging to an ungranted store returns not_found with no data. Costs one upstream request. Every response carries data_source: 'live' means the numbers came from Uber Eats, 'mock' means they are FIXTURES from a non-production demo mode and are invented. Never present mock figures as the customer's real sales, payouts or orders, and never copy them into a deliverable.",
+      "input_params": [
+        {
+          "name": "order_id",
+          "type": "string",
+          "required": true,
+          "description": "Uber Eats order UUID, from ubereats/list_active_orders or a report. Letters, digits, hyphens and underscores only.",
+          "source": "prior_action:ubereats/list_active_orders"
+        }
+      ],
+      "output_shape": "{store_id, order: <full Uber Eats order object>, data_source: 'live'|'mock'}"
+    },
+    {
+      "id": "action:ubereats/get_report",
+      "namespace": "ubereats",
+      "action": "get_report",
+      "description": "Poll a requested Uber Eats report and read its rows once ready.",
+      "mode": "read",
+      "platforms": [
+        "ubereats"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Checks the report's generation status (status names are matched case-insensitively). While it is Preparing, only the status is returned — wait and poll again. Any OTHER non-Available status is terminal: the report cannot be read, the error names the status value verbatim, and since Uber documents no such status the right move is to relay it to the user rather than to keep polling or auto-start another report. Once Available, the CSV is streamed and parsed by HEADER NAME (column sets vary by report_type and unknown columns are tolerated); the returned window is offset..offset+max_rows, with truncated=true plus next_offset when more rows follow and total_rows always carrying the full count. With summarize=true, numeric columns are summed per (store, date) group over ALL rows (not just the returned page): money formatting (1,234.00 / $800.00 / (12.50) for a negative) is understood, and any column that still cannot be summed is listed in summary.skipped_columns with the reason rather than dropped silently. When the store or date column cannot be identified the summary comes back grouped=false with a reason — it never falls back to a global sum. Report figures for the most recent 72 hours are PROVISIONAL — Uber settles report data within 72 hours, so recent numbers may still change. Re-request the report later for final figures. Uber documents a 60 requests/minute limit on the report surface, and the budget may be shared across the whole platform app rather than per merchant. On a rate_limited error with source=upstream, back off (honoring retry_after when present) instead of retrying immediately. report_ref tokens are brand-bound and expire 24 hours after request_report: another brand's ref, a tampered ref, an expired ref, or a ref whose stores are no longer granted all return not_found. Every response carries data_source: 'live' means the numbers came from Uber Eats, 'mock' means they are FIXTURES from a non-production demo mode and are invented. Never present mock figures as the customer's real sales, payouts or orders, and never copy them into a deliverable.",
+      "input_params": [
+        {
+          "name": "report_ref",
+          "type": "string",
+          "required": true,
+          "description": "The opaque report reference returned by ubereats/request_report.",
+          "source": "prior_action:ubereats/request_report"
+        },
+        {
+          "name": "max_rows",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum CSV rows to return, 1-2000. Default 200. Values above 2000 are rejected rather than clamped. When the report is bigger, rows are truncated (truncated=true, total_rows carries the full count) — page on with offset, or use summarize=true for whole-report aggregates instead of paging.",
+          "example": 200
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Row index the returned window starts at, 0-1000000. Default 0. Pass the previous response's next_offset to read the following page; the report is re-read upstream on each call, so page only when the rows themselves are needed.",
+          "example": 200
+        },
+        {
+          "name": "summarize",
+          "type": "boolean",
+          "required": false,
+          "description": "When true, adds per-(store, date) sums of the numeric columns computed over the WHOLE report. Default false. Accepts true/false (also as the strings 'true'/'false').",
+          "example": true
+        }
+      ],
+      "output_shape": "{report_ref, status: 'Preparing'|'Available', report_type, data_source: 'live'|'mock', columns?, duplicate_columns?, rows?, returned?, offset?, total_rows?, truncated?, next_offset?, note?, summary?: {grouped, store_column?, date_column?, value_columns?, skipped_columns?: [{column, reason}], groups?: [{store, date, row_count, totals}], reason?}}"
+    },
+    {
+      "id": "action:ubereats/get_store",
+      "namespace": "ubereats",
+      "action": "get_store",
+      "description": "Get one Uber Eats store's live details.",
+      "mode": "read",
+      "platforms": [
+        "ubereats"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Reads the store live from Uber Eats: name, location, timezone, current status (e.g. ONLINE / PAUSED), merchant_store_id and POS wiring. Use this — not ubereats/list_stores — whenever the store's CURRENT state matters (the listing is an import-time snapshot). Costs one upstream request. Every response carries data_source: 'live' means the numbers came from Uber Eats, 'mock' means they are FIXTURES from a non-production demo mode and are invented. Never present mock figures as the customer's real sales, payouts or orders, and never copy them into a deliverable.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Uber Eats store UUID, from ubereats/list_stores. Optional when the brand has exactly one granted store (it is resolved automatically); required to disambiguate when several are granted (the error lists the choices). Only granted stores are addressable.",
+          "source": "prior_action:ubereats/list_stores"
+        }
+      ],
+      "output_shape": "{store_id, store: <live Uber Eats store object>, data_source: 'live'|'mock'}"
+    },
+    {
+      "id": "action:ubereats/list_active_orders",
+      "namespace": "ubereats",
+      "action": "list_active_orders",
+      "description": "List a store's incoming Uber Eats orders (CREATED state only).",
+      "mode": "read",
+      "platforms": [
+        "ubereats"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "The store's order-intake feed, oldest first: orders placed by customers that have not yet been accepted or rejected by the restaurant. Each order carries its id, placement time and charge breakdown. IMPORTANT: Uber Eats exposes NO synchronous order-history endpoint. ubereats/list_active_orders is the order-INTAKE feed and returns only orders currently in the CREATED state (placed, not yet accepted). Historical orders, sales, payments and financials are only reachable through the asynchronous report surface: ubereats/request_report then ubereats/get_report. This integration is read-only: it can see the feed but can never accept, deny or cancel an order. Costs one upstream request. Every response carries data_source: 'live' means the numbers came from Uber Eats, 'mock' means they are FIXTURES from a non-production demo mode and are invented. Never present mock figures as the customer's real sales, payouts or orders, and never copy them into a deliverable.",
+      "input_params": [
+        {
+          "name": "store_id",
+          "type": "string",
+          "required": false,
+          "description": "Uber Eats store UUID, from ubereats/list_stores. Optional when the brand has exactly one granted store (it is resolved automatically); required to disambiguate when several are granted (the error lists the choices). Only granted stores are addressable.",
+          "source": "prior_action:ubereats/list_stores"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum orders to return, 1-100. Default 50. Values above 100 are rejected rather than clamped, so a truncated result is never mistaken for a complete one.",
+          "example": 50
+        }
+      ],
+      "output_shape": "{store_id, orders: [{id, display_id, current_state, placed_at, store: {id, name}, charges: {total, sub_total, tax, total_fee, delivery_fee, small_order_fee, tip, cash_amount_due}}], returned, feed: 'created_only', data_source: 'live'|'mock', note}"
+    },
+    {
+      "id": "action:ubereats/list_stores",
+      "namespace": "ubereats",
+      "action": "list_stores",
+      "description": "List the Uber Eats stores this brand can read (import-time snapshot).",
+      "mode": "read",
+      "platforms": [
+        "ubereats"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns every Uber Eats store granted to this brand with its import-time snapshot fields: store_id, name, timezone, merchant_store_id (the merchant's own store code) and status. Start here — the store_id is the value the other actions take. Costs ZERO upstream requests. Store fields are an IMPORT-TIME SNAPSHOT captured when the store was connected — name, timezone, merchant_store_id and status may be stale. Use ubereats/get_store for the store's live state. Every response carries data_source: 'live' means the numbers came from Uber Eats, 'mock' means they are FIXTURES from a non-production demo mode and are invented. Never present mock figures as the customer's real sales, payouts or orders, and never copy them into a deliverable.",
+      "input_params": [],
+      "output_shape": "{stores: [{store_id, name, timezone, merchant_store_id, status}], total_granted, source: 'import_snapshot', data_source: 'live'|'mock', note}"
+    },
+    {
+      "id": "action:ubereats/request_report",
+      "namespace": "ubereats",
+      "action": "request_report",
+      "description": "Request an async Uber Eats CSV report (sales, payments, financials, history).",
+      "mode": "read",
+      "platforms": [
+        "ubereats"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Starts generation of one of Uber's 10 read-only merchant reports across one or more granted stores and a date range, and returns a report_ref to poll with ubereats/get_report. This is the ONLY way to read historical orders, sales, payments and financial data. Reports are ASYNCHRONOUS: ubereats/request_report returns a report_ref immediately, and the CSV is generated in the background. Poll ubereats/get_report with the report_ref; while status is Preparing, wait and poll again (typically within minutes). start_date and end_date are YYYY-MM-DD calendar DAYS (day granularity, both inclusive) — there is no intraday report window. Report figures for the most recent 72 hours are PROVISIONAL — Uber settles report data within 72 hours, so recent numbers may still change. Re-request the report later for final figures. Uber documents a 60 requests/minute limit on the report surface, and the budget may be shared across the whole platform app rather than per merchant. On a rate_limited error with source=upstream, back off (honoring retry_after when present) instead of retrying immediately. A single report accepts at most 50 stores and a window of at most 366 days. The returned report_ref expires 24 hours after it is issued; after that it returns not_found and a fresh request_report is needed. Every response carries data_source: 'live' means the numbers came from Uber Eats, 'mock' means they are FIXTURES from a non-production demo mode and are invented. Never present mock figures as the customer's real sales, payouts or orders, and never copy them into a deliverable.",
+      "input_params": [
+        {
+          "name": "report_type",
+          "type": "string",
+          "required": true,
+          "description": "Which report to generate. PAYMENT_DETAILS_REPORT = per-payment payout detail; ORDER_HISTORY_REPORT = historical orders; ORDERS_AND_ITEMS_REPORT = orders with line items; FINANCE_SUMMARY_REPORT = daily financial summary; BILLING_DETAILS_REPORT = billing/fee detail; DOWNTIME_REPORT = store downtime; the two ORDER_ERRORS_* reports = order error adjustments; the two *_FEEDBACK_* reports = customer feedback.",
+          "example": "FINANCE_SUMMARY_REPORT",
+          "enum": [
+            "PAYMENT_DETAILS_REPORT",
+            "ORDER_ERRORS_MENU_ITEM_REPORT",
+            "ORDER_ERRORS_TRANSACTION_REPORT",
+            "ORDER_HISTORY_REPORT",
+            "DOWNTIME_REPORT",
+            "CUSTOMER_AND_DELIVERY_FEEDBACK_REPORT",
+            "MENU_ITEM_FEEDBACK_REPORT",
+            "BILLING_DETAILS_REPORT",
+            "ORDERS_AND_ITEMS_REPORT",
+            "FINANCE_SUMMARY_REPORT"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "store_ids",
+          "type": "list",
+          "required": false,
+          "description": "Store UUIDs to include, each from ubereats/list_stores. Defaults to ALL stores granted to this brand (when the brand has 50 or fewer). At most 50 per report — with more grants, pass an explicit subset.",
+          "source": "prior_action:ubereats/list_stores"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "First day of the report window, YYYY-MM-DD (inclusive). start_date and end_date are YYYY-MM-DD calendar DAYS (day granularity, both inclusive) — there is no intraday report window.",
+          "example": "2026-08-01"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Last day of the report window, YYYY-MM-DD (inclusive). Must not precede start_date; the window is capped at 366 days counting BOTH ends.",
+          "example": "2026-08-10"
+        }
+      ],
+      "output_shape": "{report_ref, report_type, store_ids, start_date, end_date, status: 'Requested', data_source: 'live'|'mock', note}"
     }
   ]
 }
