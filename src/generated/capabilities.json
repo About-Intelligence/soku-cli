@@ -18019,6 +18019,569 @@
       "output_shape": "{\"id\": \"video_id\", \"success\": true}\nTikTok output: resource_id is the uploaded video_id; raw preserves video_id, id, ready, and any transcoding warnings."
     },
     {
+      "id": "action:applovin/asset_performance",
+      "namespace": "applovin",
+      "action": "asset_performance",
+      "description": "AppLovin per-asset (image / video / playable) delivery and cost.",
+      "mode": "read",
+      "platforms": [
+        "applovin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Asset report: asset id, name and URL alongside impressions, clicks, CTR and cost, joined to their creative set and campaign. This is the action that connects a specific piece of creative to its numbers. Pass start_date/end_date for an explicit window, or `range` for one of AppLovin's named ranges (yesterday, last_7d, last_month). FRESHNESS: yesterday's asset data is only stable after 06:00 UTC — before that, a same-day read of yesterday may be incomplete. An empty result is a normal answer, not an error: an AppLovin account can legitimately have no delivery in the window. Do not tell the user their connection is broken because a report came back empty.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "AppLovin account id from applovin/list_accounts. Optional when the brand has exactly one connected AppLovin account; required to disambiguate when several are connected (the error lists the choices).",
+          "source": "upstream:action:applovin/list_accounts"
+        },
+        {
+          "name": "range",
+          "type": "string",
+          "required": false,
+          "description": "AppLovin named range, as an alternative to start_date/end_date. One of yesterday, last_7d, last_month.",
+          "example": "last_7d",
+          "enum": [
+            "yesterday",
+            "last_7d",
+            "last_month"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Window start, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-01",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Window end, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-12",
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Column to sort by; must be one of the columns this action requests. NOTE: AppLovin sorts LEXICOGRAPHICALLY, so a numeric column does not sort numerically — rank locally when exact ordering matters.",
+          "example": "cost",
+          "source": "constant"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC (default DESC).",
+          "example": "DESC",
+          "enum": [
+            "ASC",
+            "DESC"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Drop rows whose metrics are all zero (AppLovin `not_zero`).",
+          "example": true,
+          "source": "constant"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Max rows to fetch (1-1000, default 200).",
+          "example": 200,
+          "source": "constant"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Row offset for paging through a large report.",
+          "example": 200,
+          "source": "constant"
+        }
+      ],
+      "output_shape": "data.{account{...}, requested_columns[], window{start,end,days}, attribution, report_envelope, data_timezone, rows[], summary{row_count, totals{}, missing_columns[], unreadable_columns[]}, truncated}"
+    },
+    {
+      "id": "action:applovin/campaign_performance",
+      "namespace": "applovin",
+      "action": "campaign_performance",
+      "description": "AppLovin campaign-level delivery and cost for a date range.",
+      "mode": "read",
+      "platforms": [
+        "applovin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Advertiser report grouped by campaign: impressions, clicks, CTR, conversions (installs), cost, and average CPC/CPA per campaign per day. Use this to answer 'which campaigns are spending / converting'. AppLovin reports in UTC and keeps only the last 45 days. start_date/end_date are inclusive YYYY-MM-DD; omit both for the last 7 complete UTC days (the default window ends YESTERDAY, because today's row may still be partial). Attribution is REALTIME here — for ROAS or retention use applovin/roas_retention instead. An empty result is a normal answer, not an error: an AppLovin account can legitimately have no delivery in the window. Do not tell the user their connection is broken because a report came back empty.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "AppLovin account id from applovin/list_accounts. Optional when the brand has exactly one connected AppLovin account; required to disambiguate when several are connected (the error lists the choices).",
+          "source": "upstream:action:applovin/list_accounts"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Window start, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-01",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Window end, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-12",
+          "source": "user"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "description": "Exact-match filters as {dimension: value}. Allowed dimensions: ad_type, app_id_external, application, campaign, campaign_id_external, campaign_package_name, country, creative_set_id, device_type, placement_type, platform. Do NOT pass AppLovin filter syntax — the parameter names are built server-side.",
+          "example": {
+            "country": "US"
+          },
+          "source": "user"
+        },
+        {
+          "name": "exclude",
+          "type": "object",
+          "required": false,
+          "description": "Negative exact-match filters, same dimensions as `filters`.",
+          "example": {
+            "platform": "ios"
+          },
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Column to sort by; must be one of the columns this action requests. NOTE: AppLovin sorts LEXICOGRAPHICALLY, so a numeric column does not sort numerically — rank locally when exact ordering matters.",
+          "example": "cost",
+          "source": "constant"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC (default DESC).",
+          "example": "DESC",
+          "enum": [
+            "ASC",
+            "DESC"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Drop rows whose metrics are all zero (AppLovin `not_zero`).",
+          "example": true,
+          "source": "constant"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Max rows to fetch (1-1000, default 200).",
+          "example": 200,
+          "source": "constant"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Row offset for paging through a large report.",
+          "example": 200,
+          "source": "constant"
+        }
+      ],
+      "output_shape": "data.{account{...}, requested_columns[], window{start,end,days}, attribution, report_envelope, data_timezone, rows[], summary{row_count, totals{}, missing_columns[], unreadable_columns[]}, truncated}"
+    },
+    {
+      "id": "action:applovin/creative_performance",
+      "namespace": "applovin",
+      "action": "creative_performance",
+      "description": "AppLovin creative-set and ad level delivery for a date range.",
+      "mode": "read",
+      "platforms": [
+        "applovin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Advertiser report grouped by creative set and ad: impressions, clicks, CTR, conversions and cost per creative per day. Use this to find fatiguing or winning creatives before writing the next production brief. NOTE creative sets can be shared across campaigns, so a creative set is identified by (campaign_id_external, creative_set_id) together, not by creative_set_id alone. AppLovin reports in UTC and keeps only the last 45 days. start_date/end_date are inclusive YYYY-MM-DD; omit both for the last 7 complete UTC days (the default window ends YESTERDAY, because today's row may still be partial). An empty result is a normal answer, not an error: an AppLovin account can legitimately have no delivery in the window. Do not tell the user their connection is broken because a report came back empty.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "AppLovin account id from applovin/list_accounts. Optional when the brand has exactly one connected AppLovin account; required to disambiguate when several are connected (the error lists the choices).",
+          "source": "upstream:action:applovin/list_accounts"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Window start, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-01",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Window end, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-12",
+          "source": "user"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "description": "Exact-match filters as {dimension: value}. Allowed dimensions: ad_type, app_id_external, application, campaign, campaign_id_external, campaign_package_name, country, creative_set_id, device_type, placement_type, platform. Do NOT pass AppLovin filter syntax — the parameter names are built server-side.",
+          "example": {
+            "country": "US"
+          },
+          "source": "user"
+        },
+        {
+          "name": "exclude",
+          "type": "object",
+          "required": false,
+          "description": "Negative exact-match filters, same dimensions as `filters`.",
+          "example": {
+            "platform": "ios"
+          },
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Column to sort by; must be one of the columns this action requests. NOTE: AppLovin sorts LEXICOGRAPHICALLY, so a numeric column does not sort numerically — rank locally when exact ordering matters.",
+          "example": "cost",
+          "source": "constant"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC (default DESC).",
+          "example": "DESC",
+          "enum": [
+            "ASC",
+            "DESC"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Drop rows whose metrics are all zero (AppLovin `not_zero`).",
+          "example": true,
+          "source": "constant"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Max rows to fetch (1-1000, default 200).",
+          "example": 200,
+          "source": "constant"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Row offset for paging through a large report.",
+          "example": 200,
+          "source": "constant"
+        }
+      ],
+      "output_shape": "data.{account{...}, requested_columns[], window{start,end,days}, attribution, report_envelope, data_timezone, rows[], summary{row_count, totals{}, missing_columns[], unreadable_columns[]}, truncated}"
+    },
+    {
+      "id": "action:applovin/list_accounts",
+      "namespace": "applovin",
+      "action": "list_accounts",
+      "description": "List the AppLovin Ads accounts this brand may read reports for.",
+      "mode": "read",
+      "platforms": [
+        "applovin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns the brand-granted AppLovin Ads Manager accounts. START HERE for any AppLovin task: every other action takes an account_id from this list. Reads Soku's own grant tables — no upstream call, no quota cost. NOTE: AppLovin's reporting API exposes no account name, so the label is whatever the admin typed when connecting (or a short key fingerprint). It is a Soku label, not an AppLovin account name — do not present it to the user as the latter.",
+      "input_params": [],
+      "output_shape": "data.{accounts[].{account_id, name, status, report_envelope}, count}"
+    },
+    {
+      "id": "action:applovin/roas_retention",
+      "namespace": "applovin",
+      "action": "roas_retention",
+      "description": "AppLovin cohort ROAS and retention by campaign for a date range.",
+      "mode": "read",
+      "platforms": [
+        "applovin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Advertiser report in COHORT attribution (day_column=day) returning ROAS and retention at explicit windows — roas_1d/7d/30d, ad_roas_*, ret_1d/7d/28d — per campaign. ATTRIBUTION: AppLovin returns ROAS and retention under the same column names in two different attribution modes — cohort (value attributed back to the install date) and realtime. They are different numbers and cannot be told apart by looking at them. This action pins the mode and every response echoes `attribution`; quote it whenever you report a ROAS or retention figure. Because cohort windows need time to mature, a 7-day ROAS for a campaign that started yesterday is structurally incomplete rather than bad: always report the window alongside the number, and prefer windows that have fully elapsed. AppLovin reports in UTC and keeps only the last 45 days. start_date/end_date are inclusive YYYY-MM-DD; omit both for the last 7 complete UTC days (the default window ends YESTERDAY, because today's row may still be partial). An empty result is a normal answer, not an error: an AppLovin account can legitimately have no delivery in the window. Do not tell the user their connection is broken because a report came back empty.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "AppLovin account id from applovin/list_accounts. Optional when the brand has exactly one connected AppLovin account; required to disambiguate when several are connected (the error lists the choices).",
+          "source": "upstream:action:applovin/list_accounts"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Window start, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-01",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Window end, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-12",
+          "source": "user"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "description": "Exact-match filters as {dimension: value}. Allowed dimensions: ad_type, app_id_external, application, campaign, campaign_id_external, campaign_package_name, country, creative_set_id, device_type, placement_type, platform. Do NOT pass AppLovin filter syntax — the parameter names are built server-side.",
+          "example": {
+            "country": "US"
+          },
+          "source": "user"
+        },
+        {
+          "name": "exclude",
+          "type": "object",
+          "required": false,
+          "description": "Negative exact-match filters, same dimensions as `filters`.",
+          "example": {
+            "platform": "ios"
+          },
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Column to sort by; must be one of the columns this action requests. NOTE: AppLovin sorts LEXICOGRAPHICALLY, so a numeric column does not sort numerically — rank locally when exact ordering matters.",
+          "example": "cost",
+          "source": "constant"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC (default DESC).",
+          "example": "DESC",
+          "enum": [
+            "ASC",
+            "DESC"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Drop rows whose metrics are all zero (AppLovin `not_zero`).",
+          "example": true,
+          "source": "constant"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Max rows to fetch (1-1000, default 200).",
+          "example": 200,
+          "source": "constant"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Row offset for paging through a large report.",
+          "example": 200,
+          "source": "constant"
+        },
+        {
+          "name": "windows",
+          "type": "list",
+          "required": false,
+          "description": "Cohort windows to request, e.g. ['1d','7d','30d'] for ROAS and ['1d','7d','28d'] for retention. Defaults to 1d/7d/30d ROAS plus 1d/7d/28d retention.",
+          "example": [
+            "1d",
+            "7d",
+            "30d"
+          ],
+          "source": "constant"
+        }
+      ],
+      "output_shape": "data.{account{...}, requested_columns[], window{start,end,days}, attribution, report_envelope, data_timezone, rows[], summary{row_count, totals{}, missing_columns[], unreadable_columns[]}, truncated}"
+    },
+    {
+      "id": "action:applovin/run_report",
+      "namespace": "applovin",
+      "action": "run_report",
+      "description": "Arbitrary AppLovin advertiser report over an explicit column set.",
+      "mode": "read",
+      "platforms": [
+        "applovin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Escape hatch for slices the purpose-shaped actions do not cover — for example ROAS split by country, or delivery by placement_type. You choose `columns` from AppLovin's documented set. COLUMNS are a closed set: an unrecognized name is rejected with 400 and the valid list, rather than forwarded. AppLovin does not document what it does with an unknown column, and silently dropping it would return a report with a column missing and no indication that it happened. AppLovin reports in UTC and keeps only the last 45 days. start_date/end_date are inclusive YYYY-MM-DD; omit both for the last 7 complete UTC days (the default window ends YESTERDAY, because today's row may still be partial). Set cohort=true when any requested column is a ROAS or retention column. ATTRIBUTION: AppLovin returns ROAS and retention under the same column names in two different attribution modes — cohort (value attributed back to the install date) and realtime. They are different numbers and cannot be told apart by looking at them. This action pins the mode and every response echoes `attribution`; quote it whenever you report a ROAS or retention figure. An empty result is a normal answer, not an error: an AppLovin account can legitimately have no delivery in the window. Do not tell the user their connection is broken because a report came back empty. Prefer the purpose-shaped actions when one fits: they carry verified column sets and the right attribution mode already.",
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "AppLovin account id from applovin/list_accounts. Optional when the brand has exactly one connected AppLovin account; required to disambiguate when several are connected (the error lists the choices).",
+          "source": "upstream:action:applovin/list_accounts"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Window start, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-01",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Window end, inclusive, YYYY-MM-DD (UTC).",
+          "example": "2026-08-12",
+          "source": "user"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "description": "Exact-match filters as {dimension: value}. Allowed dimensions: ad_type, app_id_external, application, campaign, campaign_id_external, campaign_package_name, country, creative_set_id, device_type, placement_type, platform. Do NOT pass AppLovin filter syntax — the parameter names are built server-side.",
+          "example": {
+            "country": "US"
+          },
+          "source": "user"
+        },
+        {
+          "name": "exclude",
+          "type": "object",
+          "required": false,
+          "description": "Negative exact-match filters, same dimensions as `filters`.",
+          "example": {
+            "platform": "ios"
+          },
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Column to sort by; must be one of the columns this action requests. NOTE: AppLovin sorts LEXICOGRAPHICALLY, so a numeric column does not sort numerically — rank locally when exact ordering matters.",
+          "example": "cost",
+          "source": "constant"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC (default DESC).",
+          "example": "DESC",
+          "enum": [
+            "ASC",
+            "DESC"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Drop rows whose metrics are all zero (AppLovin `not_zero`).",
+          "example": true,
+          "source": "constant"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Max rows to fetch (1-1000, default 200).",
+          "example": 200,
+          "source": "constant"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Row offset for paging through a large report.",
+          "example": 200,
+          "source": "constant"
+        },
+        {
+          "name": "columns",
+          "type": "list",
+          "required": true,
+          "description": "AppLovin advertiser column names. Dimensions and metrics are mixed freely. Rejected with the valid list if any name is unknown (96 names are accepted).",
+          "example": [
+            "day",
+            "campaign",
+            "country",
+            "cost",
+            "roas_7d"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "cohort",
+          "type": "boolean",
+          "required": false,
+          "description": "Request cohort attribution (day_column=day). Required for meaningful ROAS/retention numbers; defaults to false (realtime). The response echoes which mode was used.",
+          "example": true,
+          "source": "constant"
+        }
+      ],
+      "output_shape": "data.{account{...}, requested_columns[], window{start,end,days}, attribution, report_envelope, data_timezone, rows[], summary{row_count, totals{}, missing_columns[], unreadable_columns[]}, truncated}"
+    },
+    {
       "id": "action:appsflyer/list_accounts",
       "namespace": "appsflyer",
       "action": "list_accounts",
