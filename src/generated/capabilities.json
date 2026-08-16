@@ -1390,8 +1390,8 @@
         {
           "name": "platform",
           "type": "string",
-          "required": true,
-          "description": "google, meta, tiktok, or chatgpt_ads.",
+          "required": false,
+          "description": "Optional account-scoped platform: google, meta, tiktok, or chatgpt_ads. Omit with account_id for a brand-wide current inventory.",
           "example": "google",
           "enum": [
             "google",
@@ -1404,10 +1404,16 @@
         {
           "name": "account_id",
           "type": "string",
-          "required": true,
-          "description": "Brand-scoped ad account id from list_ad_accounts.",
+          "required": false,
+          "description": "Optional brand-scoped ad account id from list_ad_accounts. Omit with platform for a brand-wide current inventory.",
           "example": "1234567890",
-          "source": "upstream:action:ads/list_ad_accounts"
+          "source": "upstream:action:ads/list_ad_accounts",
+          "required_platforms": [
+            "google",
+            "meta",
+            "tiktok",
+            "chatgpt_ads"
+          ]
         },
         {
           "name": "after_id",
@@ -1476,6 +1482,9 @@
           "source": "upstream:action:ads/list_ad_creatives,action:ads/get_ad_creatives",
           "platform": [
             "meta"
+          ],
+          "required_platforms": [
+            "meta"
           ]
         },
         {
@@ -1486,6 +1495,9 @@
           "example": "12345678901",
           "source": "upstream:action:ads/list_campaigns",
           "platform": [
+            "google"
+          ],
+          "required_platforms": [
             "google"
           ]
         }
@@ -2361,6 +2373,11 @@
             "google",
             "meta",
             "tiktok"
+          ],
+          "required_platforms": [
+            "google",
+            "meta",
+            "tiktok"
           ]
         },
         {
@@ -2384,6 +2401,9 @@
           ],
           "platform": [
             "google"
+          ],
+          "required_platforms": [
+            "google"
           ]
         },
         {
@@ -2401,6 +2421,9 @@
           ],
           "platform": [
             "google"
+          ],
+          "required_platforms": [
+            "google"
           ]
         },
         {
@@ -2416,6 +2439,9 @@
             }
           ],
           "platform": [
+            "google"
+          ],
+          "required_platforms": [
             "google"
           ]
         },
@@ -2472,7 +2498,6 @@
           "one_of_group": "creative_ref",
           "source": "upstream:action:ads/create_ad_creative",
           "platform": [
-            "google",
             "meta"
           ]
         },
@@ -2494,7 +2519,6 @@
           "one_of_group": "creative_ref",
           "source": "user",
           "platform": [
-            "google",
             "meta"
           ]
         },
@@ -2588,6 +2612,9 @@
           "description": "Authored Ad headline.",
           "platform": [
             "chatgpt_ads"
+          ],
+          "required_platforms": [
+            "chatgpt_ads"
           ]
         },
         {
@@ -2597,6 +2624,9 @@
           "description": "Authored Ad body copy.",
           "platform": [
             "chatgpt_ads"
+          ],
+          "required_platforms": [
+            "chatgpt_ads"
           ]
         },
         {
@@ -2605,6 +2635,9 @@
           "required": false,
           "description": "Explicitly approved call to action.",
           "platform": [
+            "chatgpt_ads"
+          ],
+          "required_platforms": [
             "chatgpt_ads"
           ]
         },
@@ -2623,6 +2656,9 @@
           "required": false,
           "description": "Final HTTP(S) destination URL.",
           "platform": [
+            "chatgpt_ads"
+          ],
+          "required_platforms": [
             "chatgpt_ads"
           ]
         },
@@ -2643,6 +2679,9 @@
           "example": "ag_123",
           "source": "upstream:action:ads/create_ad_group,action:ads/list_ad_groups,action:ads/gaql_search",
           "platform": [
+            "chatgpt_ads"
+          ],
+          "required_platforms": [
             "chatgpt_ads"
           ]
         },
@@ -3669,7 +3708,10 @@
           "name": "billing_event",
           "type": "string",
           "required": false,
-          "description": "Meta: required; use a Meta billing event such as IMPRESSIONS or LINK_CLICKS. TikTok: optional; when omitted, the handler derives the required CPC/CPM/OCPM/CPV value from optimization_goal."
+          "description": "Meta: required; use a Meta billing event such as IMPRESSIONS or LINK_CLICKS. TikTok: optional; when omitted, the handler derives the required CPC/CPM/OCPM/CPV value from optimization_goal.",
+          "required_platforms": [
+            "meta"
+          ]
         },
         {
           "name": "optimization_goal",
@@ -4261,6 +4303,9 @@
           "source": "constant",
           "platform": [
             "google"
+          ],
+          "required_platforms": [
+            "google"
           ]
         },
         {
@@ -4272,6 +4317,10 @@
           "platform": [
             "google",
             "meta",
+            "chatgpt_ads"
+          ],
+          "required_platforms": [
+            "google",
             "chatgpt_ads"
           ]
         },
@@ -4377,6 +4426,9 @@
           ],
           "source": "constant",
           "platform": [
+            "meta"
+          ],
+          "required_platforms": [
             "meta"
           ]
         },
@@ -4750,6 +4802,9 @@
           "example": "https://example.com/?utm_source=chatgpt_ads",
           "platform": [
             "chatgpt_ads"
+          ],
+          "required_platforms": [
+            "chatgpt_ads"
           ]
         },
         {
@@ -4788,6 +4843,9 @@
           ],
           "source": "constant",
           "platform": [
+            "chatgpt_ads"
+          ],
+          "required_platforms": [
             "chatgpt_ads"
           ]
         },
@@ -14160,7 +14218,10 @@
           "name": "event_time",
           "type": "integer",
           "required": false,
-          "description": "Unix seconds; required for Meta. Optional for TikTok, where the handler defaults to the current time."
+          "description": "Unix seconds; required for Meta. Optional for TikTok, where the handler defaults to the current time.",
+          "required_platforms": [
+            "meta"
+          ]
         },
         {
           "name": "action_source",
@@ -14222,7 +14283,10 @@
           "name": "event_id",
           "type": "string",
           "required": false,
-          "description": "Deduplication key; required for TikTok and recommended for Meta browser/CAPI dedupe."
+          "description": "Deduplication key; required for TikTok and recommended for Meta browser/CAPI dedupe.",
+          "required_platforms": [
+            "tiktok"
+          ]
         },
         {
           "name": "app_data",
@@ -15222,6 +15286,9 @@
           "source": "upstream:action:ads/list_ad_groups",
           "platform": [
             "tiktok",
+            "chatgpt_ads"
+          ],
+          "required_platforms": [
             "chatgpt_ads"
           ]
         },
