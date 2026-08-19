@@ -3227,7 +3227,13 @@
           "name": "allowed_devices",
           "type": "list",
           "required": false,
-          "description": "Explicitly approved device targeting.",
+          "description": "Explicitly approved platform targeting: ios_app, android_app, or web.",
+          "enum": [
+            "ios_app",
+            "android_app",
+            "web"
+          ],
+          "source": "constant",
           "platform": [
             "chatgpt_ads"
           ]
@@ -4976,7 +4982,13 @@
           "name": "allowed_devices",
           "type": "list",
           "required": false,
-          "description": "",
+          "description": "Optional platform targeting: ios_app, android_app, or web. Omit on create for all platforms.",
+          "enum": [
+            "ios_app",
+            "android_app",
+            "web"
+          ],
+          "source": "constant",
           "platform": [
             "chatgpt_ads"
           ]
@@ -15493,7 +15505,13 @@
           "name": "allowed_devices",
           "type": "list",
           "required": false,
-          "description": "Explicitly approved device targeting.",
+          "description": "Explicitly approved platform targeting: ios_app, android_app, or web.",
+          "enum": [
+            "ios_app",
+            "android_app",
+            "web"
+          ],
+          "source": "constant",
           "platform": [
             "chatgpt_ads"
           ]
@@ -16691,7 +16709,13 @@
           "name": "allowed_devices",
           "type": "list",
           "required": false,
-          "description": "",
+          "description": "Platform targeting: ios_app, android_app, or web. Omit to leave existing targeting unchanged; PATCH requires at least one value, so targeting cannot be widened back to all platforms once set.",
+          "enum": [
+            "ios_app",
+            "android_app",
+            "web"
+          ],
+          "source": "constant",
           "platform": [
             "chatgpt_ads"
           ]
