@@ -19477,45 +19477,6 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{toolkit, endpoint, method, status, data}"
     },
     {
-      "id": "action:dataforseo/serp_organic",
-      "namespace": "dataforseo",
-      "action": "serp_organic",
-      "description": "Live Google organic search results for one keyword.",
-      "mode": "read",
-      "platforms": [],
-      "requires_review": false,
-      "freshness_kind": "realtime",
-      "see_also": [],
-      "long_description": "Queries Google through Soku's own DataForSEO subscription and returns the ranked organic results. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account.",
-      "input_params": [
-        {
-          "name": "keyword",
-          "type": "string",
-          "required": true,
-          "description": "The search query, exactly as a person would type it."
-        },
-        {
-          "name": "location_name",
-          "type": "string",
-          "required": false,
-          "description": "Full location name as DataForSEO spells it, e.g. 'United States' or 'London,England,United Kingdom'. Defaults to United States."
-        },
-        {
-          "name": "language_code",
-          "type": "string",
-          "required": false,
-          "description": "Two-letter language code. Defaults to en."
-        },
-        {
-          "name": "limit",
-          "type": "integer",
-          "required": false,
-          "description": "How many organic results to return. Default 10, hard cap 100 — the vendor charges by depth, so an unbounded value would make the quoted price meaningless."
-        }
-      ],
-      "output_shape": "{keyword, location_name, language_code, retrieved_at, rows: [{rank, title, url, domain, snippet}]}"
-    },
-    {
       "id": "action:doordash/get_sales_summary",
       "namespace": "doordash",
       "action": "get_sales_summary",
