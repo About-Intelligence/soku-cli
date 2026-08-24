@@ -2922,6 +2922,14 @@
           "description": "Optional Instagram actor id (legacy alias)."
         },
         {
+          "name": "source_instagram_media_id",
+          "type": "string",
+          "required": false,
+          "description": "Meta only: existing Instagram media id from action:ads/list_instagram_media. Sends Meta's top-level AdCreative source_instagram_media_id and preserves the existing post. Requires instagram_user_id and is mutually exclusive with all uploaded, Page-post, dynamic, carousel and copy fields. Promotion eligibility remains a provider-only decision until the create response is returned.",
+          "example": "18159019552471938",
+          "source": "upstream:action:ads/list_instagram_media"
+        },
+        {
           "name": "asset_feed_spec",
           "type": "object",
           "required": false,
@@ -11715,6 +11723,65 @@
         }
       ],
       "output_shape": "{\"platform\": \"chatgpt_ads\", \"dimensions\": [{\"name\": \"campaign\", \"scope\": \"campaign\", \"source_view\": \"campaign_daily\", \"parquet_table\": \"campaign_daily\", \"filterable_fields\": [...], \"supports_cg_fanout\": true, \"caveat\": \"...\"}], \"metrics\": [{\"slug\": \"ctr\", \"unit\": \"ratio\", \"formula\": \"...\", \"depends_on\": [...], \"platform_support\": [...]}]} or {\"platforms\": [\"google\", \"chatgpt_ads\"], \"by_platform\": {\"google\": {...}, \"chatgpt_ads\": {...}}}"
+    },
+    {
+      "id": "action:ads/list_instagram_media",
+      "namespace": "ads",
+      "action": "list_instagram_media",
+      "description": "List existing media published by an Instagram Professional Account connected to this Meta ad account.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/get_connected_instagram_accounts",
+        "action:ads/create_ad_creative",
+        "action:ads/create_ad"
+      ],
+      "long_description": "Primary use:\nDiscover exact source_instagram_media_id values before creating an ad from an existing Instagram post. The service first proves the Instagram identity is connected to the requested ad account, then reads that identity's media edge.\n\nUse when:\n- The user wants to preserve an existing Instagram post and its engagement in an ad.\n- You need a source_instagram_media_id for create_ad_creative.\n\nDo not use when:\n- The Instagram account is not connected to the requested Meta ad account.\n- You need a guarantee that Meta will approve promotion; eligibility is provider-only.\n\nWorkflow:\n1. Select a granted Meta ad account.\n2. Choose a connected instagram_user_id when more than one is available.\n3. Pass data[].id to create_ad_creative as source_instagram_media_id.\n\nOutput semantics:\n- data[].id is the media id to pass as source_instagram_media_id.\n- eligibility=provider_only means read access and ownership are proven, but Meta does not expose a read-only guarantee that the post is promotion-eligible.\n- A missing or cross-account identity returns success=false with an actionable code.\n\nSide effects:\n- None. Read-only Graph API calls.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Meta ad account id from ads.list_ad_accounts.",
+          "example": "1234567890"
+        },
+        {
+          "name": "instagram_user_id",
+          "type": "string",
+          "required": false,
+          "description": "Identity id from ads/get_connected_instagram_accounts. Required when the ad account has more than one connected Instagram identity.",
+          "example": "17841400000000000"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Page size from 1 to 100 (default 25).",
+          "example": 25
+        },
+        {
+          "name": "after",
+          "type": "string",
+          "required": false,
+          "description": "Pagination cursor from a prior paging.cursors.after."
+        }
+      ],
+      "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"instagram_user_id\": \"178414...\", \"data\": [{\"id\": \"181...\", \"media_type\": \"VIDEO\", \"permalink\": \"https://...\", \"eligibility\": \"provider_only\"}], \"paging\": {...}}"
     },
     {
       "id": "action:ads/list_languages",
