@@ -7487,7 +7487,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/search_interests",
         "action:ads/search_geo_locations",
@@ -7822,7 +7822,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_ad_creative",
         "action:ads/get_ad_creatives"
@@ -7980,7 +7980,7 @@
         "linkedin"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/get_account_pages",
         "action:ads/get_insights",
@@ -8023,7 +8023,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_ad_creative",
         "action:ads/create_lead_form",
@@ -8144,7 +8144,7 @@
         "linkedin"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_ads",
         "action:ads/create_ad",
@@ -8193,7 +8193,7 @@
         "meta"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_ad_creatives",
         "action:ads/get_ad_creatives",
@@ -8241,7 +8241,7 @@
         "meta"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_ads",
         "action:ads/get_ad_creative",
@@ -8289,7 +8289,7 @@
         "chatgpt_ads"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_ad_groups"
       ],
@@ -8343,7 +8343,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_adsets",
         "action:ads/create_adset",
@@ -8391,7 +8391,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/update_campaign"
       ],
@@ -8439,7 +8439,7 @@
         "linkedin"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_campaigns",
         "action:ads/create_campaign",
@@ -8710,7 +8710,7 @@
         "meta"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_ad_creative",
         "action:ads/deploy_image_ads_batch",
@@ -8762,7 +8762,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_conversion_action"
       ],
@@ -9187,7 +9187,7 @@
         "linkedin"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/query_single_dimension",
         "action:ads/query_multi_dimension",
@@ -9529,7 +9529,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_lead_forms",
         "action:ads/create_lead_form",
@@ -9778,7 +9778,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_pmax_campaign",
         "action:ads/remove_campaign"
@@ -10015,7 +10015,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/gaql_search",
         "action:ads/add_keywords",
@@ -10383,7 +10383,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_customers",
         "action:ads/list_ad_accounts"
@@ -10427,7 +10427,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/gaql_search",
         "action:ads/add_account_negative_keywords",
@@ -10506,7 +10506,7 @@
         "meta"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/get_ad_creative",
         "action:ads/get_ad_creatives",
@@ -10560,7 +10560,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/gaql_search",
         "action:ads/add_ad_group_negative_keywords",
@@ -10606,7 +10606,7 @@
         "chatgpt_ads"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/get_ad_group",
         "action:ads/get_campaign"
@@ -10670,7 +10670,7 @@
         "meta"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_ad_label",
         "action:ads/apply_label"
@@ -10715,7 +10715,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_ad_rule",
         "action:ads/update_ad_rule",
@@ -10796,7 +10796,7 @@
         "linkedin"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/get_ad",
         "action:ads/create_ad",
@@ -11005,7 +11005,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/get_adset",
         "action:ads/create_adset",
@@ -11116,7 +11116,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/update_campaign"
       ],
@@ -11203,7 +11203,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/gaql_search",
         "action:ads/add_campaign_negative_keywords",
@@ -11253,7 +11253,7 @@
         "linkedin"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_campaign",
         "action:ads/get_campaign",
@@ -11512,7 +11512,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/set_geo_targeting",
         "action:ads/list_languages",
@@ -11558,7 +11558,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_custom_audience",
         "action:ads/create_lookalike_audience",
@@ -11648,7 +11648,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_ad_accounts",
         "action:ads/get_tree_structure"
@@ -11726,7 +11726,7 @@
         "google"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/set_language_targeting",
         "action:ads/list_countries"
@@ -11771,7 +11771,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_lead_form",
         "action:ads/archive_lead_form",
@@ -11920,7 +11920,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/create_pixel",
         "action:ads/update_pixel",
@@ -12373,7 +12373,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/list_custom_audiences",
         "action:ads/create_adset"
@@ -14090,7 +14090,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/search_interests",
         "action:ads/estimate_audience_size",
@@ -14206,7 +14206,7 @@
         "tiktok"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:ads/search_geo_locations",
         "action:ads/estimate_audience_size",
@@ -20948,7 +20948,7 @@
         "byo_mcp"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [],
       "long_description": "Execute a BYO MCP tool only when integration/list_tools marks that exact tool dispatch_action as integration/byo_mcp_read_tool. Do not use this for write, unreviewed, unknown, hidden, or drifted tools.",
       "input_params": [
@@ -21042,7 +21042,7 @@
         "byo_mcp"
       ],
       "requires_review": false,
-      "freshness_kind": "synced",
+      "freshness_kind": "realtime",
       "see_also": [
         "action:integration/byo_mcp_read_tool",
         "action:integration/byo_mcp_request_change"
