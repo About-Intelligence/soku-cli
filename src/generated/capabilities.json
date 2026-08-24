@@ -19105,6 +19105,51 @@
       "output_shape": null
     },
     {
+      "id": "action:ark/request",
+      "namespace": "ark",
+      "action": "request",
+      "description": "Call the ark API, supplied by Soku.",
+      "mode": "generate",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Calls ark.cn-beijing.volces.com through Soku's own ark subscription. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
+      "input_params": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": false,
+          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "description": "Query parameters as a JSON object."
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": false,
+          "description": "JSON request body, for endpoints that take one."
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
+        }
+      ],
+      "output_shape": null
+    },
+    {
       "id": "action:bigquery/get_table_schema",
       "namespace": "bigquery",
       "action": "get_table_schema",
@@ -19679,6 +19724,96 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{toolkit, endpoint, method, status, data}"
     },
     {
+      "id": "action:creatify/request",
+      "namespace": "creatify",
+      "action": "request",
+      "description": "Call the creatify API, supplied by Soku.",
+      "mode": "generate",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Calls api.creatify.ai through Soku's own creatify subscription. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
+      "input_params": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": false,
+          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "description": "Query parameters as a JSON object."
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": false,
+          "description": "JSON request body, for endpoints that take one."
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
+        }
+      ],
+      "output_shape": null
+    },
+    {
+      "id": "action:deepgram/request",
+      "namespace": "deepgram",
+      "action": "request",
+      "description": "Call the deepgram API, supplied by Soku.",
+      "mode": "generate",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Calls api.deepgram.com through Soku's own deepgram subscription. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
+      "input_params": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": false,
+          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "description": "Query parameters as a JSON object."
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": false,
+          "description": "JSON request body, for endpoints that take one."
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
+        }
+      ],
+      "output_shape": null
+    },
+    {
       "id": "action:doordash/get_sales_summary",
       "namespace": "doordash",
       "action": "get_sales_summary",
@@ -20053,6 +20188,51 @@
       "output_shape": "{store_ids, start_date, end_date, data_freshness, transactions: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
     },
     {
+      "id": "action:elevenlabs/request",
+      "namespace": "elevenlabs",
+      "action": "request",
+      "description": "Call the elevenlabs API, supplied by Soku.",
+      "mode": "generate",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Calls api.elevenlabs.io through Soku's own elevenlabs subscription. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
+      "input_params": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": false,
+          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "description": "Query parameters as a JSON object."
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": false,
+          "description": "JSON request body, for endpoints that take one."
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
+        }
+      ],
+      "output_shape": null
+    },
+    {
       "id": "action:enrichso/request",
       "namespace": "enrichso",
       "action": "request",
@@ -20108,6 +20288,51 @@
       "freshness_kind": "realtime",
       "see_also": [],
       "long_description": "Calls api.exa.ai through Soku's own exa subscription. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
+      "input_params": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": false,
+          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "description": "Query parameters as a JSON object."
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": false,
+          "description": "JSON request body, for endpoints that take one."
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
+        }
+      ],
+      "output_shape": null
+    },
+    {
+      "id": "action:fal/request",
+      "namespace": "fal",
+      "action": "request",
+      "description": "Call the fal API, supplied by Soku.",
+      "mode": "generate",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Calls queue.fal.run through Soku's own fal subscription. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
       "input_params": [
         {
           "name": "path",
@@ -20690,6 +20915,51 @@
         }
       ],
       "output_shape": "{\"property\": {\"property_id\": \"123456789\", \"data_freshness\": \"ISO\"}, \"dimensions\": [\"date\"], \"metrics\": [\"sessions\"], \"rows\": [{\"date\": \"20260501\", \"sessions\": 42}], \"columns\": {\"date\": [\"20260501\"], \"sessions\": [42]}, \"row_count\": 1, \"truncated\": false, \"limit\": 100, \"offset\": 0}"
+    },
+    {
+      "id": "action:gemini/request",
+      "namespace": "gemini",
+      "action": "request",
+      "description": "Call the gemini API, supplied by Soku.",
+      "mode": "generate",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Calls generativelanguage.googleapis.com through Soku's own gemini subscription. Soku holds the credential and pays the vendor, so the call is charged at the provider's real per-request cost rather than being free like a capability backed by your own account. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
+      "input_params": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": false,
+          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "description": "Query parameters as a JSON object."
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": false,
+          "description": "JSON request body, for endpoints that take one."
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
+        }
+      ],
+      "output_shape": null
     },
     {
       "id": "action:google_pagespeed/request",
