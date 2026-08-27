@@ -34,6 +34,41 @@ test('accepts --url and is tolerant of unknown flags', () => {
   assert.equal(r.headers['x-key'], 'v')
 })
 
+test('parses glued --flag=value the same as the space form', () => {
+  const r = parseCurl(['curl', '--request=POST', '--url=https://x.test/a', '--header=X-Key: v', '--data={"a":1}'])
+  assert.equal(r.method, 'POST')
+  assert.equal(r.url, 'https://x.test/a')
+  assert.equal(r.headers['x-key'], 'v')
+  assert.equal(r.body?.toString(), '{"a":1}')
+})
+
+test('splits glued --header on the first = only', () => {
+  const r = parseCurl(['curl', '--url=https://x.test/a', '--header=X-Foo: a=b'])
+  assert.equal(r.headers['x-foo'], 'a=b')
+})
+
+test('does not expand glued unknown options over the real url', () => {
+  const r = parseCurl(['curl', 'https://api.example/real', '--referer=https://ref.example'])
+  assert.equal(r.url, 'https://api.example/real')
+})
+
+test('does not split a value that looks like a glued flag', () => {
+  const r = parseCurl(['curl', 'https://x.test/a', '--data', '--foo=bar'])
+  assert.equal(r.body?.toString(), '--foo=bar')
+})
+
+test('keeps a --data value that itself looks like a recognized glued option', () => {
+  const r = parseCurl(['curl', '--data', '--url=https://payload.invalid', 'https://target.invalid'])
+  assert.equal(r.method, 'POST')
+  assert.equal(r.url, 'https://target.invalid')
+  assert.equal(r.body?.toString(), '--url=https://payload.invalid')
+})
+
+test('--data-raw keeps a literal @ payload instead of reading a file', () => {
+  const r = parseCurl(['curl', 'https://x.test/a', '--data-raw=@/no/such/soku-egress-test'])
+  assert.equal(r.body?.toString(), '@/no/such/soku-egress-test')
+})
+
 test('-G folds data into the query string', () => {
   const r = parseCurl(['curl', '-G', 'https://x.test/a', '-d', 'q=hello&n=2'])
   assert.equal(r.method, 'GET')

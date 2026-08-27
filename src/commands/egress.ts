@@ -37,6 +37,12 @@ function readData(value: string): Buffer {
   return Buffer.from(value)
 }
 
+// Long options we consume as `--flag value` and therefore also accept in the
+// glued `--flag=value` form. We un-glue these during parsing (below), not in a
+// pre-pass, so a value that merely looks like a glued option (e.g. the argument
+// to --data) is never split out of its value position.
+const GLUED_OPTS = new Set(['--request', '--header', '--data', '--data-raw', '--data-ascii', '--data-binary', '--url'])
+
 /** Extract method / url / headers / body from a curl-style token list. Pure. */
 export function parseCurl(tokens: string[]): ParsedCurl {
   const headers: Record<string, string> = {}
@@ -47,27 +53,41 @@ export function parseCurl(tokens: string[]): ParsedCurl {
 
   let i = tokens[0] === 'curl' ? 1 : 0
   for (; i < tokens.length; i++) {
-    const t = tokens[i]
+    const raw = tokens[i]
+    // Un-glue `--flag=value` only when this token is itself in option position
+    // and names an option we consume; then read the value inline instead of
+    // consuming the next token. A token like the `--url=x` argument to --data is
+    // never in option position, so it stays intact. Splits on the first `=`.
+    const eq = raw.indexOf('=')
+    const glued = eq > 2 && raw.startsWith('--') && GLUED_OPTS.has(raw.slice(0, eq))
+    const t = glued ? raw.slice(0, eq) : raw
+    const inline = glued ? raw.slice(eq + 1) : undefined
     switch (t) {
       case '-X':
       case '--request':
-        method = tokens[++i]?.toUpperCase()
+        method = (inline ?? tokens[++i])?.toUpperCase()
         break
       case '-H':
       case '--header': {
-        const h = tokens[++i]
+        const h = inline ?? tokens[++i]
         if (h) {
           const idx = h.indexOf(':')
           if (idx > 0) headers[h.slice(0, idx).trim().toLowerCase()] = h.slice(idx + 1).trim()
         }
         break
       }
+      case '--data-raw': {
+        // curl's --data-raw is the one data option that does NOT treat a
+        // leading `@` as a filename; the payload is sent verbatim.
+        const d = inline ?? tokens[++i]
+        if (d !== undefined) body = Buffer.from(d)
+        break
+      }
       case '-d':
       case '--data':
-      case '--data-raw':
       case '--data-ascii':
       case '--data-binary': {
-        const d = tokens[++i]
+        const d = inline ?? tokens[++i]
         if (d !== undefined) body = readData(d)
         break
       }
@@ -76,7 +96,7 @@ export function parseCurl(tokens: string[]): ParsedCurl {
         getMode = true
         break
       case '--url':
-        url = tokens[++i]
+        url = inline ?? tokens[++i]
         break
       default:
         if (/^https?:\/\//i.test(t)) url = t
