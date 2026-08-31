@@ -35,6 +35,59 @@ interface AutomationCreateOptions {
   timezone?: string
 }
 
+/** Every field is optional: an update sends only what the caller passed, so an
+ * omitted field keeps its stored value instead of being reset. */
+interface AutomationUpdateOptions {
+  name?: string
+  prompt?: string
+  cron?: string
+  intervalSeconds?: string
+  onceAt?: string
+  timezone?: string
+  status?: string
+}
+
+export interface AutomationUpdatePayload {
+  name?: string
+  prompt?: string
+  status?: AutomationStatus
+  scheduleContract?: ScheduleContract
+}
+
+export type AutomationStatus = 'active' | 'paused' | 'completed'
+
+const AUTOMATION_STATUSES: readonly AutomationStatus[] = ['active', 'paused', 'completed']
+
+export interface AutomationDeleteResponse {
+  deleted: boolean
+  automationId: string
+}
+
+export interface AutomationAttachmentDependency {
+  id: string
+  status: 'ok' | 'missing'
+  name?: string | null
+  sizeBytes?: number | null
+  contentType?: string | null
+}
+
+export interface AutomationContextReferenceDependency {
+  id: string
+  type: string
+  name?: string | null
+  brandPinned: boolean
+}
+
+export interface AutomationDependencies {
+  automationId: string
+  brandId: string
+  attachments: AutomationAttachmentDependency[]
+  contextReferences: AutomationContextReferenceDependency[]
+  missingAttachmentCount: number
+  brandPinnedReferenceCount: number
+  ready: boolean
+}
+
 export interface AutomationCreatePayload {
   name: string
   prompt: string
@@ -129,7 +182,55 @@ export function buildAutomationCreatePayload(opts: AutomationCreateOptions): Aut
   }
 }
 
-function buildScheduleContract(opts: AutomationCreateOptions): ScheduleContract {
+export function buildAutomationUpdatePayload(
+  opts: AutomationUpdateOptions,
+): AutomationUpdatePayload {
+  const scheduleSources = [opts.cron, opts.intervalSeconds, opts.onceAt].filter(
+    (value) => value !== undefined,
+  )
+  if (scheduleSources.length > 1) {
+    throw new AutomationUsageError(
+      'Provide at most one schedule option.',
+      'Use --cron, --interval-seconds, or --once-at.',
+    )
+  }
+  // --timezone alone cannot be honored: the server rebuilds the stored schedule
+  // from a whole contract, so a lone timezone would silently do nothing.
+  if (opts.timezone !== undefined && opts.cron === undefined) {
+    throw new AutomationUsageError(
+      '--timezone only applies together with --cron.',
+      'Re-send the cron expression: --cron "<expr>" --timezone <iana>.',
+    )
+  }
+
+  const payload: AutomationUpdatePayload = {}
+  if (opts.name !== undefined) payload.name = requiredText(opts.name, '--name')
+  if (opts.prompt !== undefined) payload.prompt = requiredText(opts.prompt, '--prompt')
+  if (opts.status !== undefined) payload.status = parseStatus(opts.status)
+  if (scheduleSources.length === 1) payload.scheduleContract = buildScheduleContract(opts)
+
+  if (Object.keys(payload).length === 0) {
+    throw new AutomationUsageError(
+      'Nothing to update.',
+      'Pass at least one of --name, --prompt, --status, --cron, --interval-seconds, --once-at.',
+    )
+  }
+  return payload
+}
+
+function parseStatus(raw: string): AutomationStatus {
+  const value = raw.trim() as AutomationStatus
+  if (!AUTOMATION_STATUSES.includes(value)) {
+    throw new AutomationUsageError(
+      `--status must be one of: ${AUTOMATION_STATUSES.join(', ')}.`,
+    )
+  }
+  return value
+}
+
+function buildScheduleContract(
+  opts: Pick<AutomationCreateOptions, 'cron' | 'intervalSeconds' | 'onceAt' | 'timezone'>,
+): ScheduleContract {
   if (opts.cron !== undefined) {
     const timezone = (opts.timezone || 'UTC').trim()
     if (!timezone) throw new AutomationUsageError('--timezone cannot be blank.')
@@ -210,6 +311,62 @@ export function renderAutomation(item: AutomationItem): string {
   ].join('\n')
 }
 
+export function renderAutomationDependencies(data: AutomationDependencies): string {
+  const lines: string[] = [
+    `${bold('Automation')}: ${cyan(data.automationId)}`,
+    `${bold('Dependencies')}: ${data.ready ? 'all attachments resolve' : `${data.missingAttachmentCount} missing`}`,
+  ]
+  lines.push('')
+  lines.push(bold('Attachments'))
+  lines.push(
+    data.attachments.length === 0
+      ? dim('  (none)')
+      : table(
+          data.attachments.map((item) => ({
+            status: item.status,
+            id: item.id,
+            name: item.name ?? '',
+            size: item.sizeBytes ?? '',
+          })),
+          [
+            { key: 'status', header: 'STATUS' },
+            { key: 'id', header: 'ID' },
+            { key: 'name', header: 'NAME' },
+            { key: 'size', header: 'BYTES' },
+          ],
+        ),
+  )
+  lines.push('')
+  lines.push(bold('Context references'))
+  lines.push(
+    data.contextReferences.length === 0
+      ? dim('  (none)')
+      : table(
+          data.contextReferences.map((item) => ({
+            scope: item.brandPinned ? 'brand-pinned' : 'portable',
+            type: item.type,
+            id: item.id,
+            name: item.name ?? '',
+          })),
+          [
+            { key: 'scope', header: 'SCOPE' },
+            { key: 'type', header: 'TYPE' },
+            { key: 'id', header: 'ID' },
+            { key: 'name', header: 'NAME' },
+          ],
+        ),
+  )
+  if (data.brandPinnedReferenceCount > 0) {
+    lines.push('')
+    lines.push(
+      dim(
+        `${data.brandPinnedReferenceCount} reference(s) point at rows inside this brand and must be re-picked if this automation is recreated elsewhere.`,
+      ),
+    )
+  }
+  return lines.join('\n')
+}
+
 export function runsWithConversationUrls(data: AutomationRunsResponse): AutomationRunsResponse {
   return {
     ...data,
@@ -284,6 +441,96 @@ export function registerAutomationCommands(program: Command): void {
         body: payload,
       })
       emitSuccess(data, renderAutomation)
+    })
+
+  automation
+    .command('get <automation_id>')
+    .description('Show one automation in the active brand')
+    .action(async (automationId: string) => {
+      const data = await apiRequest<AutomationItem>(automationPath(automationId), {
+        workspace: true,
+      })
+      emitSuccess(data, renderAutomation)
+    })
+
+  automation
+    .command('update <automation_id>')
+    .description('Edit an existing automation in place (name, prompt, schedule, or status)')
+    .option('--name <name>', 'New automation name')
+    .option('--prompt <prompt>', 'New prompt')
+    .option('--cron <expr>', 'Five-field cron expression, e.g. "* * * * *"')
+    .option('--interval-seconds <seconds>', 'Interval schedule in seconds (>= 3600 and divisible by 60)')
+    .option('--once-at <iso>', 'Run once at this UTC ISO timestamp')
+    .option('--timezone <tz>', 'IANA timezone; only valid together with --cron')
+    .option(`--status <status>`, `One of: ${AUTOMATION_STATUSES.join(', ')}`)
+    .action(async (automationId: string, opts: AutomationUpdateOptions) => {
+      let payload: AutomationUpdatePayload
+      try {
+        payload = buildAutomationUpdatePayload(opts)
+      } catch (err) {
+        usageError(err)
+      }
+      const data = await apiRequest<AutomationItem>(automationPath(automationId), {
+        method: 'PATCH',
+        workspace: true,
+        body: payload,
+      })
+      emitSuccess(data, renderAutomation)
+    })
+
+  automation
+    .command('pause <automation_id>')
+    .description('Pause an automation without deleting it (clears its next run)')
+    .action(async (automationId: string) => {
+      const data = await apiRequest<AutomationItem>(automationPath(automationId), {
+        method: 'PATCH',
+        workspace: true,
+        body: { status: 'paused' },
+      })
+      emitSuccess(data, renderAutomation)
+    })
+
+  automation
+    .command('resume <automation_id>')
+    .description('Resume a paused automation and recompute its next run')
+    .action(async (automationId: string) => {
+      const data = await apiRequest<AutomationItem>(automationPath(automationId), {
+        method: 'PATCH',
+        workspace: true,
+        body: { status: 'active' },
+      })
+      emitSuccess(data, renderAutomation)
+    })
+
+  automation
+    .command('delete <automation_id>')
+    .description('Delete an automation from the active brand')
+    .option('--confirm', 'Confirm the delete')
+    .action(async (automationId: string, opts: { confirm?: boolean }) => {
+      if (!opts.confirm) {
+        emitError(
+          'confirmation_required',
+          'Delete requires explicit confirmation.',
+          ExitCode.USAGE,
+          'Re-run with --confirm.',
+        )
+      }
+      const data = await apiRequest<AutomationDeleteResponse>(automationPath(automationId), {
+        method: 'DELETE',
+        workspace: true,
+      })
+      emitSuccess(data, (d) => `${bold('Deleted')}: ${cyan(d.automationId)}`)
+    })
+
+  automation
+    .command('deps <automation_id>')
+    .description('Check whether this automation\'s attachments and references still resolve')
+    .action(async (automationId: string) => {
+      const data = await apiRequest<AutomationDependencies>(
+        automationPath(automationId, 'dependencies'),
+        { workspace: true },
+      )
+      emitSuccess(data, renderAutomationDependencies)
     })
 
   automation
