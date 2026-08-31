@@ -3,6 +3,35 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
+      "version": "unreleased",
+      "date": null,
+      "notes": [],
+      "commands": {
+        "added": [],
+        "changed": [],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 292,
+          "after": 292,
+          "added": 0,
+          "removed": 0,
+          "changed": 1
+        },
+        "added": [],
+        "removed": [],
+        "changed": [
+          {
+            "id": "ads/create_ad_rule",
+            "fields": [
+              "description"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0-alpha.18",
       "date": "2026-08-31",
       "notes": [

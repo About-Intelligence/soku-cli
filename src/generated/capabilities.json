@@ -3438,7 +3438,7 @@
       "id": "action:ads/create_ad_rule",
       "namespace": "ads",
       "action": "create_ad_rule",
-      "description": "Create a Meta or TikTok automated ad rule; review-gated.",
+      "description": "Create a Meta or TikTok automated ad rule to schedule campaign or ad status changes, enable or pause delivery, and adjust budgets from operational conditions; review-gated.",
       "mode": "write",
       "platforms": [
         "meta",
