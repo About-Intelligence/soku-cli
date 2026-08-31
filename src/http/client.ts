@@ -11,6 +11,28 @@ interface RequestOptions {
   /** Require the active org/brand headers (data endpoints). */
   workspace?: boolean
   apiBase?: string
+  /**
+   * Throw {@link ApiError} instead of printing and exiting.
+   *
+   * The default is to exit, which is right for a one-shot command: the error
+   * envelope is the output. It is wrong inside a batch, where one file's
+   * transient 503 would take down a run of hundreds and leave the caller no
+   * chance to retry it. Batch callers set this and handle the error themselves.
+   */
+  throwOnError?: boolean
+}
+
+/** A failed request, raised only when the caller asked for `throwOnError`. */
+export class ApiError extends Error {
+  constructor(
+    readonly type: string,
+    message: string,
+    readonly status: number,
+    readonly hint?: string,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
 }
 
 export async function apiRequest<T = unknown>(path: string, opts: RequestOptions = {}): Promise<T> {
@@ -50,6 +72,12 @@ export async function apiRequest<T = unknown>(path: string, opts: RequestOptions
   }
 
   const base = resolveApiBaseUrl(opts.apiBase)
+  // Status 0 marks a failure that never reached the server, so a caller
+  // classifying retriability sees "no answer" rather than a fabricated code.
+  const fail = (type: string, message: string, status: number, code: ExitCodeValue, hint?: string): never => {
+    if (opts.throwOnError) throw new ApiError(type, message, status, hint)
+    return emitError(type, message, code, hint)
+  }
   let res: Response
   try {
     res = await fetch(`${base}${path}`, {
@@ -63,9 +91,10 @@ export async function apiRequest<T = unknown>(path: string, opts: RequestOptions
             : JSON.stringify(opts.body),
     })
   } catch (err) {
-    return emitError(
+    return fail(
       'network_error',
       `Could not reach ${base}: ${(err as Error).message}`,
+      0,
       ExitCode.RUNTIME,
       'Behind a proxy? Set ALL_PROXY.',
     )
@@ -80,23 +109,30 @@ export async function apiRequest<T = unknown>(path: string, opts: RequestOptions
     // cleanly instead of looping on a dead credential.
     const code = (parsed as { error?: string } | null)?.error ?? 'unauthorized'
     await clearToken()
-    return emitError(
+    return fail(
       'unauthorized',
       `Authentication failed (${code}).`,
+      res.status,
       ExitCode.AUTH,
       'Run `soku auth login`.',
     )
   }
   if (res.status === 403) {
-    return emitError('forbidden', describeError(parsed) ?? 'Access denied.', ExitCode.AUTH)
+    return fail('forbidden', describeError(parsed) ?? 'Access denied.', res.status, ExitCode.AUTH)
   }
   if (res.status === 404) {
-    return emitError('not_found', describeError(parsed) ?? 'Not found.', ExitCode.NOT_FOUND)
+    return fail(
+      'not_found',
+      describeError(parsed) ?? 'Not found.',
+      res.status,
+      ExitCode.NOT_FOUND,
+    )
   }
   if (res.status >= 400) {
-    return emitError(
+    return fail(
       describeCode(parsed) ?? 'request_failed',
       describeError(parsed) ?? `HTTP ${res.status}`,
+      res.status,
       exitCodeForStatus(res.status),
       describeHint(parsed) ?? undefined,
     )
