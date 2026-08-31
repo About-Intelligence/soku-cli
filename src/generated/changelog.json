@@ -1,0 +1,1448 @@
+{
+  "schemaVersion": 1,
+  "historyStartsAt": "0.1.0-alpha.15",
+  "entries": [
+    {
+      "version": "unreleased",
+      "date": null,
+      "notes": [
+        "automation: added get, update, pause, resume, delete, and deps \u2014 an existing automation can now be edited and paused in place instead of rebuilt in the target brand.",
+        "context: upload retries transient failures, records a resumable run id, and can reconcile what landed against the server by size and checksum (--verify, or the standalone `context verify`).",
+        "context: added `context uploads` to list runs that still have unfinished files.",
+        "context: a transient server error during upload no longer terminates the whole batch.",
+        "changelog: added this file and the `soku changelog` command.",
+        "egress: `soku egress -- curl` no longer drops parameters. `--data-urlencode` is now handled (it was skipped entirely, taking its value with it), repeated data flags accumulate with `&` instead of overwriting, and any curl flag the parser does not understand is now a usage error rather than a silent skip.",
+        "egress: `--data-urlencode` encoding matches curl byte for byte \u2014 a space is `+`, percent-escapes are lowercase.",
+        "egress: `-o/--output` writes the response body to that file; `@-` reads a data body from stdin."
+      ],
+      "commands": {
+        "added": [
+          "automation get",
+          "automation update",
+          "automation pause",
+          "automation resume",
+          "automation delete",
+          "automation deps",
+          "context verify",
+          "context uploads",
+          "changelog"
+        ],
+        "changed": [
+          "context upload",
+          "egress"
+        ],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 253,
+          "after": 292,
+          "added": 43,
+          "removed": 4,
+          "changed": 156
+        },
+        "added": [
+          {
+            "id": "ads/build_batch_retry_template",
+            "mode": "read",
+            "description": "Build an editable resubmission template containing only the failed and skipped operations of a finished action-review batch."
+          },
+          {
+            "id": "ads/get_deploy_readiness",
+            "mode": "read",
+            "description": "Read whether one ad account's synced conversion-event configuration is ready for a conversion-dependent campaign deploy, and which single state blocks it."
+          },
+          {
+            "id": "ads/get_offline_conversion_readiness",
+            "mode": "read",
+            "description": "Read whether this brand's Google Ads conversion actions and Meta pixels are configured to receive offline (in-store) conversions, and what blocks each one."
+          },
+          {
+            "id": "ads/list_instagram_media",
+            "mode": "read",
+            "description": "List existing media published by an Instagram Professional Account connected to this Meta ad account."
+          },
+          {
+            "id": "applovin/asset_performance",
+            "mode": "read",
+            "description": "AppLovin per-asset (image / video / playable) delivery and cost."
+          },
+          {
+            "id": "applovin/campaign_performance",
+            "mode": "read",
+            "description": "AppLovin campaign-level delivery and cost for a date range."
+          },
+          {
+            "id": "applovin/creative_performance",
+            "mode": "read",
+            "description": "AppLovin creative-set and ad level delivery for a date range."
+          },
+          {
+            "id": "applovin/list_accounts",
+            "mode": "read",
+            "description": "List the AppLovin Ads accounts this brand may read reports for."
+          },
+          {
+            "id": "applovin/roas_retention",
+            "mode": "read",
+            "description": "AppLovin cohort ROAS and retention by campaign for a date range."
+          },
+          {
+            "id": "applovin/run_report",
+            "mode": "read",
+            "description": "Arbitrary AppLovin advertiser report over an explicit column set."
+          },
+          {
+            "id": "bigquery/get_table_schema",
+            "mode": "read",
+            "description": "Read one BigQuery table or view's column list (name, type, mode) plus its row and byte counts."
+          },
+          {
+            "id": "bigquery/list_datasets",
+            "mode": "read",
+            "description": "List the BigQuery datasets in a connected GCP project; returns the dataset_id values the other bigquery.* actions take."
+          },
+          {
+            "id": "bigquery/list_tables",
+            "mode": "read",
+            "description": "List the tables and views in one BigQuery dataset; returns table_id values plus each entry's type."
+          },
+          {
+            "id": "bigquery/query",
+            "mode": "risk",
+            "description": "Run one read-only GoogleSQL query against the connected BigQuery project. Always human-reviewed: a person reads the SQL before it runs."
+          },
+          {
+            "id": "doordash/get_sales_summary",
+            "mode": "read",
+            "description": "DoorDash sales aggregates (orders, fees, marketing, net) \u2014 no rows."
+          },
+          {
+            "id": "doordash/list_cancelled_orders",
+            "mode": "read",
+            "description": "List DoorDash cancelled-order rows with aggregates."
+          },
+          {
+            "id": "doordash/list_orders",
+            "mode": "read",
+            "description": "List DoorDash order rows (ORDER_DETAIL report) with aggregates."
+          },
+          {
+            "id": "doordash/list_payouts",
+            "mode": "read",
+            "description": "List DoorDash payout rows (PAYOUT_SUMMARY report) with aggregates."
+          },
+          {
+            "id": "doordash/list_promotion_performance",
+            "mode": "read",
+            "description": "List DoorDash promotion performance rows."
+          },
+          {
+            "id": "doordash/list_sponsored_listing_performance",
+            "mode": "read",
+            "description": "List DoorDash Sponsored Listing (ads) performance rows."
+          },
+          {
+            "id": "doordash/list_stores",
+            "mode": "read",
+            "description": "List the DoorDash stores this brand can read."
+          },
+          {
+            "id": "doordash/list_transactions",
+            "mode": "read",
+            "description": "List DoorDash per-order transaction rows (fees, refunds, marketing)."
+          },
+          {
+            "id": "guardrails/clear_emergency_stop",
+            "mode": "risk",
+            "description": "Clear the emergency stop and return the restore whitelist (HITL-gated)."
+          },
+          {
+            "id": "guardrails/list_rules",
+            "mode": "read",
+            "description": "Read the brand's write-guardrail rules and emergency-stop status."
+          },
+          {
+            "id": "guardrails/remove_rule",
+            "mode": "write",
+            "description": "Delete one write-guardrail rule by coordinate (HITL-gated)."
+          },
+          {
+            "id": "guardrails/seed_default_pack",
+            "mode": "write",
+            "description": "Seed the factory default guardrail pack (idempotent, HITL-gated)."
+          },
+          {
+            "id": "guardrails/set_emergency_stop",
+            "mode": "risk",
+            "description": "Engage the brand's emergency stop for all ads writes (HITL-gated)."
+          },
+          {
+            "id": "guardrails/set_rule",
+            "mode": "write",
+            "description": "Create or overwrite one write-guardrail rule (HITL-gated)."
+          },
+          {
+            "id": "sprout/list_profiles",
+            "mode": "read",
+            "description": "List a Sprout Social customer's social profiles and tags (LinkedIn, Facebook, Instagram, X, ...)."
+          },
+          {
+            "id": "sprout/post_analytics",
+            "mode": "read",
+            "description": "Per-post analytics (impressions, reactions, clicks per published post) for a time range."
+          },
+          {
+            "id": "sprout/profile_analytics",
+            "mode": "read",
+            "description": "Daily owned-profile analytics (impressions, engagement, follower growth) for a date range."
+          },
+          {
+            "id": "toast/get_order",
+            "mode": "read",
+            "description": "Get one Toast order in full detail."
+          },
+          {
+            "id": "toast/list_checks",
+            "mode": "read",
+            "description": "List Toast checks (bills) across a business day or time range."
+          },
+          {
+            "id": "toast/list_orders",
+            "mode": "read",
+            "description": "List Toast order summaries for a business day or time range."
+          },
+          {
+            "id": "toast/list_payments",
+            "mode": "read",
+            "description": "List Toast payment details for one paid business day."
+          },
+          {
+            "id": "toast/list_refunds",
+            "mode": "read",
+            "description": "List Toast refunds issued on one business day."
+          },
+          {
+            "id": "toast/list_restaurants",
+            "mode": "read",
+            "description": "List the Toast restaurant locations this brand can read."
+          },
+          {
+            "id": "ubereats/get_order",
+            "mode": "read",
+            "description": "Get one Uber Eats order in full detail."
+          },
+          {
+            "id": "ubereats/get_report",
+            "mode": "read",
+            "description": "Poll a requested Uber Eats report and read its rows once ready."
+          },
+          {
+            "id": "ubereats/get_store",
+            "mode": "read",
+            "description": "Get one Uber Eats store's live details."
+          },
+          {
+            "id": "ubereats/list_active_orders",
+            "mode": "read",
+            "description": "List a store's incoming Uber Eats orders (CREATED state only)."
+          },
+          {
+            "id": "ubereats/list_stores",
+            "mode": "read",
+            "description": "List the Uber Eats stores this brand can read (import-time snapshot)."
+          },
+          {
+            "id": "ubereats/request_report",
+            "mode": "read",
+            "description": "Request an async Uber Eats CSV report (sales, payments, financials, history)."
+          }
+        ],
+        "removed": [
+          {
+            "id": "org/get_overview",
+            "mode": "read",
+            "description": "Read the current organization's cross-brand overview."
+          },
+          {
+            "id": "org/get_usage_summary",
+            "mode": "read",
+            "description": "Read cross-brand usage, tokens, source split, and spend."
+          },
+          {
+            "id": "org/list_activity",
+            "mode": "read",
+            "description": "List the current organization's merged activity feed."
+          },
+          {
+            "id": "org/list_brands",
+            "mode": "read",
+            "description": "List live brands in the current organization."
+          }
+        ],
+        "changed": [
+          {
+            "id": "ads/add_account_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_ad_group_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_audience_targeting",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/add_callouts",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_audience_targeting",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_negative_keywords",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_webpage_exclusion",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_keywords",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/add_sitelinks",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/add_structured_snippets",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/apply_ad_group_label",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/apply_campaign_label",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/apply_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_ad",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_ad_unit",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_lead_form",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/audit_ad_automation_inventory",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/audit_creative_automation",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_ad_creatives",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_ads",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_adsets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_campaigns",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad",
+            "fields": [
+              "long_description",
+              "platforms",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_ad_creative",
+            "fields": [
+              "long_description",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_ad_group",
+            "fields": [
+              "description",
+              "long_description",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_ad_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad_rule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad_unit",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_adset",
+            "fields": [
+              "long_description",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_bidding_strategy",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_campaign",
+            "fields": [
+              "description",
+              "long_description",
+              "platforms",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_change_history_task",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_conversion_action",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_gmv_max_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_lead_form",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_lookalike_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_pixel",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_pmax_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_product_catalog",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_product_feed",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_rule_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_smart_plus_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_text_asset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_user_list",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_youtube_video_asset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/deploy_image_ads_batch",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/enable_ad_automation_audits",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/establish_automation_baseline",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/estimate_audience_size",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/gaql_search",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/generate_ad_preview",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/generate_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/get_account_info",
+            "fields": [
+              "long_description",
+              "platforms",
+              "freshness_kind",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/get_account_pages",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_ad",
+            "fields": [
+              "long_description",
+              "platforms",
+              "freshness_kind",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/get_ad_creative",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_ad_creatives",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_ad_group",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_adset",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_bidding_strategy",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_campaign",
+            "fields": [
+              "long_description",
+              "platforms",
+              "freshness_kind",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/get_connected_instagram_accounts",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_conversion_tracking_snippets",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_data_readiness",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/get_insights",
+            "fields": [
+              "long_description",
+              "platforms",
+              "freshness_kind",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/get_leads",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_pmax_campaign",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_recommendations",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/get_resource_metadata",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/get_tree_structure",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_account_negative_keywords",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_ad_accounts",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_ad_creatives",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_ad_group_negative_keywords",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_ad_groups",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_ad_labels",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_ad_rules",
+            "fields": [
+              "long_description",
+              "freshness_kind",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/list_ads",
+            "fields": [
+              "long_description",
+              "platforms",
+              "freshness_kind",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/list_adsets",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_bidding_strategies",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_brand_campaigns",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_campaign_negative_keywords",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_campaigns",
+            "fields": [
+              "long_description",
+              "platforms",
+              "freshness_kind",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/list_conversion_actions",
+            "fields": [
+              "long_description",
+              "see_also"
+            ]
+          },
+          {
+            "id": "ads/list_countries",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_custom_audiences",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_customers",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_dimensions",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_languages",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_lead_forms",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_operation_records",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_pixels",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/list_saved_audiences",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/migrate_legacy_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/query_single_dimension",
+            "fields": [
+              "long_description",
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/register_automation_copy",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_account_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad",
+            "fields": [
+              "long_description",
+              "platforms",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_creative",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_rule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_adset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_bidding_strategy",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign",
+            "fields": [
+              "long_description",
+              "platforms",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_assets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_conversion_action",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_keyword",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_product_catalog",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_product_feed",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/replace_campaign_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/resolve_terms",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/search_geo_locations",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/search_interests",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "ads/send_conversion_event",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/set_ad_schedule",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/set_bid_modifier",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/set_final_url_suffix",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/set_geo_targeting",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/set_language_targeting",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/set_network_settings",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_ad",
+            "fields": [
+              "long_description",
+              "platforms",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_ad_group",
+            "fields": [
+              "long_description",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/update_ad_rule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_adset",
+            "fields": [
+              "long_description",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/update_bidding_strategy",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
+            "fields": [
+              "long_description",
+              "platforms",
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/update_conversion_action",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_gmv_max_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_keyword",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_pixel",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_product_catalog",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_product_feed",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_smart_plus_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_smart_plus_campaign_status",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_user_list",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_custom_audience_file",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_image",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_image_asset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_images",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_video",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "gsc/query_search_analytics",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "integration/byo_mcp_read_tool",
+            "fields": [
+              "freshness_kind"
+            ]
+          },
+          {
+            "id": "integration/list_tools",
+            "fields": [
+              "freshness_kind"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0-alpha.17",
+      "date": "2026-08-03",
+      "notes": [],
+      "commands": {
+        "added": [],
+        "changed": [],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 246,
+          "after": 253,
+          "added": 7,
+          "removed": 0,
+          "changed": 8
+        },
+        "added": [
+          {
+            "id": "ads/add_campaign_webpage_exclusion",
+            "mode": "risk",
+            "description": "Exclude webpages (URL paths, page titles, content) from a Google campaign via negative WEBPAGE criteria; review-gated."
+          },
+          {
+            "id": "ads/audit_ad_automation_inventory",
+            "mode": "read",
+            "description": "Read-only paginated TikTok, Google, Meta, or ChatGPT Ads audit of every automation baseline currently tracked for one brand-scoped ad account."
+          },
+          {
+            "id": "ads/audit_creative_automation",
+            "mode": "read",
+            "description": "Read-only drift audit: compare a Meta creative's or Google campaign's live AI-automation settings against the approved intent baseline."
+          },
+          {
+            "id": "ads/enable_ad_automation_audits",
+            "mode": "risk",
+            "description": "HITL provision or recover the current brand's 48-hour and weekly full-current-state Google, Meta, TikTok, and ChatGPT Ads automation audits."
+          },
+          {
+            "id": "ads/establish_automation_baseline",
+            "mode": "risk",
+            "description": "HITL Google, Meta, TikTok, or ChatGPT Ads confirmation of a fresh provider state as a human baseline."
+          },
+          {
+            "id": "ads/preview_automation_baseline",
+            "mode": "read",
+            "description": "Read-only Google, Meta, TikTok, or ChatGPT Ads automation observation and identity-bound approval digest."
+          },
+          {
+            "id": "ads/register_automation_copy",
+            "mode": "risk",
+            "description": "HITL register a Google, Meta, TikTok, or ChatGPT Ads copy from one authoritative automation intent."
+          }
+        ],
+        "removed": [],
+        "changed": [
+          {
+            "id": "ads/create_ad",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_ad_creative",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_ad_group",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_campaign",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_pmax_campaign",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/migrate_legacy_ad_units",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_ad",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "version": "0.1.0-alpha.16",
+      "date": "2026-07-30",
+      "notes": [],
+      "commands": {
+        "added": [],
+        "changed": [],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 246,
+          "after": 246,
+          "added": 0,
+          "removed": 0,
+          "changed": 0
+        },
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
+      "version": "0.1.0-alpha.15",
+      "date": "2026-07-30",
+      "notes": [
+        "First release published from this repository, with 246 capabilities.",
+        "No earlier manifest exists here to diff against: the alpha.14 manifest lived in the monorepo before the CLI was extracted."
+      ],
+      "commands": {
+        "added": [],
+        "changed": [],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 0,
+          "after": 246,
+          "added": 0,
+          "removed": 0,
+          "changed": 0
+        },
+        "added": [],
+        "removed": [],
+        "changed": [],
+        "baseline": true
+      }
+    }
+  ]
+}

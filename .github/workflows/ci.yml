@@ -34,6 +34,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify the version agrees across every file that carries it
+        run: node scripts/stamp-release.mjs --check
+
       - name: Type check
         run: pnpm typecheck
 
@@ -54,6 +57,9 @@ jobs:
           for (const required of [
             'dist/index.js',
             'dist/generated/capabilities.json',
+            // `soku changelog` reads this at runtime, so a package without it
+            // ships a command that fails on every invocation.
+            'dist/generated/changelog.json',
             'skills/soku/SKILL.md',
             'package.json',
           ]) {
