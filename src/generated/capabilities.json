@@ -12817,6 +12817,12 @@
           "type": "string",
           "required": false,
           "description": "Override conversion-mapping default; one of 1d_click, 7d_click, 1d_view, 7d_view, 28d_view, 1d_click_1d_view, 7d_click_1d_view, 28d_click_1d_view, default"
+        },
+        {
+          "name": "include_meta",
+          "type": "boolean",
+          "required": false,
+          "description": "For dimension=asset only, include the dashboard asset metadata object for each row. Defaults to false."
         }
       ],
       "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"dimension\": \"campaign\", \"data_basis\": {\"view\": \"...\", \"parquet_table\": \"...\", \"selected_scope\": \"campaign\", \"cg_fan_out_available\": true}, \"scope_caveat\": \"...\", \"row_count\": 128, \"truncated\": false, \"warning\": null, \"columns\": {\"campaign_id\": [...], \"spend_micros\": [...], \"ctr\": [...], \"cg.qualified-new-user.all_conv\": [...]}, \"summary\": null, \"readiness\": null | {\"partial\": true, \"readiness\": {...}, \"fallback\": {...}}}"
