@@ -12,7 +12,7 @@ metadata:
   version: "0.5"
   # CLI release this skill was written against. `soku changelog --since <that
   # version>` lists what moved if the installed CLI is newer.
-  cliVersion: "0.1.0-alpha.17"
+  cliVersion: "0.1.0-alpha.18"
 ---
 
 # Soku CLI

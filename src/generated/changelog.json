@@ -3,16 +3,16 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
+      "version": "0.1.0-alpha.18",
+      "date": "2026-08-31",
       "notes": [
-        "automation: added get, update, pause, resume, delete, and deps \u2014 an existing automation can now be edited and paused in place instead of rebuilt in the target brand.",
+        "automation: added get, update, pause, resume, delete, and deps — an existing automation can now be edited and paused in place instead of rebuilt in the target brand.",
         "context: upload retries transient failures, records a resumable run id, and can reconcile what landed against the server by size and checksum (--verify, or the standalone `context verify`).",
         "context: added `context uploads` to list runs that still have unfinished files.",
         "context: a transient server error during upload no longer terminates the whole batch.",
         "changelog: added this file and the `soku changelog` command.",
         "egress: `soku egress -- curl` no longer drops parameters. `--data-urlencode` is now handled (it was skipped entirely, taking its value with it), repeated data flags accumulate with `&` instead of overwriting, and any curl flag the parser does not understand is now a usage error rather than a silent skip.",
-        "egress: `--data-urlencode` encoding matches curl byte for byte \u2014 a space is `+`, percent-escapes are lowercase.",
+        "egress: `--data-urlencode` encoding matches curl byte for byte — a space is `+`, percent-escapes are lowercase.",
         "egress: `-o/--output` writes the response body to that file; `@-` reads a data body from stdin."
       ],
       "commands": {
@@ -115,7 +115,7 @@
           {
             "id": "doordash/get_sales_summary",
             "mode": "read",
-            "description": "DoorDash sales aggregates (orders, fees, marketing, net) \u2014 no rows."
+            "description": "DoorDash sales aggregates (orders, fees, marketing, net) — no rows."
           },
           {
             "id": "doordash/list_cancelled_orders",
