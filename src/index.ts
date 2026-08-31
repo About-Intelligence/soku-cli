@@ -8,6 +8,7 @@ import { registerAuthCommands } from './commands/auth.js'
 import { registerAutomationCommands } from './commands/automation.js'
 import { registerBrandCommands } from './commands/brand.js'
 import { registerCallCommand } from './commands/call.js'
+import { registerChangelogCommand } from './commands/changelog.js'
 import { registerContextCommands } from './commands/context.js'
 import { registerEgressCommands } from './commands/egress.js'
 import { registerFilesCommands } from './commands/files.js'
@@ -46,6 +47,7 @@ registerContextCommands(program)
 registerFilesCommands(program)
 registerSkillCommand(program)
 registerUpdateCommand(program)
+registerChangelogCommand(program)
 registerUpdateCheckCommand(program)
 
 function commandNames(command: Command): Set<string> {

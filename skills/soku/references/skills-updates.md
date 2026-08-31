@@ -87,3 +87,26 @@ soku skill remove soku
 
 Removing the last Soku-managed skill removes the local `.soku-skills.json`
 manifest.
+
+## After Upgrading The CLI
+
+An upgrade can add, change, or retire capabilities, which invalidates whatever
+this session believed the CLI could do. Ask the CLI itself rather than guessing:
+
+```bash
+soku changelog --since <the version you upgraded from> --summary
+soku changelog --since <the version you upgraded from>
+```
+
+`--summary` gives counts per version; without it, each entry lists the actions
+that were added or removed and, for a surviving action, which fields changed.
+Output is the usual JSON envelope in a non-TTY context, so it can be parsed.
+
+The changelog is bundled with the installed CLI, so it always describes the
+binary that is running and needs no network call. It cannot speak for versions
+older than its `historyStartsAt`; when `--since` reaches past that, the response
+sets `truncated: true` and says so rather than implying nothing changed.
+
+This skill's frontmatter records the CLI release it was written against under
+`metadata.cliVersion`. If the installed CLI is newer, run the command above
+before relying on details in these reference files.

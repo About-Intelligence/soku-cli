@@ -86,6 +86,31 @@ function useResolvedBrand(result: BrandResolveResult, ref: string): Brand {
   )
 }
 
+/** Where the active org/brand actually came from for this invocation.
+ *
+ * `apiRequest` lets `SOKU_ORG_ID` / `SOKU_BRAND_ID` override saved config, and
+ * the agent docs recommend exactly that for one-off scripts. `status` used to
+ * read only the config file, so in an env-driven session it reported "(none)"
+ * while every write went to the env-specified brand — the one check an agent is
+ * told to run before writing could not see where the write would land.
+ */
+export function resolveActiveWorkspace(): {
+  orgId: string | null
+  brandId: string | null
+  source: 'env' | 'config'
+} {
+  const cfg = loadConfig()
+  const envOrg = process.env.SOKU_ORG_ID || null
+  const envBrand = process.env.SOKU_BRAND_ID || null
+  return {
+    orgId: envOrg ?? cfg.activeOrgId ?? null,
+    brandId: envBrand ?? cfg.activeBrandId ?? null,
+    // Either override alone changes where requests go, so either one makes the
+    // effective workspace env-decided.
+    source: envOrg || envBrand ? 'env' : 'config',
+  }
+}
+
 export function registerWorkspaceCommands(program: Command): void {
   const workspace = program.command('workspace').description('Inspect or set the active Soku workspace')
 
@@ -93,25 +118,29 @@ export function registerWorkspaceCommands(program: Command): void {
     .command('status')
     .description('Show the active organization and brand')
     .action(async () => {
-      const cfg = loadConfig()
+      const active = resolveActiveWorkspace()
       const orgsData = await apiRequest<{ orgs: Org[]; count: number }>('/api/cli/orgs')
-      const org = cfg.activeOrgId ? orgsData.orgs.find((item) => item.id === cfg.activeOrgId) : undefined
+      const org = active.orgId ? orgsData.orgs.find((item) => item.id === active.orgId) : undefined
       let brand: Brand | undefined
-      if (org && cfg.activeBrandId) {
+      if (org && active.brandId) {
         const brandsData = await apiRequest<{ brands: Brand[]; count: number }>(
           `/api/cli/brands?org_id=${encodeURIComponent(org.id)}`,
         )
-        brand = brandsData.brands.find((item) => item.id === cfg.activeBrandId)
+        brand = brandsData.brands.find((item) => item.id === active.brandId)
       }
 
       const data = {
-        active_org_id: cfg.activeOrgId ?? null,
+        active_org_id: active.orgId,
         active_org_name: org?.name ?? null,
         active_org_slug: org?.slug ?? null,
-        active_brand_id: cfg.activeBrandId ?? null,
+        active_brand_id: active.brandId,
         active_brand_name: brand?.name ?? null,
         active_brand_slug: brand?.slug ?? null,
         workspace_ready: Boolean(org && brand),
+        // Which of the two sources decided the answer. An agent that checks the
+        // brand before a write needs to know an env override is in play, since
+        // `use-brand` writes config and would not change where writes land.
+        source: active.source,
       }
       emitSuccess(data, (d) => {
         const orgLabel = d.active_org_slug || d.active_org_name || d.active_org_id || '(none)'
@@ -120,7 +149,10 @@ export function registerWorkspaceCommands(program: Command): void {
         return [
           `Workspace: ${ready}`,
           `Org: ${orgLabel}`,
-          `Brand: ${brandLabel}`,
+          `Brand: ${brandLabel} ${dim('(current target — not the limit of your access)')}`,
+          d.source === 'env'
+            ? dim('Source: SOKU_ORG_ID / SOKU_BRAND_ID (env overrides saved config)')
+            : dim('Source: saved config'),
           d.workspace_ready
             ? dim('Next: soku resources list')
             : dim('Next: soku workspace use-brand <brand>'),
