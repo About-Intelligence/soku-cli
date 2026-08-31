@@ -46,6 +46,22 @@ still return a HITL review the user approves; that is the only gate left
 (besides the active org/brand). The `--resource` flag and the `soku resources`
 command have been removed from the CLI.
 
+## What The Login Grants
+
+The token is account-level, not brand-level. It reaches **every brand the signed-in
+account can already access**, and the brand chosen on the approval page only sets
+where the CLI starts.
+
+Users regularly read that selection as the scope of the grant and are then
+surprised to see other brands. If a user asks why they can see a brand they did
+not authorize, say this plainly: the approval covered their whole account, and
+the picker chose a starting point. `soku brand list` shows the full set.
+
+The practical consequence is the opposite of a security concern and needs
+stating too: **nothing stops a command from writing into the wrong brand.** The
+active brand is sticky, does not follow the web app, and survives across
+sessions. Confirm it in the same turn as any write.
+
 ## Workspace
 
 Never infer Soku workspace state from the local shell directory.
@@ -59,6 +75,15 @@ soku workspace use-brand <brand>
 If `resolve` is ambiguous, show the candidates and ask the user which exact
 brand/org to use. For one-off scripts, `SOKU_ORG_ID` and `SOKU_BRAND_ID` can
 override saved config.
+
+`workspace status` resolves the same way requests do, so it reports the brand a
+write would actually reach whichever source set it. Its `source` field says
+which one won:
+
+- `config` — the saved active brand. `soku workspace use-brand` changes it.
+- `env` — `SOKU_ORG_ID` / `SOKU_BRAND_ID` are set and override the saved config.
+  In this case `use-brand` writes the config file but does **not** change where
+  writes land; change the environment variables instead.
 
 Legacy commands still work, but prefer `workspace` for agent flows:
 

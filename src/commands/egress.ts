@@ -10,7 +10,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { createWriteStream, readFileSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 
@@ -26,76 +26,262 @@ export interface ParsedCurl {
   url?: string
   headers: Record<string, string>
   body?: Buffer
+  /** `-o/--output`: write the upstream body here instead of stdout. */
+  output?: string
 }
 
 // A header value carrying only an auth scheme word (or nothing) — the result of
 // `-H "Authorization: Bearer $X"` when `$X` is unset. Not a real credential.
 const PLACEHOLDER_AUTH = /^\s*(bearer|token|key|basic)?\s*$/i
 
+export class CurlUsageError extends Error {
+  constructor(message: string, readonly hint?: string) {
+    super(message)
+  }
+}
+
 function readData(value: string): Buffer {
+  // `@-` means stdin, which is how the published Gemini skills feed a heredoc
+  // JSON body. `readFileSync('-')` looked for a file literally named `-`.
+  if (value === '@-') return readFileSync(0)
   if (value.startsWith('@')) return readFileSync(value.slice(1))
   return Buffer.from(value)
 }
 
-/** Extract method / url / headers / body from a curl-style token list. Pure. */
+/** Encode exactly as curl's `--data-urlencode` does.
+ *
+ * Measured against curl 8.7.1 rather than assumed, because two details are easy
+ * to get wrong and both change the bytes the upstream receives:
+ *
+ *   - a space becomes `+`, NOT `%20` — this is form encoding, not RFC 3986
+ *   - hex digits are LOWERCASE (`%2c`), where `encodeURIComponent` emits `%2C`
+ *
+ * Unreserved characters (`A-Za-z0-9-._~`) pass through; everything else is
+ * percent-encoded per UTF-8 byte. Matching curl is the point: the whole promise
+ * of `soku egress` is that prefixing an existing skill's curl changes nothing
+ * about the request that reaches the third party.
+ */
+export function curlEscape(value: string): string {
+  let out = ''
+  for (const byte of Buffer.from(value, 'utf8')) {
+    const ch = String.fromCharCode(byte)
+    if (/[A-Za-z0-9\-._~]/.test(ch)) out += ch
+    else if (ch === ' ') out += '+'
+    else out += `%${byte.toString(16).padStart(2, '0')}`
+  }
+  return out
+}
+
+/** Build one `--data-urlencode` segment, following curl's four forms.
+ *
+ *   content        -> encoded content, no name
+ *   =content       -> encoded content, no name (leading `=` dropped)
+ *   name=content   -> `name=` kept literal, content encoded
+ *   @file          -> encoded file bytes, no name
+ *   name@file      -> `name=` kept literal, encoded file bytes
+ *
+ * Whichever of `=` or `@` appears first decides the form, matching curl.
+ */
+export function buildUrlEncodedSegment(
+  spec: string,
+  readFile: (path: string) => string = (path) => readFileSync(path, 'utf8'),
+): string {
+  const eq = spec.indexOf('=')
+  const at = spec.indexOf('@')
+
+  if (eq !== -1 && (at === -1 || eq < at)) {
+    const name = spec.slice(0, eq)
+    const content = spec.slice(eq + 1)
+    return name ? `${name}=${curlEscape(content)}` : curlEscape(content)
+  }
+  if (at !== -1) {
+    const name = spec.slice(0, at)
+    const path = spec.slice(at + 1)
+    let content: string
+    try {
+      content = path === '-' ? readFileSync(0, 'utf8') : readFile(path)
+    } catch (err) {
+      throw new CurlUsageError(
+        `--data-urlencode could not read file: ${path} (${(err as Error).message})`,
+      )
+    }
+    return name ? `${name}=${curlEscape(content)}` : curlEscape(content)
+  }
+  return curlEscape(spec)
+}
+
+/** Short flags that take no value, so `-sSL` can be split into `-s -S -L`. */
+const NO_VALUE_SHORT = new Set(['s', 'S', 'i', 'v', 'k', 'f', 'L', 'G', 'I', 'g', 'j', '#'])
+
+/** Flags accepted and deliberately ignored, with no value to consume.
+ *
+ * Every one of these shapes curl's LOCAL behaviour — stderr noise, TLS
+ * strictness, redirect handling, exit-code policy — and cannot change the
+ * `{method, url, headers, body}` this command forwards. Ignoring them is
+ * therefore not silent data loss; dropping a flag that WOULD change the request
+ * is, which is why anything not listed here is now an error.
+ */
+const IGNORED_NO_VALUE = new Set([
+  '-s', '--silent',
+  '-S', '--show-error',
+  '-i', '--include',
+  '-v', '--verbose',
+  '-k', '--insecure',
+  '-f', '--fail', '--fail-with-body', '--fail-early',
+  '-L', '--location', '--location-trusted',
+  '--compressed',
+  '--no-progress-meter',
+  '-#', '--progress-bar',
+  '--retry-all-errors', '--retry-connrefused',
+  '-g', '--globoff',
+  '-j', '--junk-session-cookies',
+  '--no-keepalive',
+  '--tcp-nodelay',
+])
+
+/** Accepted-and-ignored flags that consume one value.
+ *
+ * Consuming the value is the point: an unconsumed value becomes a stray token,
+ * which is exactly how `--data-urlencode country=us` used to lose its argument.
+ */
+const IGNORED_WITH_VALUE = new Set([
+  '-m', '--max-time',
+  '--connect-timeout',
+  '--retry', '--retry-delay', '--retry-max-time',
+  '--limit-rate',
+  '-w', '--write-out',
+  '--resolve',
+  '--max-redirs',
+  '--noproxy',
+  '-D', '--dump-header',
+])
+
+/** Expand a bundled short-flag token (`-sSL`) into its parts.
+ *
+ * Only bundles made entirely of no-value short flags expand; anything else is
+ * rejected rather than guessed at, because a bundle ending in a value-taking
+ * flag (`-so out.json`) would otherwise silently mis-assign the value.
+ */
+export function expandShortBundle(token: string): string[] | null {
+  if (!/^-[A-Za-z#]{2,}$/.test(token)) return null
+  const letters = token.slice(1).split('')
+  if (!letters.every((c) => NO_VALUE_SHORT.has(c))) return null
+  return letters.map((c) => `-${c}`)
+}
+
+/** Extract method / url / headers / body from a curl-style token list. Pure.
+ *
+ * Anything this parser does not understand is now an error. The previous
+ * behaviour — skip the flag, and do not consume its value — meant an
+ * unsupported flag vanished, its value was dropped as a stray token, and the
+ * request went out anyway with parameters missing. The upstream then answered
+ * about the first thing it noticed missing, which sent every investigation in
+ * the wrong direction.
+ */
 export function parseCurl(tokens: string[]): ParsedCurl {
   const headers: Record<string, string> = {}
   let method: string | undefined
   let url: string | undefined
-  let body: Buffer | undefined
+  let output: string | undefined
   let getMode = false
+  // Every data flag appends here, and the parts join with `&`, matching curl.
+  // Assigning instead (the old behaviour) meant `-d a=1 -d b=2` sent only b=2.
+  const dataParts: string[] = []
 
-  let i = tokens[0] === 'curl' ? 1 : 0
-  for (; i < tokens.length; i++) {
-    const t = tokens[i]
+  const expanded: string[] = []
+  const start = tokens[0] === 'curl' ? 1 : 0
+  for (let i = start; i < tokens.length; i++) {
+    const bundle = expandShortBundle(tokens[i])
+    if (bundle) expanded.push(...bundle)
+    else expanded.push(tokens[i])
+  }
+
+  for (let i = 0; i < expanded.length; i++) {
+    const t = expanded[i]
+
+    const requireValue = (flag: string): string => {
+      const v = expanded[++i]
+      if (v === undefined) throw new CurlUsageError(`${flag} expects a value.`)
+      return v
+    }
+
     switch (t) {
       case '-X':
       case '--request':
-        method = tokens[++i]?.toUpperCase()
+        method = requireValue(t).toUpperCase()
+        break
+      case '-I':
+      case '--head':
+        method = 'HEAD'
         break
       case '-H':
       case '--header': {
-        const h = tokens[++i]
-        if (h) {
-          const idx = h.indexOf(':')
-          if (idx > 0) headers[h.slice(0, idx).trim().toLowerCase()] = h.slice(idx + 1).trim()
-        }
+        const h = requireValue(t)
+        const idx = h.indexOf(':')
+        if (idx > 0) headers[h.slice(0, idx).trim().toLowerCase()] = h.slice(idx + 1).trim()
         break
       }
       case '-d':
       case '--data':
       case '--data-raw':
       case '--data-ascii':
-      case '--data-binary': {
-        const d = tokens[++i]
-        if (d !== undefined) body = readData(d)
+      case '--data-binary':
+        dataParts.push(readData(requireValue(t)).toString())
         break
-      }
+      case '--data-urlencode':
+        dataParts.push(buildUrlEncodedSegment(requireValue(t)))
+        break
       case '-G':
       case '--get':
         getMode = true
         break
       case '--url':
-        url = tokens[++i]
+        url = requireValue(t)
         break
-      default:
-        if (/^https?:\/\//i.test(t)) url = t
-        // Unknown flags are skipped; we do not consume their value, so a few
-        // exotic curl flags may leak a token — the documented subset is
-        // -X/-H/-d/--data*/-G/--url + the URL.
+      case '-o':
+      case '--output':
+        output = requireValue(t)
         break
+      default: {
+        if (IGNORED_NO_VALUE.has(t)) break
+        if (IGNORED_WITH_VALUE.has(t)) {
+          requireValue(t)
+          break
+        }
+        if (t.startsWith('-')) {
+          throw new CurlUsageError(
+            `Unsupported curl flag: ${t}`,
+            'soku egress forwards {method, url, headers, body}. Supported: ' +
+              '-X/--request, -I/--head, -H/--header, -d/--data(-raw|-ascii|-binary), ' +
+              '--data-urlencode, -G/--get, --url, -o/--output. ' +
+              'Rewrite the request without this flag, or open an issue to add it.',
+          )
+        }
+        if (url !== undefined) {
+          throw new CurlUsageError(
+            `Unexpected argument: ${t}`,
+            'Only one URL is supported; a stray argument usually means a flag before it was misspelled.',
+          )
+        }
+        url = t
+        break
+      }
     }
   }
 
+  const data = dataParts.join('&')
+  let body: Buffer | undefined = data ? Buffer.from(data) : undefined
+
   if (!method) method = body ? 'POST' : 'GET'
   if (getMode && body && url) {
-    const u = new URL(url)
-    for (const [k, v] of new URLSearchParams(body.toString())) u.searchParams.append(k, v)
-    url = u.toString()
+    // Append the already-encoded query verbatim. Round-tripping it through
+    // URLSearchParams would re-encode it, changing the exact bytes curl would
+    // have sent (uppercase hex, and `%2A` where curl writes `%2a`).
+    url = `${url}${url.includes('?') ? '&' : '?'}${data}`
     body = undefined
     method = 'GET'
   }
-  return { method, url, headers, body }
+  return { method, url, headers, body, output }
 }
 
 /** Drop empty / bare-scheme auth headers so the server injects the real key
@@ -134,6 +320,11 @@ function egressErrorExit(status: number, type: string, message: string): never {
           ? ExitCode.NOT_FOUND
           : ExitCode.RUNTIME
   return emitError(type, message, code)
+}
+
+/** Where the upstream body goes: the `-o` file, or stdout when none was given. */
+export function responseSink(output: string | undefined): NodeJS.WritableStream {
+  return output ? createWriteStream(output) : process.stdout
 }
 
 async function runEgress(parsed: ParsedCurl): Promise<void> {
@@ -186,9 +377,13 @@ async function runEgress(parsed: ParsedCurl): Promise<void> {
     egressErrorExit(res.status, type, message)
   }
 
-  // Passthrough: stream the upstream body to stdout verbatim.
+  // Passthrough: stream the upstream body verbatim — to the `-o` file when the
+  // caller asked for one, otherwise stdout. Skills that download binary assets
+  // (a rendered screenshot, say) pass `-o`, and dropping it would put the bytes
+  // on stdout while the next step went looking for a file that never appeared.
   if (res.body) {
-    await pipeline(Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0]), process.stdout)
+    const source = Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0])
+    await pipeline(source, responseSink(parsed.output))
   }
   process.exit(ExitCode.OK)
 }
@@ -206,7 +401,16 @@ export function registerEgressCommands(program: Command): void {
     .argument('[request...]', 'the third-party request, e.g. `-- curl -H "..." https://host/path`')
     .allowUnknownOption()
     .action(async (request: string[]) => {
-      await runEgress(parseCurl(request))
+      let parsed: ParsedCurl
+      try {
+        parsed = parseCurl(request)
+      } catch (err) {
+        if (err instanceof CurlUsageError) {
+          emitError('usage', err.message, ExitCode.USAGE, err.hint)
+        }
+        throw err
+      }
+      await runEgress(parsed)
     })
 
   egress

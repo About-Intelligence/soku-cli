@@ -8,22 +8,44 @@ import {
   automationPath,
   automationRunsPath,
   buildAutomationCreatePayload,
+  buildAutomationUpdatePayload,
   conversationUrl,
   registerAutomationCommands,
+  renderAutomationDependencies,
   renderAutomationRuns,
   renderAutomations,
   runsWithConversationUrls,
 } from './automation.js'
 
-test('automation command exposes list create trigger and runs', () => {
+test('automation command exposes the full lifecycle, not just create and rebuild', () => {
   const program = new Command()
   registerAutomationCommands(program)
   const automation = program.commands.find((cmd) => cmd.name() === 'automation')
   assert.ok(automation)
   assert.deepEqual(
     automation.commands.map((cmd) => cmd.name()).sort(),
-    ['create', 'list', 'runs', 'trigger'],
+    [
+      'create',
+      'delete',
+      'deps',
+      'get',
+      'list',
+      'pause',
+      'resume',
+      'runs',
+      'trigger',
+      'update',
+    ],
   )
+})
+
+test('automation delete refuses to run without --confirm', () => {
+  const program = new Command()
+  registerAutomationCommands(program)
+  const automation = program.commands.find((cmd) => cmd.name() === 'automation')
+  const del = automation?.commands.find((cmd) => cmd.name() === 'delete')
+  assert.ok(del)
+  assert.ok(del.options.some((opt) => opt.long === '--confirm'))
 })
 
 test('automation paths encode ids and query params', () => {
@@ -161,4 +183,64 @@ test('automation renderers include status and canonical links', () => {
   )
   assert.match(renderAutomationRuns(runs), /Agent handoff started/)
   assert.match(renderAutomationRuns(runs), /\/o\/org-slug\/b\/brand-slug\/chat/)
+})
+
+
+test('automation update payload sends only the fields that were passed', () => {
+  assert.deepEqual(buildAutomationUpdatePayload({ name: 'Renamed' }), { name: 'Renamed' })
+  assert.deepEqual(buildAutomationUpdatePayload({ status: 'paused' }), { status: 'paused' })
+  assert.deepEqual(
+    buildAutomationUpdatePayload({ prompt: 'New prompt', cron: '30 9 * * *', timezone: 'Asia/Shanghai' }),
+    {
+      prompt: 'New prompt',
+      scheduleContract: {
+        kind: 'local_cron',
+        cron: '30 9 * * *',
+        timezone: 'Asia/Shanghai',
+        source: 'agent',
+      },
+    },
+  )
+})
+
+test('automation update payload rejects empty, multi-schedule, and bad status input', () => {
+  assert.throws(() => buildAutomationUpdatePayload({}), AutomationUsageError)
+  assert.throws(
+    () => buildAutomationUpdatePayload({ cron: '* * * * *', onceAt: '2026-01-01T00:00:00Z' }),
+    AutomationUsageError,
+  )
+  assert.throws(() => buildAutomationUpdatePayload({ status: 'sleeping' }), AutomationUsageError)
+})
+
+test('automation update rejects a lone --timezone instead of silently ignoring it', () => {
+  // The server rebuilds the stored schedule from a whole contract, so a
+  // timezone with no cron would look accepted and change nothing.
+  assert.throws(
+    () => buildAutomationUpdatePayload({ timezone: 'Asia/Shanghai' }),
+    AutomationUsageError,
+  )
+})
+
+test('automation deps renders resolvable and missing dependencies distinctly', () => {
+  const rendered = renderAutomationDependencies({
+    automationId: 'auto-1',
+    brandId: 'brand-1',
+    attachments: [
+      { id: 'att-ok', status: 'ok', name: 'brief.pdf', sizeBytes: 2048 },
+      { id: 'att-gone', status: 'missing' },
+    ],
+    contextReferences: [
+      { id: 'act_123', type: 'account', name: 'Meta Ads', brandPinned: true },
+      { id: 'soku-ads-report', type: 'skill', name: 'Ads report', brandPinned: false },
+    ],
+    missingAttachmentCount: 1,
+    brandPinnedReferenceCount: 1,
+    ready: false,
+  })
+
+  assert.match(rendered, /1 missing/)
+  assert.match(rendered, /att-gone/)
+  assert.match(rendered, /brand-pinned/)
+  assert.match(rendered, /portable/)
+  assert.match(rendered, /must be re-picked/)
 })

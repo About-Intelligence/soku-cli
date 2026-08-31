@@ -121,7 +121,11 @@ export function authStatusPayload(me: AuthStatusMe): { signed_in: true } & AuthS
 
 /** Human (TTY) renderer for `auth status`. */
 export function renderAuthStatus(d: AuthStatusMe): string {
-  return `${green('✓')} Signed in ${dim(`(${d.scope_type})`)}\n  owner: ${cyan(d.owner_id)}`
+  return [
+    `${green('✓')} Signed in ${dim(`(${d.scope_type})`)}`,
+    `  owner: ${cyan(d.owner_id)}`,
+    dim('  Reaches every brand this account can access; `soku brand list` shows them.'),
+  ].join('\n')
 }
 
 async function pollAndStore(opts: {
@@ -152,11 +156,23 @@ async function pollAndStore(opts: {
       scope: outcome.token.scope,
       workspace_configured: workspaceConfigured,
       workspace: outcome.token.workspace ?? null,
+      // The brand picked during approval is a starting point, not a grant
+      // boundary. Stating it here is the cheapest place to stop the reading
+      // that "I authorized one brand, so why can I see others?".
+      brand_scope: 'session',
     },
     () =>
-      `${green('✓')} Signed in ${dim(`(token valid ~${days} days)`)}\n  ${dim(
-        workspaceConfigured ? 'Next: soku ads list-ad-accounts' : 'Next: soku org list',
-      )}`,
+      [
+        `${green('✓')} Signed in ${dim(`(token valid ~${days} days)`)}`,
+        workspaceConfigured
+          ? dim('  The brand you picked is where the CLI starts, not the limit of this session.')
+          : '',
+        `  ${dim(
+          workspaceConfigured ? 'Next: soku ads list-ad-accounts' : 'Next: soku org list',
+        )}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
   )
 }
 

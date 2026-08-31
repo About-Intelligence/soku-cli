@@ -1,6 +1,6 @@
 {
   "name": "@soku-ai/cli",
-  "version": "0.1.0-alpha.17",
+  "version": "0.1.0-alpha.18",
   "description": "Soku CLI — call Soku ads/GA4/PostHog data capabilities from any AI agent or shell.",
   "license": "MIT",
   "author": "About Intelligence",
@@ -39,9 +39,9 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "tsc && mkdir -p dist/generated && cp src/generated/capabilities.json dist/generated/capabilities.json",
+    "build": "tsc && mkdir -p dist/generated && cp src/generated/capabilities.json src/generated/changelog.json dist/generated/",
     "typecheck": "tsc --noEmit",
-    "test": "tsc -p tsconfig.test.json && find .test-build -name '*.test.js' -print | sort | xargs node --test",
+    "test": "tsc -p tsconfig.test.json && mkdir -p .test-build/generated && cp src/generated/capabilities.json src/generated/changelog.json .test-build/generated/ && find .test-build -name '*.test.js' -print | sort | xargs node --test && node --test scripts/*.test.mjs",
     "clean": "rm -rf dist .test-build",
     "postinstall": "node postinstall.cjs",
     "prepublishOnly": "pnpm run clean && pnpm run build"

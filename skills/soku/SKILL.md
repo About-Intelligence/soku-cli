@@ -9,7 +9,10 @@ description: >-
 license: MIT
 metadata:
   author: About Intelligence
-  version: "0.4"
+  version: "0.5"
+  # CLI release this skill was written against. `soku changelog --since <that
+  # version>` lists what moved if the installed CLI is newer.
+  cliVersion: "0.1.0-alpha.18"
 ---
 
 # Soku CLI
@@ -30,7 +33,7 @@ Read only the reference files needed for the user's task:
 | Meta/Google/ChatGPT Ads writes, uploads, bulk create, review-gated approval | `references/ads-write.md` |
 | SEO Hosting, automations, Context Hub files, temporary public file URLs | `references/seo-automation-files.md` |
 | Third-party APIs through server-side credential injection; security rules | `references/egress-security.md` |
-| Installing, updating, or removing Soku-managed local skills | `references/skills-updates.md` |
+| Installing, updating, or removing Soku-managed local skills; finding out what an upgrade changed | `references/skills-updates.md` |
 | Migrate context, project files, or workspaces from Claude into Soku | Run `soku skill install migrate-from-claude`, then read the installed `soku-migrate-from-claude` skill. |
 
 For an installed business skill such as `soku-ads-report`, read that skill too.
@@ -71,6 +74,18 @@ soku <namespace> <action> --help
 
 ## Non-Negotiable Rules
 
+- **Confirm the target brand immediately before any write, and read it back
+  after.** Run `soku workspace status` in the same turn as the write — not
+  earlier in the session — and check the reported brand is the one the user
+  named (its `source` field tells you whether saved config or a `SOKU_BRAND_ID`
+  environment variable decided it, which is what you would have to change). The
+  CLI keeps whatever brand was selected last, and it does not follow the brand
+  the user is looking at in the web app, so a brand confirmed three turns ago
+  proves nothing about this write. After the write, read the object back
+  (`soku automation get`, `soku context list`, `soku seo-hosting pages list`)
+  and confirm it landed where you intended. A write into the wrong brand
+  succeeds silently and looks identical to a correct one; the read-back is the
+  only thing that tells them apart.
 - Never print or persist the Soku access token.
 - Never ask the user to paste third-party provider keys for covered providers.
 - Do not fail just because an upstream provider key env var is unset. Use

@@ -56,5 +56,18 @@ test('auth status passes session identity through the envelope', () => {
     scope_type: 'user',
   })
   // Colors are no-ops when stdout is not a TTY, so the render is plain text.
-  assert.equal(renderAuthStatus(me), '✓ Signed in (user)\n  owner: user-1')
+  assert.equal(
+    renderAuthStatus(me),
+    '✓ Signed in (user)\n' +
+      '  owner: user-1\n' +
+      '  Reaches every brand this account can access; `soku brand list` shows them.',
+  )
+})
+
+test('auth status states the session breadth, not just the identity', () => {
+  // Users read the brand they picked at approval time as the scope of the
+  // grant. The status line is where that misreading gets corrected.
+  const rendered = renderAuthStatus({ owner_id: 'user-1', scope_type: 'user' })
+  assert.match(rendered, /every brand this account can access/)
+  assert.match(rendered, /soku brand list/)
 })
