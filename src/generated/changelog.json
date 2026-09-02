@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 293,
-          "added": 1,
+          "after": 295,
+          "added": 3,
           "removed": 0,
           "changed": 5
         },
@@ -24,6 +24,16 @@
             "id": "ads/list_geo_targets",
             "mode": "read",
             "description": "Search the live ChatGPT Ads country, region, and DMA catalog for one granted account."
+          },
+          {
+            "id": "creatives/apply_ops",
+            "mode": "write",
+            "description": "Apply structural edits to a creatives canvas."
+          },
+          {
+            "id": "creatives/get_canvas",
+            "mode": "read",
+            "description": "Read a creatives canvas: its nodes, edges and current version."
           }
         ],
         "removed": [],

@@ -19619,6 +19619,38 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{toolkit, endpoint, method, status, data}"
     },
     {
+      "id": "action:creatives/apply_ops",
+      "namespace": "creatives",
+      "action": "apply_ops",
+      "description": "Apply structural edits to a creatives canvas.",
+      "mode": "write",
+      "platforms": [
+        "creatives"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Adds, updates, moves, removes and connects nodes. Reversible and free — generation, rendering and publishing are separate capabilities because they spend money or change a customer's ad account.",
+      "input_params": [],
+      "output_shape": null
+    },
+    {
+      "id": "action:creatives/get_canvas",
+      "namespace": "creatives",
+      "action": "get_canvas",
+      "description": "Read a creatives canvas: its nodes, edges and current version.",
+      "mode": "read",
+      "platforms": [
+        "creatives"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "long_description": "Returns the whole canvas document plus the version it is current as of. Use it to see what a person changed on a live surface link before deciding what to do next.",
+      "input_params": [],
+      "output_shape": null
+    },
+    {
       "id": "action:doordash/get_sales_summary",
       "namespace": "doordash",
       "action": "get_sales_summary",
