@@ -17,7 +17,7 @@
           "after": 292,
           "added": 0,
           "removed": 0,
-          "changed": 1
+          "changed": 2
         },
         "added": [],
         "removed": [],
@@ -26,6 +26,12 @@
             "id": "ads/create_ad_rule",
             "fields": [
               "description"
+            ]
+          },
+          {
+            "id": "ads/create_campaign",
+            "fields": [
+              "long_description"
             ]
           }
         ]
