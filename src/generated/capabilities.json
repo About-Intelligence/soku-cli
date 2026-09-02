@@ -3267,15 +3267,6 @@
           ]
         },
         {
-          "name": "allowed_countries",
-          "type": "list",
-          "required": false,
-          "description": "Explicitly approved country targeting.",
-          "platform": [
-            "chatgpt_ads"
-          ]
-        },
-        {
           "name": "allowed_devices",
           "type": "list",
           "required": false,
@@ -5022,10 +5013,20 @@
           ]
         },
         {
-          "name": "allowed_countries",
+          "name": "geo_targets",
           "type": "list",
           "required": false,
-          "description": "",
+          "description": "ChatGPT Ads location ids. Call action:ads/list_geo_targets first.",
+          "source": "upstream:action:ads/list_geo_targets",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "geo_target_details",
+          "type": "list",
+          "required": false,
+          "description": "Display snapshot rows returned by ads/list_geo_targets; ids must exactly match geo_targets and are never sent to the ChatGPT Ads platform.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -11725,6 +11726,73 @@
       "output_shape": "{\"platform\": \"chatgpt_ads\", \"dimensions\": [{\"name\": \"campaign\", \"scope\": \"campaign\", \"source_view\": \"campaign_daily\", \"parquet_table\": \"campaign_daily\", \"filterable_fields\": [...], \"supports_cg_fanout\": true, \"caveat\": \"...\"}], \"metrics\": [{\"slug\": \"ctr\", \"unit\": \"ratio\", \"formula\": \"...\", \"depends_on\": [...], \"platform_support\": [...]}]} or {\"platforms\": [\"google\", \"chatgpt_ads\"], \"by_platform\": {\"google\": {...}, \"chatgpt_ads\": {...}}}"
     },
     {
+      "id": "action:ads/list_geo_targets",
+      "namespace": "ads",
+      "action": "list_geo_targets",
+      "description": "Search the live ChatGPT Ads country, region, and DMA catalog for one granted account.",
+      "mode": "read",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/list_ad_accounts",
+        "action:ads/create_campaign"
+      ],
+      "long_description": "Use this before creating or updating ChatGPT Ads campaign locations. The returned location_id values are the only values accepted by geo_targets. Countries can be fetched in one request. Regions should be scoped with country_code. DMA targets are US-only and should be searched by name because the provider catalog exceeds the 200-row response limit. Results are realtime from the ChatGPT Ads platform and never fall back to a local dictionary.",
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Must be chatgpt_ads.",
+          "example": "chatgpt_ads",
+          "enum": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Granted ChatGPT Ads advertiser account id."
+        },
+        {
+          "name": "q",
+          "type": "string",
+          "required": false,
+          "description": "Optional case-insensitive name search, required in practice for DMA."
+        },
+        {
+          "name": "target_type",
+          "type": "string",
+          "required": false,
+          "description": "Optional target kind.",
+          "enum": [
+            "country",
+            "region",
+            "dma"
+          ]
+        },
+        {
+          "name": "country_code",
+          "type": "string",
+          "required": false,
+          "description": "Optional two-letter country code; use this for region queries.",
+          "example": "US"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Maximum rows from 1 to 200; defaults to 50.",
+          "example": 50
+        }
+      ],
+      "output_shape": "{\"account\":{\"account_id\":\"...\",\"platform\":\"chatgpt_ads\",\"name\":\"...\"},\"rows\":[{\"location_id\":\"2840\",\"name\":\"United States\",\"canonical_name\":\"United States\",\"country_code\":\"US\",\"target_type\":\"country\"}]}"
+    },
+    {
       "id": "action:ads/list_instagram_media",
       "namespace": "ads",
       "action": "list_instagram_media",
@@ -15663,15 +15731,6 @@
           ]
         },
         {
-          "name": "allowed_countries",
-          "type": "list",
-          "required": false,
-          "description": "Explicitly approved country targeting.",
-          "platform": [
-            "chatgpt_ads"
-          ]
-        },
-        {
           "name": "allowed_devices",
           "type": "list",
           "required": false,
@@ -16867,10 +16926,20 @@
           ]
         },
         {
-          "name": "allowed_countries",
+          "name": "geo_targets",
           "type": "list",
           "required": false,
-          "description": "",
+          "description": "Replacement ChatGPT Ads location ids. Call action:ads/list_geo_targets first.",
+          "source": "upstream:action:ads/list_geo_targets",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "geo_target_details",
+          "type": "list",
+          "required": false,
+          "description": "Display snapshot rows matching geo_targets exactly; never sent upstream.",
           "platform": [
             "chatgpt_ads"
           ]

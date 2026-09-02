@@ -14,14 +14,26 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 292,
-          "added": 0,
+          "after": 293,
+          "added": 1,
           "removed": 0,
-          "changed": 2
+          "changed": 5
         },
-        "added": [],
+        "added": [
+          {
+            "id": "ads/list_geo_targets",
+            "mode": "read",
+            "description": "Search the live ChatGPT Ads country, region, and DMA catalog for one granted account."
+          }
+        ],
         "removed": [],
         "changed": [
+          {
+            "id": "ads/create_ad_group",
+            "fields": [
+              "input_params"
+            ]
+          },
           {
             "id": "ads/create_ad_rule",
             "fields": [
@@ -31,7 +43,20 @@
           {
             "id": "ads/create_campaign",
             "fields": [
+              "input_params",
               "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad_group",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
+            "fields": [
+              "input_params"
             ]
           }
         ]
