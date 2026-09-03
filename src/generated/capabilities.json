@@ -19629,10 +19629,66 @@
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
-      "see_also": [],
+      "see_also": [
+        "action:creatives/get_canvas"
+      ],
       "long_description": "Adds, updates, moves, removes and connects nodes. Reversible and free — generation, rendering and publishing are separate capabilities because they spend money or change a customer's ad account.",
-      "input_params": [],
-      "output_shape": null
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "Which canvas. Get it from creatives/list_canvases, from creatives/create_canvas, or from the person — it is the UUID in their canvas URL.",
+          "example": "6f1e9a5c-3d2b-4c88-9f0a-1b2c3d4e5f60",
+          "source": "upstream:action:creatives/list_canvases,action:creatives/create_canvas"
+        },
+        {
+          "name": "ops",
+          "type": "list",
+          "required": true,
+          "description": "Structural operations to apply, in order. Only the allowlisted kinds — adding, updating, moving, removing and connecting nodes. Generation, rendering and publishing are separate capabilities and are refused here. At most 500 per call.",
+          "example": [
+            {
+              "op": "move-node",
+              "nodeId": "n1",
+              "position": {
+                "x": 120,
+                "y": 240
+              }
+            }
+          ],
+          "source": "user"
+        }
+      ],
+      "output_shape": "project_id, canvas{nodes,edges}, version"
+    },
+    {
+      "id": "action:creatives/create_canvas",
+      "namespace": "creatives",
+      "action": "create_canvas",
+      "description": "Create an empty creatives canvas in this brand.",
+      "mode": "write",
+      "platforms": [
+        "creatives"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:creatives/list_canvases",
+        "action:creatives/apply_ops"
+      ],
+      "long_description": "Returns the new canvas's id, which is what creatives/get_canvas, creatives/apply_ops and open_live_surface all take. Use it when the person wants to start something new rather than continue existing work; call creatives/list_canvases first if they might mean one they already have.",
+      "input_params": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": false,
+          "description": "What to call it. Trimmed, and an empty or omitted title gets the same default name the web app uses.",
+          "example": "Q4 launch concepts",
+          "source": "user"
+        }
+      ],
+      "output_shape": "project_id, title, version"
     },
     {
       "id": "action:creatives/get_canvas",
@@ -19645,10 +19701,41 @@
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
-      "see_also": [],
+      "see_also": [
+        "action:creatives/list_canvases",
+        "action:creatives/apply_ops"
+      ],
       "long_description": "Returns the whole canvas document plus the version it is current as of. Use it to see what a person changed on a live surface link before deciding what to do next.",
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "Which canvas. Get it from creatives/list_canvases, from creatives/create_canvas, or from the person — it is the UUID in their canvas URL.",
+          "example": "6f1e9a5c-3d2b-4c88-9f0a-1b2c3d4e5f60",
+          "source": "upstream:action:creatives/list_canvases,action:creatives/create_canvas"
+        }
+      ],
+      "output_shape": "project_id, title, canvas{nodes,edges}, version"
+    },
+    {
+      "id": "action:creatives/list_canvases",
+      "namespace": "creatives",
+      "action": "list_canvases",
+      "description": "List this brand's creatives canvases, newest activity first.",
+      "mode": "read",
+      "platforms": [
+        "creatives"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:creatives/get_canvas",
+        "action:creatives/create_canvas"
+      ],
+      "long_description": "Answers 'which canvas?'. Returns id, title, version, node count and last activity for each — not the documents themselves. Call it to offer the person a choice, then read the one they pick with creatives/get_canvas, or hand them a live link to it.",
       "input_params": [],
-      "output_shape": null
+      "output_shape": "canvases[]{project_id,title,version,node_count,updated_at}, count, truncated?, total?"
     },
     {
       "id": "action:doordash/get_sales_summary",

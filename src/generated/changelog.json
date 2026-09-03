@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 295,
-          "added": 3,
+          "after": 297,
+          "added": 5,
           "removed": 0,
           "changed": 5
         },
@@ -31,9 +31,19 @@
             "description": "Apply structural edits to a creatives canvas."
           },
           {
+            "id": "creatives/create_canvas",
+            "mode": "write",
+            "description": "Create an empty creatives canvas in this brand."
+          },
+          {
             "id": "creatives/get_canvas",
             "mode": "read",
             "description": "Read a creatives canvas: its nodes, edges and current version."
+          },
+          {
+            "id": "creatives/list_canvases",
+            "mode": "read",
+            "description": "List this brand's creatives canvases, newest activity first."
           }
         ],
         "removed": [],
