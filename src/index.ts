@@ -13,6 +13,7 @@ import { registerContextCommands } from './commands/context.js'
 import { registerEgressCommands } from './commands/egress.js'
 import { registerFilesCommands } from './commands/files.js'
 import { registerGeneratedCommands } from './commands/generated.js'
+import { registerLiveSurfaceCommands } from './commands/live-surface.js'
 import { registerMemoryCommands } from './commands/memory.js'
 import { registerOrgCommands } from './commands/org.js'
 import { registerReviewCommands } from './commands/review.js'
@@ -41,6 +42,7 @@ registerGeneratedCommands(program)
 registerAdsCommands(program)
 registerCallCommand(program)
 registerEgressCommands(program)
+registerLiveSurfaceCommands(program)
 registerReviewCommands(program)
 registerSeoHostingCommands(program)
 registerContextCommands(program)
