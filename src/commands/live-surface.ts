@@ -1,4 +1,4 @@
-/** `soku live-surfaces open | list | revoke | rotate-credential`
+/** `soku live open | list | revoke | rotate-credential`
  *
  * A live surface is a link you hand to a person. They open it in their own
  * browser and watch the resource change as you work on it, edit it themselves,
@@ -32,9 +32,14 @@ interface ListedSurface {
 }
 
 export function registerLiveSurfaceCommands(program: Command): void {
+  // `live`, not `live-surfaces`. The page a person opens is at `/live/<handle>`,
+  // so that is the word they already have for this; `live-surfaces` is the
+  // internal table's name leaking onto the command line. The server route
+  // stays `/api/cli/live-surfaces` — it is deployed, and nothing is served by
+  // renaming a path nobody types.
   const surfaces = program
-    .command('live-surfaces')
-    .description('Hand someone a live link to a resource you are working on')
+    .command('live')
+    .description('Hand someone a live link to a canvas you are working on')
 
   surfaces
     .command('open <resource-id>')

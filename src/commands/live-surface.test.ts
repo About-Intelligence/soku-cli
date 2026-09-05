@@ -15,15 +15,15 @@ function findCommand(root: Command, ...path: string[]): Command {
   return current
 }
 
-test('live-surfaces exposes the four operations the server routes offer', () => {
+test('live exposes the four operations the server routes offer', () => {
   // The server surface shipped before this command did, so the docs and the
-  // dispatcher's refusal message pointed at `soku live-surfaces` while nothing
+  // dispatcher's refusal message pointed at `soku live` while nothing
   // by that name existed. Each of these has a route behind it.
   const program = new Command()
   registerLiveSurfaceCommands(program)
 
   for (const name of ['open', 'list', 'revoke', 'rotate-credential']) {
-    const command = findCommand(program, 'live-surfaces', name)
+    const command = findCommand(program, 'live', name)
     assert.ok(command.description(), `${name} has no description`)
   }
 })
@@ -33,7 +33,7 @@ test('open can hand over a link that cannot be edited or approved from', () => {
   // changes, and `--no-approvals` is what withholds the credential entirely.
   const program = new Command()
   registerLiveSurfaceCommands(program)
-  const open = findCommand(program, 'live-surfaces', 'open')
+  const open = findCommand(program, 'live', 'open')
 
   const flags = open.options.map((option) => option.long)
   assert.ok(flags.includes('--read-only'))
@@ -47,8 +47,8 @@ test('revoking a link and rotating its code are separate commands', () => {
   const program = new Command()
   registerLiveSurfaceCommands(program)
 
-  const revoke = findCommand(program, 'live-surfaces', 'revoke')
-  const rotate = findCommand(program, 'live-surfaces', 'rotate-credential')
+  const revoke = findCommand(program, 'live', 'revoke')
+  const rotate = findCommand(program, 'live', 'rotate-credential')
 
   assert.notEqual(revoke.name(), rotate.name())
   assert.match(rotate.description(), /leaving the link itself alive/i)
