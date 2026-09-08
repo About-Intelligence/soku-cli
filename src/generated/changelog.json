@@ -110,7 +110,8 @@
           {
             "id": "ads/get_account_info",
             "fields": [
-              "long_description"
+              "long_description",
+              "output_shape"
             ]
           },
           {
