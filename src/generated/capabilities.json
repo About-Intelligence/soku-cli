@@ -22450,7 +22450,7 @@
           }
         }
       ],
-      "long_description": "Forwards a read-only Stripe tool call for one granted account and returns live data (realtime — there is no cached sync pipeline). Current hosted MCP exposes generic API reads through `stripe_api_read` (for example GET `/v1/balance`, `/v1/customers`, `/v1/invoices`, `/v1/subscriptions`, `/v1/payment_intents`) plus `get_stripe_account_info` and `search_stripe_resources`. Get the account_id from `stripe/list_accounts` (never ask the user for it). Only allowlisted read tools run immediately; a write or unvetted tool returns `requires_review` — call `stripe/request_change` for those. The response echoes which account was queried.",
+      "long_description": "Forwards a read-only Stripe tool call for one granted account and returns live data (realtime — there is no cached sync pipeline). Current hosted MCP exposes generic API reads through `stripe_api_read` (for example GET `/v1/balance`, `/v1/customers`, `/v1/invoices`, `/v1/subscriptions`, `/v1/payment_intents`); find the operation id with `stripe_api_search` / `stripe_api_details`. Get the account_id from `stripe/list_accounts` (never ask the user for it). The account pin Stripe requires (`stripe_context` + `livemode`) is injected server-side from that account_id — never pass it yourself. Only allowlisted read tools run immediately; a write or unvetted tool returns `requires_review` — call `stripe/request_change` for those. The response echoes which account was queried.",
       "output_shape": "data.{project_id, tool, is_error, content[], structured, truncated}"
     },
     {
