@@ -17,7 +17,7 @@
           "after": 297,
           "added": 5,
           "removed": 0,
-          "changed": 5
+          "changed": 15
         },
         "added": [
           {
@@ -49,9 +49,35 @@
         "removed": [],
         "changed": [
           {
+            "id": "ads/bulk_create_adsets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_campaigns",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad",
+            "fields": [
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_ad_creative",
+            "fields": [
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
             "id": "ads/create_ad_group",
             "fields": [
-              "input_params"
+              "input_params",
+              "output_shape"
             ]
           },
           {
@@ -61,22 +87,64 @@
             ]
           },
           {
+            "id": "ads/create_adset",
+            "fields": [
+              "long_description",
+              "output_shape"
+            ]
+          },
+          {
             "id": "ads/create_campaign",
             "fields": [
               "input_params",
+              "long_description",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/estimate_audience_size",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/get_account_info",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/get_insights",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/search_geo_locations",
+            "fields": [
               "long_description"
             ]
           },
           {
             "id": "ads/update_ad_group",
             "fields": [
-              "input_params"
+              "input_params",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "ads/update_adset",
+            "fields": [
+              "long_description",
+              "output_shape"
             ]
           },
           {
             "id": "ads/update_campaign",
             "fields": [
-              "input_params"
+              "input_params",
+              "long_description",
+              "output_shape"
             ]
           }
         ]
