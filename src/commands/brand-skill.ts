@@ -76,6 +76,41 @@ interface BrandSkillCatalogResponse {
   count: number
 }
 
+/** A listing in the cross-tenant community catalog (mirrors CommunitySkillRead). */
+interface CommunitySkill {
+  slug: string
+  name: string
+  description: string
+  version: string
+  categories: string[]
+  tags: string[]
+  providers: string[]
+  publisher_org_name: string
+  status: string
+  install_count: number
+  published_at: string
+  installed_version?: string | null
+  update_available: boolean
+  is_publisher: boolean
+}
+
+interface CommunityCatalogResponse {
+  brand_id: string
+  skills: CommunitySkill[]
+  count: number
+  total: number
+}
+
+interface CommunityInstallResponse extends BrandSkillMutationResponse {
+  upgraded: boolean
+}
+
+interface CommunityPublishResponse {
+  brand_id: string
+  skill: CommunitySkill
+  version: { version: string; bundle_sha256: string; byte_size: number; file_count: number }
+}
+
 interface BrandSkillMutationResponse {
   brand_id: string
   skill: InstalledSkill | UploadedSkill
@@ -312,6 +347,45 @@ function collectZipFiles(root: string): Record<string, Uint8Array> {
   return out
 }
 
+export function renderCommunityCatalog(data: CommunityCatalogResponse): string {
+  if (data.skills.length === 0) {
+    return `${dim('No community skills published yet.')}\n`
+  }
+  const rows = data.skills.map((skill) => ({
+    slug: skill.slug,
+    version: skill.version,
+    publisher: skill.publisher_org_name,
+    installs: skill.install_count,
+    brand: skill.update_available
+      ? `update → ${skill.version}`
+      : skill.installed_version
+        ? `installed ${skill.installed_version}`
+        : '-',
+  }))
+  const header = `${bold('Community skills')} ${dim(`(${data.count} of ${data.total})`)}`
+  const body = table(rows, [
+    { key: 'slug', header: 'Slug' },
+    { key: 'version', header: 'Version' },
+    { key: 'publisher', header: 'Publisher' },
+    { key: 'installs', header: 'Installs' },
+    { key: 'brand', header: 'This brand' },
+  ])
+  return `${header}\n${body}\n`
+}
+
+function renderCommunityInstall(data: CommunityInstallResponse): string {
+  const verb = data.upgraded ? 'Updated' : 'Installed'
+  const version =
+    'skill_meta' in data.skill ? (data.skill.skill_meta.version ?? 'unversioned') : data.skill.version
+  return `${green(`${verb} ${data.skill.slug}`)} ${dim(`(${version})`)}\n`
+}
+
+function renderPublish(data: CommunityPublishResponse): string {
+  return `${green(`Published ${data.skill.slug} v${data.version.version}`)} ${dim(
+    `as ${data.skill.publisher_org_name}`,
+  )}\n`
+}
+
 function renderMutation(data: BrandSkillMutationResponse): string {
   const skill = data.skill
   const name = 'skill_meta' in skill ? skill.skill_meta.name : skill.slug
@@ -379,15 +453,63 @@ export function registerBrandSkillCommands(brand: Command): void {
     })
 
   skill
+    .command('community')
+    .description('Browse community-published skills with the active brand install state')
+    .option('-q, --query <text>', 'Filter by name, slug, description, or publisher')
+    .option('--category <category>', 'Filter by frontmatter category')
+    .option('--sort <sort>', 'recent (default) or installs', 'recent')
+    .action(async (opts: { query?: string; category?: string; sort?: string }) => {
+      const params = new URLSearchParams()
+      if (opts.query) params.set('q', opts.query)
+      if (opts.category) params.set('category', opts.category)
+      if (opts.sort) params.set('sort', opts.sort)
+      const suffix = params.size > 0 ? `?${params.toString()}` : ''
+      const data = await apiRequest<CommunityCatalogResponse>(
+        `${BRAND_SKILLS_PATH}/community${suffix}`,
+        { workspace: true },
+      )
+      emitSuccess(data, renderCommunityCatalog)
+    })
+
+  skill
     .command('install <slug>')
-    .description('Install or re-add a catalog skill to the active brand')
-    .action(async (slug: string) => {
+    .description('Install a catalog skill (or, with --community, a community skill) into the active brand')
+    .option('--community', 'Install from the community catalog instead of the official catalog')
+    .action(async (slug: string, opts: { community?: boolean }) => {
       validateSlug(slug)
+      if (opts.community) {
+        const data = await apiRequest<CommunityInstallResponse>(
+          `${BRAND_SKILLS_PATH}/community/${encodeURIComponent(slug)}/install`,
+          { method: 'POST', workspace: true },
+        )
+        emitSuccess(data, renderCommunityInstall)
+        return
+      }
       const data = await apiRequest<BrandSkillMutationResponse>(
         `${BRAND_SKILLS_PATH}/${encodeURIComponent(slug)}/install`,
         { method: 'POST', workspace: true },
       )
       emitSuccess(data, renderMutation)
+    })
+
+  skill
+    .command('publish <slug>')
+    .description('Publish one of the active brand\'s private skills to the community catalog')
+    .option(
+      '--category <categories>',
+      'Comma-separated listing categories (ads, seo, aso, creative, social, analytics, general, operations); defaults to the SKILL.md frontmatter category',
+    )
+    .action(async (slug: string, opts: { category?: string }) => {
+      validateSlug(slug)
+      const categories = (opts.category ?? '')
+        .split(',')
+        .map((c) => c.trim().toLowerCase())
+        .filter(Boolean)
+      const data = await apiRequest<CommunityPublishResponse>(
+        `${BRAND_SKILLS_PATH}/uploaded/${encodeURIComponent(slug)}/publish`,
+        { method: 'POST', workspace: true, ...(categories.length > 0 ? { body: { categories } } : {}) },
+      )
+      emitSuccess(data, renderPublish)
     })
 
   skill

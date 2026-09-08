@@ -9,7 +9,7 @@ description: >-
 license: MIT
 metadata:
   author: About Intelligence
-  version: "0.5"
+  version: "0.6"
   # CLI release this skill was written against. `soku changelog --since <that
   # version>` lists what moved if the installed CLI is newer.
   cliVersion: "0.1.0-alpha.18"
@@ -34,6 +34,7 @@ Read only the reference files needed for the user's task:
 | SEO Hosting, automations, Context Hub files, temporary public file URLs | `references/seo-automation-files.md` |
 | Third-party APIs through server-side credential injection; security rules | `references/egress-security.md` |
 | Installing, updating, or removing Soku-managed local skills; finding out what an upgrade changed | `references/skills-updates.md` |
+| Managing the skills inside the active Soku brand (official catalog, private uploads, publishing to or installing from the community catalog) | `references/brand-skills.md` |
 | Migrate context, project files, or workspaces from Claude into Soku | Run `soku skill install migrate-from-claude`, then read the installed `soku-migrate-from-claude` skill. |
 
 For an installed business skill such as `soku-ads-report`, read that skill too.

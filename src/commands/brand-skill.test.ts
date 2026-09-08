@@ -12,6 +12,7 @@ import {
   packageSkillPath,
   planSkillDownloadTargets,
   registerBrandSkillCommands,
+  renderCommunityCatalog,
 } from './brand-skill.js'
 
 function findCommand(root: Command, ...path: string[]): Command {
@@ -43,12 +44,67 @@ test('brand skill command exposes catalog, upload, and file edit workflows', () 
     'write',
     'create-file',
     'delete-file',
+    'community',
+    'publish',
   ]) {
     assert.ok(findCommand(brand, 'skill', name))
   }
 
   const write = findCommand(brand, 'skill', 'write')
   assert.ok(write.options.some((opt) => opt.long === '--file'))
+
+  // Community install shares the `install` verb behind an explicit flag so a
+  // slug that exists in both catalogs is never ambiguous.
+  const install = findCommand(brand, 'skill', 'install')
+  assert.ok(install.options.some((opt) => opt.long === '--community'))
+  const community = findCommand(brand, 'skill', 'community')
+  assert.ok(community.options.some((opt) => opt.long === '--sort'))
+})
+
+test('renderCommunityCatalog shows publisher org and per-brand install state', () => {
+  const out = renderCommunityCatalog({
+    brand_id: 'b',
+    count: 2,
+    total: 2,
+    skills: [
+      {
+        slug: 'seo-digest',
+        name: 'SEO Digest',
+        description: 'd',
+        version: '0.3.0',
+        categories: ['seo'],
+        tags: [],
+        providers: [],
+        publisher_org_name: 'Acme Growth',
+        status: 'published',
+        install_count: 7,
+        published_at: '2026-09-08T00:00:00Z',
+        installed_version: '0.2.0',
+        update_available: true,
+        is_publisher: false,
+      },
+      {
+        slug: 'ads-hooks',
+        name: 'Ads Hooks',
+        description: 'd',
+        version: '1.0.0',
+        categories: [],
+        tags: [],
+        providers: [],
+        publisher_org_name: 'Other Co',
+        status: 'published',
+        install_count: 0,
+        published_at: '2026-09-08T00:00:00Z',
+        installed_version: null,
+        update_available: false,
+        is_publisher: true,
+      },
+    ],
+  })
+  assert.match(out, /Acme Growth/)
+  assert.match(out, /update → 0\.3\.0/)
+  assert.match(out, /Other Co/)
+  assert.doesNotMatch(out, /user/i)
 })
 
 test('brand skill file paths preserve nested paths while escaping segments', () => {
