@@ -17735,7 +17735,7 @@
           ]
         }
       ],
-      "long_description": "Primary use:\nEdit an existing PMax asset group's asset attachments without recreating its campaign or changing budgets, URLs, audience signals, or other asset groups.\n\nUse when:\nThe user wants to add images/headlines or replace specific existing assets.\n\nDo not use when:\nYou need to copy a campaign, change listing groups, or edit campaign brand assets. This action changes asset-group attachments only.\n\nWorkflow:\n1. Read get_pmax_campaign and select exact campaign_id/asset_group_id.\n2. Reuse create_text_asset, upload_image_asset, or create_youtube_video_asset to obtain new account-owned asset IDs.\n3. Submit add_assets and remove_assets in the SAME reviewed call. Each item is {asset_id, field_type}; unrelated attachments are preserved.\n4. Inspect raw.readback.status. A successful mutation alone is not verification.\n\nOutput semantics:\nAdditions/removals execute atomically. Minimum asset requirements and type compatibility remain enforced by Google. Missing readback yields outcome=unknown; a differing set yields outcome=partial. Inspect the exact group before retrying.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
+      "long_description": "Primary use:\nEdit an existing PMax asset group's asset attachments without recreating its campaign or changing budgets, URLs, audience signals, or other asset groups.\n\nUse when:\nThe user wants to add images/headlines or replace specific existing assets.\n\nDo not use when:\nYou need to copy a campaign, change listing groups, or edit campaign brand assets. This action changes asset-group attachments only.\n\nWorkflow:\n1. Read get_pmax_campaign and select exact campaign_id/asset_group_id.\n2. Reuse create_text_asset, upload_image_asset, or create_youtube_video_asset to obtain new account-owned asset IDs.\n3. Submit add_assets and remove_assets in the SAME reviewed call. Each item is {asset_id, field_type}; unrelated attachments are preserved.\n4. Inspect raw.readback.status. A successful mutation alone is not verification.\n\nSide effects:\nAdds or removes the reviewed asset-group attachments in Google Ads. Removing attachments changes which assets can serve in that group. Campaign delivery configuration and unrelated attachments are preserved.\n\nOutput semantics:\nAdditions/removals execute atomically. Minimum asset requirements and type compatibility remain enforced by Google. Missing readback yields outcome=unknown; a differing set yields outcome=partial. Inspect the exact group before retrying.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
       "output_shape": "{\"success\":true,\"resource_id\":\"456\",\"raw\":{\"readback\":{\"status\":\"verified|mismatch|unverified\"},\"retry_safe\":false}}"
     },
     {
@@ -20332,6 +20332,122 @@
       "output_shape": "{store_ids, start_date, end_date, data_freshness, transactions: [<report CSV rows as objects>], total_rows, returned_rows, truncated, aggregates: {row_count, sums: {column: decimal-string}, missing_columns, unreadable_columns, parsed_values, unparsed_values}, out_of_scope_rows?, unattributed_rows?, store_scope_unverified?, scope_note?, note?} OR, while the report is still generating: {status: 'pending', report_id, retry_after_seconds, note, store_ids, start_date, end_date, data_freshness}"
     },
     {
+      "id": "action:ga4/ensure_google_ads_link",
+      "namespace": "ga4",
+      "action": "ensure_google_ads_link",
+      "description": "Link a granted Google Ads account to this granted GA4 property; does not import conversions.",
+      "mode": "risk",
+      "platforms": [
+        "ga4"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "property_id",
+          "type": "string",
+          "required": true,
+          "description": "GA4 property from ga4/list_properties"
+        },
+        {
+          "name": "customer_id",
+          "type": "string",
+          "required": true,
+          "description": "10-digit Google Ads customer, also granted to this Brand"
+        }
+      ],
+      "long_description": "Use native GA4 OAuth. Configuration writes require analytics.edit and approval. Configuration verification is not website installation, event delivery, Google Ads import or attribution verification. Do not retry uncertain writes until current configuration is read.",
+      "output_shape": "{observed_at, resource?, configuration_verified?, report?, can_manage?}"
+    },
+    {
+      "id": "action:ga4/ensure_key_event",
+      "namespace": "ga4",
+      "action": "ensure_key_event",
+      "description": "Mark an event as a GA4 key event, reusing an existing match and verifying configuration.",
+      "mode": "risk",
+      "platforms": [
+        "ga4"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "property_id",
+          "type": "string",
+          "required": true,
+          "description": "GA4 property from ga4/list_properties"
+        },
+        {
+          "name": "event_name",
+          "type": "string",
+          "required": true,
+          "description": "Exact event emitted by the real successful business action"
+        }
+      ],
+      "long_description": "Use native GA4 OAuth. Configuration writes require analytics.edit and approval. Configuration verification is not website installation, event delivery, Google Ads import or attribution verification. Do not retry uncertain writes until current configuration is read.",
+      "output_shape": "{observed_at, resource?, configuration_verified?, report?, can_manage?}"
+    },
+    {
+      "id": "action:ga4/ensure_web_stream",
+      "namespace": "ga4",
+      "action": "ensure_web_stream",
+      "description": "Create or reuse a named GA4 web stream and read back its measurement ID.",
+      "mode": "risk",
+      "platforms": [
+        "ga4"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "property_id",
+          "type": "string",
+          "required": true,
+          "description": "GA4 property from ga4/list_properties"
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "website_url",
+          "type": "string",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "long_description": "Use native GA4 OAuth. Configuration writes require analytics.edit and approval. Configuration verification is not website installation, event delivery, Google Ads import or attribution verification. Do not retry uncertain writes until current configuration is read.",
+      "output_shape": "{observed_at, resource?, configuration_verified?, report?, can_manage?}"
+    },
+    {
+      "id": "action:ga4/get_configuration",
+      "namespace": "ga4",
+      "action": "get_configuration",
+      "description": "Read live GA4 streams, key events, Google Ads links and management scope readiness.",
+      "mode": "read",
+      "platforms": [
+        "ga4"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "property_id",
+          "type": "string",
+          "required": true,
+          "description": "GA4 property from ga4/list_properties"
+        }
+      ],
+      "long_description": "Use native GA4 OAuth. Configuration writes require analytics.edit and approval. Configuration verification is not website installation, event delivery, Google Ads import or attribution verification. Do not retry uncertain writes until current configuration is read.",
+      "output_shape": "{observed_at, resource?, configuration_verified?, report?, can_manage?}"
+    },
+    {
       "id": "action:ga4/get_conversion_overview",
       "namespace": "ga4",
       "action": "get_conversion_overview",
@@ -20791,6 +20907,96 @@
       "output_shape": "{\"property\": {\"property_id\": \"123456789\", \"data_freshness\": \"ISO\"}, \"dimensions\": [\"date\"], \"metrics\": [\"sessions\"], \"rows\": [{\"date\": \"20260501\", \"sessions\": 42}], \"columns\": {\"date\": [\"20260501\"], \"sessions\": [42]}, \"row_count\": 1, \"truncated\": false, \"limit\": 100, \"offset\": 0}"
     },
     {
+      "id": "action:ga4/verify_realtime_event",
+      "namespace": "ga4",
+      "action": "verify_realtime_event",
+      "description": "Read this exact event in GA4's last 30 minutes; does not prove a specific test submission or Ads attribution.",
+      "mode": "read",
+      "platforms": [
+        "ga4"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "property_id",
+          "type": "string",
+          "required": true,
+          "description": "GA4 property from ga4/list_properties"
+        },
+        {
+          "name": "event_name",
+          "type": "string",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "long_description": "Use native GA4 OAuth. Configuration writes require analytics.edit and approval. Configuration verification is not website installation, event delivery, Google Ads import or attribution verification. Do not retry uncertain writes until current configuration is read.",
+      "output_shape": "{observed_at, resource?, configuration_verified?, report?, can_manage?}"
+    },
+    {
+      "id": "action:geo/list_prompts",
+      "namespace": "geo",
+      "action": "list_prompts",
+      "description": "List active GEO tracking prompts for the current brand.",
+      "mode": "read",
+      "platforms": [
+        "geo"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:geo/save_report"
+      ],
+      "input_params": [],
+      "long_description": null,
+      "output_shape": "{ items: [{ id, text, tag, platforms, status }] }"
+    },
+    {
+      "id": "action:geo/save_report",
+      "namespace": "geo",
+      "action": "save_report",
+      "description": "Save a GEO diagnosis report and candidate tracking prompts.",
+      "mode": "write",
+      "platforms": [
+        "geo"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:geo/list_prompts"
+      ],
+      "input_params": [
+        {
+          "name": "title",
+          "type": "string",
+          "required": true,
+          "description": "Report title."
+        },
+        {
+          "name": "scope",
+          "type": "object",
+          "required": true,
+          "description": "Surfaces, country, and language."
+        },
+        {
+          "name": "findings",
+          "type": "array",
+          "required": true,
+          "description": "Ordered diagnosis findings."
+        },
+        {
+          "name": "candidate_prompts",
+          "type": "array",
+          "required": true,
+          "description": "Candidate buying-question prompts."
+        }
+      ],
+      "long_description": null,
+      "output_shape": "{ report_id, candidate_prompt_ids: [uuid] }"
+    },
+    {
       "id": "action:gsc/get_daily_trend",
       "namespace": "gsc",
       "action": "get_daily_trend",
@@ -21138,6 +21344,143 @@
       ],
       "long_description": "Primary use:\nFull-control Google Search organic performance query — the generic pass-through to searchAnalytics.query. Prefer the convenience actions (list_top_queries, list_top_pages, get_daily_trend) for single-dimension questions; use this one for multi-dimension grouping, filters, or non-web search types.\n\nUse when:\n- You need multiple dimensions at once (e.g. query x page, date x device).\n- You need dimension_filter_groups (e.g. only queries containing a brand term, only one country) or a non-default search_type / data_state / aggregation_type.\n\nDo not use when:\n- A convenience action answers the question with fewer knobs.\n- You need paid-search data (ads.*) or on-site analytics (ga4.*): Search Console covers Google ORGANIC search only.\n\nConstraints:\n- Valid dimensions: country, device, page, query, searchAppearance, date.\n- Valid search_type values: web, image, video, news, discover, googleNews (default web).\n- data_state 'all' includes fresh (still-consolidating) data; 'final' (default upstream) returns only finalized data.\n- row_limit defaults to 100 and is hard-capped at 25000 (the API maximum per request); page beyond that with start_row.\n- Large result sets must be paginated by the caller: row_limit caps at 25000 per call, so keep it bounded and walk pages with start_row instead of asking for everything at once.\n- site_url must match a property EXACTLY as Search Console knows it: a URL-prefix property is a full origin like 'https://example.com/' (trailing slash included), while a site verified as a DOMAIN property is addressed as 'sc-domain:example.com' — never as a URL-prefix. When a call fails with gsc_permission_denied or gsc_site_not_found, re-check the exact site_url against gsc.list_sites before retrying.\n\nOutput semantics:\n- rows[].keys aligns positionally with the requested dimensions.\n- ctr is a 0-1 ratio; position is the average result position (lower is better).\n- Rows are sorted by clicks descending (API default). Empty rows means no organic data for the range/filters, not an error.",
       "output_shape": "{\"site\": {\"site_url\": \"sc-domain:example.com\", \"permission_level\": \"siteOwner\"}, \"rows\": [{\"keys\": [\"query text\", \"https://example.com/page\"], \"clicks\": N, \"impressions\": N, \"ctr\": 0..1, \"position\": N}], \"response_aggregation_type\": \"byProperty\", \"row_limit\": 100, \"start_row\": 0}"
+    },
+    {
+      "id": "action:gtm/get",
+      "namespace": "gtm",
+      "action": "get",
+      "description": "Read GTM containers, workspaces, tags, triggers, variables and versions.",
+      "mode": "read",
+      "platforms": [
+        "gtm"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "GTM account granted to this Brand, from gtm/list_accounts"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Account-relative API path, e.g. containers/123/workspaces/4/tags"
+        },
+        {
+          "name": "page_token",
+          "type": "string",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "long_description": "Use native Google Tag Manager OAuth. Account grants cover containers within that account. Follow nextPageToken on list reads. Edits require approval; PUT preserves omitted top-level fields and requires a fresh fingerprint. Publishing is a separate approval. Published does not mean the container is installed on the website or that events reached Analytics.",
+      "output_shape": "Google Tag Manager v2 JSON; writes include resource and verification state."
+    },
+    {
+      "id": "action:gtm/list_accounts",
+      "namespace": "gtm",
+      "action": "list_accounts",
+      "description": "List this Brand's granted Tag Manager accounts.",
+      "mode": "read",
+      "platforms": [
+        "gtm"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": "Use native Google Tag Manager OAuth. Account grants cover containers within that account. Follow nextPageToken on list reads. Edits require approval; PUT preserves omitted top-level fields and requires a fresh fingerprint. Publishing is a separate approval. Published does not mean the container is installed on the website or that events reached Analytics.",
+      "output_shape": "Google Tag Manager v2 JSON; writes include resource and verification state."
+    },
+    {
+      "id": "action:gtm/publish_version",
+      "namespace": "gtm",
+      "action": "publish_version",
+      "description": "Publish the exact approved GTM version and verify the live version.",
+      "mode": "risk",
+      "platforms": [
+        "gtm"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "GTM account granted to this Brand, from gtm/list_accounts"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Account-relative API path, e.g. containers/123/workspaces/4/tags"
+        },
+        {
+          "name": "fingerprint",
+          "type": "string",
+          "required": true,
+          "description": "Exact reviewed version fingerprint"
+        }
+      ],
+      "long_description": "Use native Google Tag Manager OAuth. Account grants cover containers within that account. Follow nextPageToken on list reads. Edits require approval; PUT preserves omitted top-level fields and requires a fresh fingerprint. Publishing is a separate approval. Published does not mean the container is installed on the website or that events reached Analytics.",
+      "output_shape": "Google Tag Manager v2 JSON; writes include resource and verification state."
+    },
+    {
+      "id": "action:gtm/request_change",
+      "namespace": "gtm",
+      "action": "request_change",
+      "description": "Create or update GTM configuration, or compile a workspace version. Never publishes.",
+      "mode": "risk",
+      "platforms": [
+        "gtm"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "GTM account granted to this Brand, from gtm/list_accounts"
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Account-relative API path, e.g. containers/123/workspaces/4/tags"
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": true,
+          "description": "",
+          "enum": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "fingerprint",
+          "type": "string",
+          "required": false,
+          "description": "Required for PUT; copied from a fresh resource read"
+        }
+      ],
+      "long_description": "Use native Google Tag Manager OAuth. Account grants cover containers within that account. Follow nextPageToken on list reads. Edits require approval; PUT preserves omitted top-level fields and requires a fresh fingerprint. Publishing is a separate approval. Published does not mean the container is installed on the website or that events reached Analytics.",
+      "output_shape": "Google Tag Manager v2 JSON; writes include resource and verification state."
     },
     {
       "id": "action:guardrails/clear_emergency_stop",

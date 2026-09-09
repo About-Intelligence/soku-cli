@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 298,
-          "added": 6,
+          "after": 309,
+          "added": 17,
           "removed": 0,
           "changed": 23
         },
@@ -49,6 +49,61 @@
             "id": "creatives/list_canvases",
             "mode": "read",
             "description": "List this brand's creatives canvases, newest activity first."
+          },
+          {
+            "id": "ga4/ensure_google_ads_link",
+            "mode": "risk",
+            "description": "Link a granted Google Ads account to this granted GA4 property; does not import conversions."
+          },
+          {
+            "id": "ga4/ensure_key_event",
+            "mode": "risk",
+            "description": "Mark an event as a GA4 key event, reusing an existing match and verifying configuration."
+          },
+          {
+            "id": "ga4/ensure_web_stream",
+            "mode": "risk",
+            "description": "Create or reuse a named GA4 web stream and read back its measurement ID."
+          },
+          {
+            "id": "ga4/get_configuration",
+            "mode": "read",
+            "description": "Read live GA4 streams, key events, Google Ads links and management scope readiness."
+          },
+          {
+            "id": "ga4/verify_realtime_event",
+            "mode": "read",
+            "description": "Read this exact event in GA4's last 30 minutes; does not prove a specific test submission or Ads attribution."
+          },
+          {
+            "id": "geo/list_prompts",
+            "mode": "read",
+            "description": "List active GEO tracking prompts for the current brand."
+          },
+          {
+            "id": "geo/save_report",
+            "mode": "write",
+            "description": "Save a GEO diagnosis report and candidate tracking prompts."
+          },
+          {
+            "id": "gtm/get",
+            "mode": "read",
+            "description": "Read GTM containers, workspaces, tags, triggers, variables and versions."
+          },
+          {
+            "id": "gtm/list_accounts",
+            "mode": "read",
+            "description": "List this Brand's granted Tag Manager accounts."
+          },
+          {
+            "id": "gtm/publish_version",
+            "mode": "risk",
+            "description": "Publish the exact approved GTM version and verify the live version."
+          },
+          {
+            "id": "gtm/request_change",
+            "mode": "risk",
+            "description": "Create or update GTM configuration, or compile a workspace version. Never publishes."
           }
         ],
         "removed": [],
