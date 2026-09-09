@@ -14,16 +14,21 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 297,
-          "added": 5,
+          "after": 298,
+          "added": 6,
           "removed": 0,
-          "changed": 19
+          "changed": 23
         },
         "added": [
           {
             "id": "ads/list_geo_targets",
             "mode": "read",
             "description": "Search the live ChatGPT Ads country, region, and DMA catalog for one granted account."
+          },
+          {
+            "id": "ads/update_pmax_asset_group",
+            "mode": "risk",
+            "description": "Add or replace assets on an existing Google PMax asset group; review-gated."
           },
           {
             "id": "creatives/apply_ops",
@@ -63,6 +68,7 @@
           {
             "id": "ads/create_ad",
             "fields": [
+              "input_params",
               "output_shape"
             ]
           },
@@ -89,6 +95,7 @@
           {
             "id": "ads/create_adset",
             "fields": [
+              "input_params",
               "long_description",
               "output_shape"
             ]
@@ -99,6 +106,12 @@
               "input_params",
               "long_description",
               "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_pmax_campaign",
+            "fields": [
+              "long_description"
             ]
           },
           {
@@ -122,6 +135,12 @@
             ]
           },
           {
+            "id": "ads/get_adset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/get_campaign",
             "fields": [
               "description",
@@ -131,6 +150,12 @@
           },
           {
             "id": "ads/get_insights",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/list_adsets",
             "fields": [
               "long_description"
             ]
@@ -149,6 +174,13 @@
             ]
           },
           {
+            "id": "ads/update_ad",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/update_ad_group",
             "fields": [
               "input_params",
@@ -158,6 +190,7 @@
           {
             "id": "ads/update_adset",
             "fields": [
+              "input_params",
               "long_description",
               "output_shape"
             ]
