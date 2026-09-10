@@ -23243,6 +23243,202 @@
       "output_shape": "{restaurants: [{restaurant_guid, name, location_name, time_zone, closeout_hour, management_group_guid, archived, address: {line1, city, state, zip, country}, phone}], offset, returned, total_granted, has_more}"
     },
     {
+      "id": "action:topon/get_report",
+      "namespace": "topon",
+      "action": "get_report",
+      "description": "Read a TopOn revenue, hourly, LTV or retention report page.",
+      "mode": "read",
+      "platforms": [
+        "topon"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted App ID; optional for one connected App."
+        },
+        {
+          "name": "report",
+          "type": "string",
+          "required": true,
+          "description": "revenue, hourly, ltv or retention"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD"
+        },
+        {
+          "name": "time_zone",
+          "type": "string",
+          "required": true,
+          "description": "UTC-8, UTC+0 or UTC+8"
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "required": false,
+          "description": "Hourly currency: USD or CNY. Other reports use account currency."
+        },
+        {
+          "name": "group_by",
+          "type": "list",
+          "required": false,
+          "description": "date, app, area, channel, adformat; adformat only for revenue; hourly is time-only."
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Pagination offset, initially 0"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Page size 1–1000, default 100"
+        }
+      ],
+      "long_description": "Use list_apps first. Dates are inclusive YYYY-MM-DD. Hourly supports 10 days and estimated income only. LTV is cohort revenue; retention is a count. Follow next_offset for remaining pages. For other reports, device downloads and management, use list_operations with query or mutate.",
+      "output_shape": "data.{app_id,report,records,count,next_offset,complete,currency,time_zone,fetched_at,data_updated_at,note,unavailable_metrics}"
+    },
+    {
+      "id": "action:topon/list_apps",
+      "namespace": "topon",
+      "action": "list_apps",
+      "description": "List Brand-granted TopOn Apps.",
+      "mode": "read",
+      "platforms": [
+        "topon"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": null,
+      "output_shape": "data.rows[].{app_id,name}"
+    },
+    {
+      "id": "action:topon/list_operations",
+      "namespace": "topon",
+      "action": "list_operations",
+      "description": "Discover all TopOn read/write operations and fetch an operation schema.",
+      "mode": "read",
+      "platforms": [
+        "topon"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "operation",
+          "type": "string",
+          "required": false,
+          "description": "Return the exact schema for one operation"
+        }
+      ],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
+      "id": "action:topon/list_resources",
+      "namespace": "topon",
+      "action": "list_resources",
+      "description": "List TopOn App and explicitly granted Publisher resources.",
+      "mode": "read",
+      "platforms": [
+        "topon"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
+      "id": "action:topon/mutate",
+      "namespace": "topon",
+      "action": "mutate",
+      "description": "Manage TopOn Apps, placements, networks, units, segments, strategies, A/B tests, reward rules and report uploads after approval.",
+      "mode": "risk",
+      "platforms": [
+        "topon"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "resource_id",
+          "type": "string",
+          "required": true,
+          "description": "Exact Brand-granted ID from topon/list_resources"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Operation from topon/list_operations"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": true,
+          "description": "Parameters matching the operation input_schema"
+        }
+      ],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
+      "id": "action:topon/query",
+      "namespace": "topon",
+      "action": "query",
+      "description": "Read TopOn configuration, all reports, or device report download links on demand.",
+      "mode": "read",
+      "platforms": [
+        "topon"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "resource_id",
+          "type": "string",
+          "required": true,
+          "description": "Exact Brand-granted ID from topon/list_resources"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Operation from topon/list_operations"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": true,
+          "description": "Parameters matching the operation input_schema"
+        }
+      ],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
       "id": "action:ubereats/get_order",
       "namespace": "ubereats",
       "action": "get_order",

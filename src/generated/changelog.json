@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 310,
-          "added": 18,
+          "after": 316,
+          "added": 24,
           "removed": 0,
           "changed": 23
         },
@@ -109,6 +109,36 @@
             "id": "gtm/request_change",
             "mode": "risk",
             "description": "Create or update GTM configuration, or compile a workspace version. Never publishes."
+          },
+          {
+            "id": "topon/get_report",
+            "mode": "read",
+            "description": "Read a TopOn revenue, hourly, LTV or retention report page."
+          },
+          {
+            "id": "topon/list_apps",
+            "mode": "read",
+            "description": "List Brand-granted TopOn Apps."
+          },
+          {
+            "id": "topon/list_operations",
+            "mode": "read",
+            "description": "Discover all TopOn read/write operations and fetch an operation schema."
+          },
+          {
+            "id": "topon/list_resources",
+            "mode": "read",
+            "description": "List TopOn App and explicitly granted Publisher resources."
+          },
+          {
+            "id": "topon/mutate",
+            "mode": "risk",
+            "description": "Manage TopOn Apps, placements, networks, units, segments, strategies, A/B tests, reward rules and report uploads after approval."
+          },
+          {
+            "id": "topon/query",
+            "mode": "read",
+            "description": "Read TopOn configuration, all reports, or device report download links on demand."
           }
         ],
         "removed": [],
