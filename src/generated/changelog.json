@@ -14,12 +14,17 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 309,
-          "added": 17,
+          "after": 310,
+          "added": 18,
           "removed": 0,
           "changed": 23
         },
         "added": [
+          {
+            "id": "ads/check_ad_compliance",
+            "mode": "generate",
+            "description": "Advisory ChatGPT Ads content, media and destination policy check; never approval or a publishing gate."
+          },
           {
             "id": "ads/list_geo_targets",
             "mode": "read",

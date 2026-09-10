@@ -2294,6 +2294,35 @@
       "output_shape": "{\"success\": true|false, \"total\": 2, \"succeeded\": 1, \"failed\": 1, \"items\": [{\"index\": 0, \"client_ref\": \"row-1\", \"success\": true, \"stage\": \"...\", \"campaign_id|adset_id|creative_id|ad_id\": \"...\"}]}\nTikTok output: raw.items[] carries each TikTok result under raw; read raw.items[].raw.campaign_id or raw.items[].raw.id for created campaign ids."
     },
     {
+      "id": "action:ads/check_ad_compliance",
+      "namespace": "ads",
+      "action": "check_ad_compliance",
+      "description": "Advisory ChatGPT Ads content, media and destination policy check; never approval or a publishing gate.",
+      "mode": "generate",
+      "platforms": [
+        "chatgpt_ads"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Granted ChatGPT Ads account id."
+        },
+        {
+          "name": "content",
+          "type": "object",
+          "required": true,
+          "description": "input_version (string), optional draft_id/draft_version, items [{location, kind: text|image|video|destination, value}], optional product_facts and target_market. Supply each title, body, context hint, media and destination separately; empty values explicitly record absent material."
+        }
+      ],
+      "long_description": "Use during planning, editing and before publishing the current Draft. Collect exact current copy/context hints, image/video URLs and final product/app destinations. Preserve draft_id and draft_version. Report all coverage gaps; never treat no findings as approval or suggest disguising a restricted business.",
+      "output_shape": "{input_version,input_fingerprint,draft_id,draft_version,checked_at,policy_source,policy_version,policy_verified_on,policy_digest,status:complete|partial|unavailable,coverage:[{location,kind,status,reason,final_url}],findings:[{location,evidence,policy_reference,risk,suggestion,time_seconds}]}"
+    },
+    {
       "id": "action:ads/clear_conversion_group_manual_campaign",
       "namespace": "ads",
       "action": "clear_conversion_group_manual_campaign",
