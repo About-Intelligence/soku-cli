@@ -206,6 +206,7 @@
           {
             "id": "ads/get_insights",
             "fields": [
+              "input_params",
               "long_description"
             ]
           },
