@@ -4375,12 +4375,14 @@
           "name": "campaign_draft",
           "type": "object",
           "required": false,
-          "description": "Preferred ChatGPT Ads create source: the complete Dashboard CampaignDraft tree. The server replaces every group brandName with the authoritative current Brand name, derives the exact provider request, saves the draft for Dashboard editing, and binds Review approval to that saved version. Do not combine it with direct Campaign fields. Required keys are schema_version=1, campaign, and groups. When editing a returned Draft, preserve every field the user did not change and never invent imagePath. After approval, report raw.campaign.deployment_status, nested Ad review_status, and audit_schedule_status; pending or missing values mean work remains, so never promise automatic review, delivery, or display. If a previously published local Draft now reads as archived or the provider reads draft, inactive, or missing, report the current archived state; never infer it was never materialized or recommend reactivation without explicit user intent.",
+          "description": "Preferred ChatGPT Ads create source: the complete Dashboard CampaignDraft tree. The server replaces every group brandName with the authoritative current Brand name, derives the exact provider request, saves the draft for Dashboard editing, and binds Review approval to that saved version. Do not combine it with direct Campaign fields. Required keys are schema_version=1, campaign, and groups. When editing a returned Draft, preserve every field the user did not change and never invent imagePath. campaign.budgetType is daily (default) or total; totalBudget is USD and requires endDate plus runUntilPaused=false. Each Ad may set landingPage; blank inherits its Group destination. Preserve URL query parameters exactly. After approval, report raw.campaign.delivery_status/delivery_issues, nested Ad network_review, and audit_schedule_status; pending or missing values mean work remains, so never promise automatic review, delivery, or display. If a previously published local Draft now reads as archived or the provider reads draft, inactive, or missing, report the current archived state; never infer it was never materialized or recommend reactivation without explicit user intent.",
           "example": {
             "schema_version": 1,
             "campaign": {
               "name": "US conversions",
               "dailyBudget": "25",
+              "budgetType": "daily",
+              "totalBudget": "",
               "objective": "Conversions",
               "rawObjective": "",
               "conversionType": "Purchase",
@@ -4985,7 +4987,7 @@
           "name": "daily_budget",
           "type": "number",
           "required": false,
-          "description": "ChatGPT Ads only (required): dashboard daily budget in dollars. Prefer budget_daily_micros for cross-platform payloads; either field satisfies the ChatGPT Ads required budget.",
+          "description": "ChatGPT Ads only: daily budget in USD for budget_type=daily. Prefer budget_daily_micros for cross-platform payloads; either field satisfies the daily budget. For total use total_budget, never a daily conversion.",
           "example": 300,
           "platform": [
             "google",
@@ -5212,6 +5214,24 @@
           "example": {},
           "platform": [
             "tiktok"
+          ]
+        },
+        {
+          "name": "budget_type",
+          "type": "string",
+          "required": false,
+          "description": "daily (default) or total. Mode can change only before first launch. Previously launched campaigns remain locked even when paused. Amounts can still be edited.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "total_budget",
+          "type": "number",
+          "required": false,
+          "description": "Total USD budget, only with budget_type=total and end_time; omit daily_budget or set it null. Never convert total budget into a daily budget.",
+          "platform": [
+            "chatgpt_ads"
           ]
         }
       ],
@@ -8664,7 +8684,7 @@
       "id": "action:ads/get_campaign",
       "namespace": "ads",
       "action": "get_campaign",
-      "description": "Read one live campaign, or read a ChatGPT Ads local CampaignDraft with campaign_id=draft:<uuid>. Also supports TikTok through its provider-native contract.",
+      "description": "Read one live campaign, or read a ChatGPT Ads local CampaignDraft with campaign_id=draft:<uuid>. Also supports TikTok through its provider-native contract. ChatGPT Ads delivery_status and delivery_issues are provider delivery facts separate from status/is_active; eligible does not prove spend. network_review on embedded Ads is upstream review (pending/approved/rejected with reason and timestamps), separate from platform review_status and Soku advisory checks. null or unfamiliar status never means approved.",
       "mode": "read",
       "platforms": [
         "google",
@@ -17434,6 +17454,24 @@
           "required": false,
           "description": "Conversion event for a ChatGPT Ads Campaign PATCH. The advertiser dashboard may accept and echo this field while omitting it from the immediate Campaign GET; in that case campaign_field_verification reports it as unverifiable.",
           "example": "purchase",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "budget_type",
+          "type": "string",
+          "required": false,
+          "description": "daily (default) or total. Mode can change only before first launch. Previously launched campaigns remain locked even when paused. Amounts can still be edited.",
+          "platform": [
+            "chatgpt_ads"
+          ]
+        },
+        {
+          "name": "total_budget",
+          "type": "number",
+          "required": false,
+          "description": "Total USD budget, only with budget_type=total and end_time; omit daily_budget or set it null. Never convert total budget into a daily budget.",
           "platform": [
             "chatgpt_ads"
           ]
