@@ -14,10 +14,10 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 316,
-          "added": 24,
+          "after": 320,
+          "added": 28,
           "removed": 0,
-          "changed": 23
+          "changed": 26
         },
         "added": [
           {
@@ -26,9 +26,29 @@
             "description": "Advisory ChatGPT Ads content, media and destination policy check; never approval or a publishing gate."
           },
           {
+            "id": "ads/create_custom_conversion",
+            "mode": "write",
+            "description": "Create a Meta website URL-contains custom conversion with approval and exact readback."
+          },
+          {
+            "id": "ads/get_custom_conversion",
+            "mode": "read",
+            "description": "Read one Meta custom conversion by exact ID within the resolved account."
+          },
+          {
+            "id": "ads/list_custom_conversions",
+            "mode": "read",
+            "description": "List one page of Meta custom conversions for discovery and duplicate checks."
+          },
+          {
             "id": "ads/list_geo_targets",
             "mode": "read",
             "description": "Search the live ChatGPT Ads country, region, and DMA catalog for one granted account."
+          },
+          {
+            "id": "ads/search_targeting",
+            "mode": "read",
+            "description": "Discover Meta work positions, behaviors, industries, and income targeting IDs."
           },
           {
             "id": "ads/update_pmax_asset_group",
@@ -199,6 +219,12 @@
             ]
           },
           {
+            "id": "ads/create_custom_audience",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
             "id": "ads/create_pmax_campaign",
             "fields": [
               "long_description"
@@ -292,6 +318,19 @@
               "input_params",
               "long_description",
               "output_shape"
+            ]
+          },
+          {
+            "id": "ads/upload_image",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "shopify/graphql_query",
+            "fields": [
+              "long_description"
             ]
           },
           {

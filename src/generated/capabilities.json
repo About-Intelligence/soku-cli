@@ -5509,8 +5509,8 @@
         {
           "name": "subtype",
           "type": "string",
-          "required": true,
-          "description": "One of CUSTOM, WEBSITE, APP, OFFLINE_CONVERSION, CLAIM, PARTNER, MANAGED, VIDEO, LOOKALIKE, ENGAGEMENT, BAG_OF_ACCOUNTS, STUDY_RULE_AUDIENCE, FOX. Default CUSTOM.",
+          "required": false,
+          "description": "One of CUSTOM, WEBSITE, APP, OFFLINE_CONVERSION, CLAIM, PARTNER, MANAGED, VIDEO, LOOKALIKE, ENGAGEMENT, BAG_OF_ACCOUNTS, STUDY_RULE_AUDIENCE, FOX. Default CUSTOM only without rule. When providing a rule, omission is preserved for Meta to validate; subtype is not globally deprecated.",
           "example": "WEBSITE",
           "platform": [
             "meta"
@@ -5810,6 +5810,96 @@
       ],
       "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nCreate a Meta custom audience of a chosen subtype (CUSTOM, WEBSITE, APP, etc.) for later retargeting.\n\nUse when:\n- The user wants to build a custom audience from pixel events, an uploaded list, app activity, or engagement signals.\n\nDo not use when:\n- The user wants a Lookalike audience. Use action:ads/create_lookalike_audience.\n- The platform is Google. Use action:ads/create_user_list.\n\nWorkflow:\n1. Choose subtype and optional rule / pixel_id / customer_file_source.\n2. Submit via action:_batch/submit for HITL review.\n3. List or use the new audience_id via action:ads/list_custom_audiences or in action:ads/create_lookalike_audience as source_audience_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new audience id.\n\nSide effects:\n- POSTs to {account_id}/customaudiences. Audience may populate asynchronously.\n- Metadata (name/description) is editable via action:ads/update_custom_audience; removable via action:ads/remove_custom_audience (irreversible hard delete).\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
       "output_shape": "{\"id\": \"audience_id\", \"name\": \"...\"}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
+    },
+    {
+      "id": "action:ads/create_custom_conversion",
+      "namespace": "ads",
+      "action": "create_custom_conversion",
+      "description": "Create a Meta website URL-contains custom conversion with approval and exact readback.",
+      "mode": "write",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/list_pixels",
+        "action:ads/list_custom_conversions",
+        "action:ads/get_custom_conversion"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Account owning the conversion and authorized to use the pixel.",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true,
+          "description": "Conversion name approved by the user.",
+          "source": "user"
+        },
+        {
+          "name": "pixel_id",
+          "type": "string",
+          "required": true,
+          "description": "Numeric pixel ID associated with this account.",
+          "source": "upstream:action:ads/list_pixels"
+        },
+        {
+          "name": "url_contains",
+          "type": "string",
+          "required": true,
+          "description": "Nonempty case-insensitive URL substring, for example /thank-you.",
+          "source": "user"
+        },
+        {
+          "name": "custom_event_type",
+          "type": "string",
+          "required": true,
+          "description": "Meta conversion category; does not assert that an event fired.",
+          "example": "LEAD",
+          "enum": [
+            "ADD_PAYMENT_INFO",
+            "ADD_TO_CART",
+            "ADD_TO_WISHLIST",
+            "COMPLETE_REGISTRATION",
+            "CONTACT",
+            "CONTENT_VIEW",
+            "CUSTOMIZE_PRODUCT",
+            "DONATE",
+            "FACEBOOK_SELECTED",
+            "FIND_LOCATION",
+            "INITIATED_CHECKOUT",
+            "LEAD",
+            "LISTING_INTERACTION",
+            "OTHER",
+            "PURCHASE",
+            "SCHEDULE",
+            "SEARCH",
+            "START_TRIAL",
+            "SUBMIT_APPLICATION",
+            "SUBSCRIBE"
+          ],
+          "source": "constant"
+        }
+      ],
+      "long_description": "Use to measure a website URL rule on a pixel associated with the resolved ad account. First list_pixels and list_custom_conversions to identify the pixel and avoid duplicates. Required name, pixel_id, url_contains and custom_event_type form the approved definition. Sends event_source_id=pixel_id, action_source_type=website and rule.url.i_contains. Shared/business-owned pixels are accepted when the exact pixel appears in the resolved account adspixels edge. Missing association or permission blocks creation; restore account access in Events Manager. Readback compares name, pixel, complete URL rule and event type; extra rule conditions cannot verify. Missing or mismatched fields are unknown/partial, never verified. If creation has an unknown result, inspect list_custom_conversions and get_custom_conversion before any new create; no automatic retry. This does not install a pixel, prove events fired, configure conversion groups or change ad optimization.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
+      "output_shape": "{\"success\":true,\"resource_id\":\"...\",\"raw\":{\"id\":\"...\"},\"readback\":{\"status\":\"verified|unverified|mismatch\"}}\nPost-write readback (cross-cutting): after a successful write on this action's registered platforms the resource is re-read and compared with the submitted intent; the success envelope carries a `readback` node with status one of verified | mismatch | unverified. verified: every intended field matched AND none stayed unconfirmed; readback.fields holds the platform's ACTUAL values and resource_id is the read-back id. mismatch: readback.mismatches[{field, intended, actual}] plus top-level outcome=partial — the platform silently altered a value; reconcile before further writes. Follow readback.guidance: disclose partial application and exact differences; do not call an unverified difference expected or equivalent. unverified: top-level outcome=unknown while the write STAYS successful — either the resource could not be read back, or (reason=unconfirmed_fields) intended fields never appeared on the read surface (readback.unconfirmed_fields) — do NOT recreate the resource and do NOT blindly retry the mutation; read the resource back first and reconcile."
     },
     {
       "id": "action:ads/create_gmv_max_campaign",
@@ -8943,6 +9033,51 @@
       "output_shape": "{\"success\":true,\"raw\":{\"tag_snippets\":[{\"global_site_tag\":\"...\",\"event_snippet\":\"...\"}]}}"
     },
     {
+      "id": "action:ads/get_custom_conversion",
+      "namespace": "ads",
+      "action": "get_custom_conversion",
+      "description": "Read one Meta custom conversion by exact ID within the resolved account.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/list_custom_conversions",
+        "action:ads/create_custom_conversion"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Authorized ad account.",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "custom_conversion_id",
+          "type": "string",
+          "required": true,
+          "description": "Exact conversion ID.",
+          "source": "upstream:action:ads/list_custom_conversions,action:ads/create_custom_conversion"
+        }
+      ],
+      "long_description": "Use to inspect the name, pixel, URL rule, event category and availability of a known conversion. Wrong account or wrong returned ID is not_found. The Graph rule is a JSON string; is_unavailable/is_archived do not prove website events are firing. Use list_custom_conversions if the ID is unknown.",
+      "output_shape": "{\"raw\":{\"id\":\"...\",\"account_id\":\"...\",\"name\":\"...\",\"pixel\":{\"id\":\"...\"},\"rule\":\"JSON string\",\"custom_event_type\":\"LEAD\",\"is_archived\":false,\"is_unavailable\":false}}"
+    },
+    {
       "id": "action:ads/get_data_readiness",
       "namespace": "ads",
       "action": "get_data_readiness",
@@ -11791,6 +11926,56 @@
       "output_shape": "{\"data\": [{\"id\": \"...\", \"name\": \"...\", \"subtype\": \"CUSTOM|WEBSITE|...\", \"description\": \"...\", \"delivery_status\": {\"code\": 200, \"description\": \"...\"}}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
+      "id": "action:ads/list_custom_conversions",
+      "namespace": "ads",
+      "action": "list_custom_conversions",
+      "description": "List one page of Meta custom conversions for discovery and duplicate checks.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/get_custom_conversion",
+        "action:ads/create_custom_conversion"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Authorized ad account.",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Page size; default 100."
+        },
+        {
+          "name": "after",
+          "type": "string",
+          "required": false,
+          "description": "Prior raw.paging.cursors.after when raw.paging.next exists."
+        }
+      ],
+      "long_description": "Use before creation or to reconcile an unknown create outcome. Follow paging.cursors.after while paging.next exists; one page is not the complete inventory. Match pixel, rule and event category as well as name. Listing a definition does not prove that events fired or that Ads reporting has adopted it.",
+      "output_shape": "{\"raw\":{\"data\":[{\"id\":\"...\",\"name\":\"...\",\"pixel\":{\"id\":\"...\"},\"rule\":\"JSON string\",\"custom_event_type\":\"LEAD\"}],\"paging\":{\"cursors\":{\"after\":\"...\"},\"next\":\"...\"}}}"
+    },
+    {
       "id": "action:ads/list_customers",
       "namespace": "ads",
       "action": "list_customers",
@@ -14554,6 +14739,85 @@
       "output_shape": "{\"data\": [{\"id\": \"interest_id\", \"name\": \"...\", \"audience_size_lower_bound\": N, \"audience_size_upper_bound\": N, \"topic\": \"...\", \"path\": [\"...\"]}]}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
     },
     {
+      "id": "action:ads/search_targeting",
+      "namespace": "ads",
+      "action": "search_targeting",
+      "description": "Discover Meta work positions, behaviors, industries, and income targeting IDs.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/search_interests",
+        "action:ads/list_saved_audiences",
+        "action:ads/update_adset"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Account used to resolve the authorized token.",
+          "source": "upstream:action:ads/list_ad_accounts"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": true,
+          "description": "Taxonomy to discover.",
+          "example": "work_positions",
+          "enum": [
+            "work_positions",
+            "behaviors",
+            "industries",
+            "income"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": false,
+          "description": "Required only for work_positions; omit for category browsing.",
+          "source": "user"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Page size; default 25."
+        },
+        {
+          "name": "after",
+          "type": "string",
+          "required": false,
+          "description": "Prior raw.paging.cursors.after when raw.paging.next exists."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "required": false,
+          "description": "Optional Meta locale, for example en_US.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Use for detailed targeting discovery before changing an ad set. Work positions require query; other categories browse taxonomy without query. Pass paging.cursors.after only when paging.next exists. Returned IDs belong in targeting.work_positions, behaviors, industries, or income respectively. Empty results mean no IDs were returned, not a zero-size audience. Availability depends on current Meta API, market, account and special-ad restrictions; discovery does not prove an ID is eligible for this account. Preserve upstream permission/unsupported errors and use list_saved_audiences or Ads Manager when unavailable. Never invent IDs or infer a person's income or industry from language.",
+      "output_shape": "{\"raw\":{\"data\":[{\"id\":\"...\",\"name\":\"...\"}],\"paging\":{\"cursors\":{\"after\":\"...\"},\"next\":\"...\"}}}"
+    },
+    {
       "id": "action:ads/send_conversion_event",
       "namespace": "ads",
       "action": "send_conversion_event",
@@ -15424,6 +15688,26 @@
       ],
       "input_params": [
         {
+          "name": "lead_gen_form_id",
+          "type": "string",
+          "required": false,
+          "description": "Meta only: replace an existing single-image/video story's lead form, preserving ad ID, CTA and other settings. The underlying creative ID changes. Must be an ACTIVE form on the source Page, explicitly selected for the target business; Page membership does not prove B06/A11 business relevance. Asset feed/carousel form replacement is rejected.",
+          "source": "upstream:action:ads/list_lead_forms",
+          "platform": [
+            "meta"
+          ]
+        },
+        {
+          "name": "expected_creative_id",
+          "type": "string",
+          "required": false,
+          "description": "Meta patch only: source creative ID bound during review preparation; execution stops if the ad has changed creatives. Can also be obtained from get_ad.",
+          "source": "upstream:action:ads/get_ad",
+          "platform": [
+            "meta"
+          ]
+        },
+        {
           "name": "platform",
           "type": "string",
           "required": true,
@@ -15722,7 +16006,7 @@
           ]
         }
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing ad's status, URLs (Google), or creative wiring (Meta).\n\nUse when:\n- The user wants to activate, pause, or remove an ad.\n- The user wants to update final_urls on a Google RSA.\n- The user wants to swap a Meta ad's creative_id or tracking_specs.\n- For Meta copy/UTM-only edits use url_tags/message/headline/description; the handler preserves source configuration, creates and verifies a new creative, then relinks and verifies the original ad. Do not combine these patch fields with creative replacement or other ad changes.\n\nDo not use when:\n- The user wants to update Google RSA headlines or descriptions. These are NOT mutable; use action:ads/remove_ad then action:ads/create_ad.\n- The user wants to update the ad group or ad set. Use action:ads/update_ad_group or action:ads/update_adset.\n\nWorkflow:\n1. Call action:ads/list_ads to capture prior state.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields updated; warnings[] may explain that RSA creative fields were skipped.\n- Google returns success=false with the warning message if only RSA creative fields are supplied (nothing actually mutable).\n- Meta copy/UTM patch raw includes creative_id, previous_creative_id and verification with exact ad_id/creative_id. Failure may retain an orphan creative_id and stage: read the original ad before retrying; never infer completion from creative creation alone. Other Meta updates return {success: true}.\n\nSide effects:\n- Google: status update targets AdGroupAd; final_urls update targets the Ad. Headlines/descriptions are silently skipped with a warning.\n- Meta: POST {ad_id} with supplied fields. If creative_id is provided it is wrapped as creative={creative_id: ...}.\n- Setting status to ENABLED/ACTIVE resumes spend immediately.\n- Reversible if prior values captured.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing ad's status, URLs (Google), or creative wiring (Meta).\n\nUse when:\n- The user wants to activate, pause, or remove an ad.\n- The user wants to update final_urls on a Google RSA.\n- The user wants to swap a Meta ad's creative_id or tracking_specs.\n- For Meta copy/UTM/form edits use url_tags/message/headline/description/lead_gen_form_id; the handler preserves source configuration, creates and verifies a new creative, then relinks and verifies the original ad. Do not combine these patch fields with creative replacement or other ad changes.\n\nDo not use when:\n- The user wants to update Google RSA headlines or descriptions. These are NOT mutable; use action:ads/remove_ad then action:ads/create_ad.\n- The user wants to update the ad group or ad set. Use action:ads/update_ad_group or action:ads/update_adset.\n\nWorkflow:\n1. Call action:ads/list_ads to capture prior state.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_ads.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields updated; warnings[] may explain that RSA creative fields were skipped.\n- Google returns success=false with the warning message if only RSA creative fields are supplied (nothing actually mutable).\n- Meta copy/UTM patch raw includes creative_id, previous_creative_id and verification with exact ad_id/creative_id. Failure may retain an orphan creative_id and stage: read the original ad before retrying; never infer completion from creative creation alone. Other Meta updates return {success: true}.\n\nSide effects:\n- Google: status update targets AdGroupAd; final_urls update targets the Ad. Headlines/descriptions are silently skipped with a warning.\n- Meta: POST {ad_id} with supplied fields. If creative_id is provided it is wrapped as creative={creative_id: ...}.\n- Setting status to ENABLED/ACTIVE resumes spend immediately.\n- Reversible if prior values captured.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
       "output_shape": "{\"success\": true, \"message\": \"Ad updated: status, final_urls\", \"results\": [...], \"warnings\": [\"Headlines and descriptions cannot be updated on an existing RSA...\"]}  // Meta: {\"success\": true}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
     },
     {
@@ -18335,9 +18619,21 @@
         {
           "name": "image_url",
           "type": "string",
-          "required": true,
+          "required": false,
           "description": "Public https URL of the image; rejects http, redirects, IP literals, and files > 25 MB. Required when platform=tiktok.",
-          "example": "https://example.com/banner.jpg"
+          "example": "https://example.com/banner.jpg",
+          "required_platforms": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "bytes_base64",
+          "type": "string",
+          "required": false,
+          "description": "Meta: image bytes instead of image_url; exactly one source is required.",
+          "platform": [
+            "meta"
+          ]
         },
         {
           "name": "name",
@@ -18372,7 +18668,7 @@
           ]
         }
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nDownload a public https image, validate it, and POST the bytes to Meta's {account_id}/adimages. Returns image_hash for action:ads/create_ad_creative.\n\nUse when:\n- The user wants to ingest a new image asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http (non-https), or an IP literal. The handler rejects such URLs before any upload.\n- The image is larger than 25 MB. The handler returns an error.\n- The platform is Google. Use action:ads/upload_image_asset (returns asset_id).\n\nWorkflow:\n1. Get a public https image URL <= 25 MB without redirects.\n2. Submit this write through action:_batch/submit for HITL review.\n3. Use the returned image_hash in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.image_hash is the value to feed into create_ad_creative.image_hash.\n- Errors: 'Image exceeds 25 MB byte limit.' or 'Image URL returned a redirect.'\n\nSide effects:\n- Downloads the URL (rejects redirects, enforces 25 MB cap, validates public https).\n- Base64-encodes and POSTs to {account_id}/adimages; image is stored against the account.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs describe image_url as the input but do not state the internal mechanism is base64 'bytes' upload (not a Meta-fetched URL), nor that the 25MB cap is stricter than Meta's ~30MB native limit — an agent could wrongly assume a <30MB image will succeed. Also note: Docs do not mention image format constraints (Meta accepts JPG/PNG; GIF/WEBP/other may be rejected by Meta with code 100), so the agent cannot pre-validate format. Capability gap: copy_from: cross-account image reuse (clone an existing hash into another account) is unreachable in all three layers; agent must re-upload bytes per account.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nDownload a public https image, validate it, and POST the bytes to Meta's {account_id}/adimages. Returns image_hash for action:ads/create_ad_creative.\n\nUse when:\n- The user wants to ingest a new image asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http (non-https), or an IP literal. The handler rejects such URLs before any upload.\n- The image is larger than 25 MB. The handler returns an error.\n- The platform is Google. Use action:ads/upload_image_asset (returns asset_id).\n\nWorkflow:\n1. Get a public https image URL <= 25 MB without redirects.\n2. Submit for HITL review. Meta URL bytes are captured before approval so later URL expiry cannot replace or invalidate the approved image.\n3. Use the returned image_hash in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.image_hash is the value to feed into create_ad_creative.image_hash.\n- Errors: 'Image exceeds 25 MB byte limit.' or 'Image URL returned a redirect.'\n\nSide effects:\n- Downloads the URL (rejects redirects, enforces 25 MB cap, validates public https).\n- Base64-encodes and POSTs to {account_id}/adimages; image is stored against the account.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs describe image_url as the input but do not state the internal mechanism is base64 'bytes' upload (not a Meta-fetched URL), nor that the 25MB cap is stricter than Meta's ~30MB native limit — an agent could wrongly assume a <30MB image will succeed. Also note: Docs do not mention image format constraints (Meta accepts JPG/PNG; GIF/WEBP/other may be rejected by Meta with code 100), so the agent cannot pre-validate format. Capability gap: copy_from: cross-account image reuse (clone an existing hash into another account) is unreachable in all three layers; agent must re-upload bytes per account.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"image_hash\": \"hex_md5\", \"images\": [{\"hash\": \"...\", \"url\": \"...\", \"width\": 1200, \"height\": 628, \"name\": \"...\"}]}\nTikTok output: resource_id is the uploaded image_id; raw preserves image_id and id. image_hash belongs to the Meta response only."
     },
     {
@@ -22456,7 +22752,7 @@
           }
         }
       ],
-      "long_description": "Executes a query document against the connected store's Shopify Admin GraphQL API (version 2026-07). One GraphQL endpoint covers the whole Admin API read surface — products, orders, customers, inventory, collections, and shop metadata — so there are no per-entity wrapper actions; consult the official Shopify Admin GraphQL API reference for query shapes. The Shopify integration is READ-ONLY in this version: no write action exists, and a document containing a mutation or subscription is rejected before any request is sent. Known scope limit: read_orders only covers roughly the last 60 days of orders by default (full history needs the Shopify-approved read_all_orders scope, which is not enabled). When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw GraphQL response body (data / errors / extensions.cost throttle status) is returned verbatim.",
+      "long_description": "Executes a query document against the connected store's Shopify Admin GraphQL API (version 2026-07). One GraphQL endpoint covers the whole Admin API read surface — products, orders, customers, inventory, collections, and shop metadata — so there are no per-entity wrapper actions; consult the official Shopify Admin GraphQL API reference for query shapes. The Shopify integration is READ-ONLY in this version: no write action exists, and a document containing a mutation or subscription is rejected before any request is sent. Known scope limit: read_orders only covers roughly the last 60 days of orders by default (full history needs the Shopify-approved read_all_orders scope, which is not enabled). When exactly one store is connected, store_id may be omitted and is auto-resolved. The raw GraphQL response body (data / errors / extensions.cost throttle status) is returned verbatim. To read cookie banner settings, query { privacySettings { banner { enabled autoManaged } } }. This needs read_privacy_settings; an ACCESS_DENIED error is not evidence that the banner is disabled or was reverted. For a custom app, ask its owner to add that read scope in Shopify Dev Dashboard, release the app version and approve the updated store access, then reconnect Shopify in Settings → Integrations. For an OAuth connection, reconnect after the Soku app scope update is published. Retry the same query and inspect errors before claiming success. This reads shop configuration, not a visitor's consent or GA4 event delivery.",
       "output_shape": "data.{store_id, shop_domain, status, data} — inner `data` is the raw Shopify GraphQL response body ({data, errors[], extensions.cost})"
     },
     {
