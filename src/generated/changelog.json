@@ -14,12 +14,62 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 324,
-          "added": 32,
+          "after": 334,
+          "added": 42,
           "removed": 0,
           "changed": 30
         },
         "added": [
+          {
+            "id": "admob/campaign_report",
+            "mode": "read",
+            "description": "AdMob campaign report"
+          },
+          {
+            "id": "admob/get_account",
+            "mode": "read",
+            "description": "AdMob get account"
+          },
+          {
+            "id": "admob/list_ad_sources",
+            "mode": "read",
+            "description": "AdMob list ad sources"
+          },
+          {
+            "id": "admob/list_ad_unit_mappings",
+            "mode": "read",
+            "description": "AdMob list ad unit mappings"
+          },
+          {
+            "id": "admob/list_ad_units",
+            "mode": "read",
+            "description": "AdMob list ad units"
+          },
+          {
+            "id": "admob/list_adapters",
+            "mode": "read",
+            "description": "AdMob list adapters"
+          },
+          {
+            "id": "admob/list_apps",
+            "mode": "read",
+            "description": "AdMob list apps"
+          },
+          {
+            "id": "admob/list_mediation_groups",
+            "mode": "read",
+            "description": "AdMob list mediation groups"
+          },
+          {
+            "id": "admob/mediation_report",
+            "mode": "read",
+            "description": "AdMob mediation report"
+          },
+          {
+            "id": "admob/network_report",
+            "mode": "read",
+            "description": "AdMob network report"
+          },
           {
             "id": "ads/check_ad_compliance",
             "mode": "generate",

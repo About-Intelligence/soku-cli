@@ -128,6 +128,329 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
     },
     {
+      "id": "action:admob/campaign_report",
+      "namespace": "admob",
+      "action": "campaign_report",
+      "description": "AdMob campaign report",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD in the publisher reporting timezone.",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD in the publisher reporting timezone.",
+          "source": "user"
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": false,
+          "description": "Campaign metrics: ('IMPRESSIONS', 'CLICKS', 'CLICK_THROUGH_RATE', 'INSTALLS', 'ESTIMATED_COST', 'AVERAGE_CPI', 'INTERACTIONS'). Maximum 30 inclusive days.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Campaign opportunity-cost report, not earnings. At most 30 inclusive days. Requires a unique linked store app; rows are projected by placement ID and platform. Raw metricValues retained; report currency is unknown. No header/footer. Truncated results must not be treated as complete totals.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/get_account",
+      "namespace": "admob",
+      "action": "get_account",
+      "description": "AdMob get account",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/list_ad_sources",
+      "namespace": "admob",
+      "action": "list_ad_sources",
+      "description": "AdMob list ad sources",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/list_ad_unit_mappings",
+      "namespace": "admob",
+      "action": "list_ad_unit_mappings",
+      "description": "AdMob list ad unit mappings",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        },
+        {
+          "name": "ad_unit_id",
+          "type": "string",
+          "required": true,
+          "description": "ID from the corresponding cached list for this app.",
+          "source": "upstream:action:admob/list_ad_units"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/list_ad_units",
+      "namespace": "admob",
+      "action": "list_ad_units",
+      "description": "AdMob list ad units",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/list_adapters",
+      "namespace": "admob",
+      "action": "list_adapters",
+      "description": "AdMob list adapters",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        },
+        {
+          "name": "ad_source_id",
+          "type": "string",
+          "required": true,
+          "description": "ID from the corresponding cached list for this app.",
+          "source": "upstream:action:admob/list_ad_sources"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/list_apps",
+      "namespace": "admob",
+      "action": "list_apps",
+      "description": "AdMob list apps",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/list_mediation_groups",
+      "namespace": "admob",
+      "action": "list_mediation_groups",
+      "description": "AdMob list mediation groups",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/mediation_report",
+      "namespace": "admob",
+      "action": "mediation_report",
+      "description": "AdMob mediation report",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD in the publisher reporting timezone.",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD in the publisher reporting timezone.",
+          "source": "user"
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": false,
+          "description": "Optional documented metric names. Network: IMPRESSION_RPM and SHOW_RATE; mediation: OBSERVED_ECPM; both: AD_REQUESTS, MATCHED_REQUESTS, MATCH_RATE, IMPRESSIONS, CLICKS, IMPRESSION_CTR, ESTIMATED_EARNINGS.",
+          "source": "user"
+        },
+        {
+          "name": "max_rows",
+          "type": "integer",
+          "required": false,
+          "description": "1–100000; hitting the cap is marked truncated.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
+      "id": "action:admob/network_report",
+      "namespace": "admob",
+      "action": "network_report",
+      "description": "AdMob network report",
+      "mode": "read",
+      "platforms": [
+        "admob"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "AdMob App ID from list_apps; optional only with one granted app.",
+          "source": "upstream:action:admob/list_apps"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD in the publisher reporting timezone.",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD in the publisher reporting timezone.",
+          "source": "user"
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": false,
+          "description": "Optional documented metric names. Network: IMPRESSION_RPM and SHOW_RATE; mediation: OBSERVED_ECPM; both: AD_REQUESTS, MATCHED_REQUESTS, MATCH_RATE, IMPRESSIONS, CLICKS, IMPRESSION_CTR, ESTIMATED_EARNINGS.",
+          "source": "user"
+        },
+        {
+          "name": "max_rows",
+          "type": "integer",
+          "required": false,
+          "description": "1–100000; hitting the cap is marked truncated.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Read only the current brand's granted apps. Inventory is cached at import. Reports are daily; monetary metrics remain micros in the publisher currency. Earnings are estimated, may change within 48 hours and finalize at month end. Quote header, footer warnings, timezone and currency. Network RPM and mediation observed eCPM are distinct. Empty reports are successful. Historical network lookback is not yet live-verified. Beta inventory may require Google access; cached errors require reconnect after access is granted. Mapping configuration values are redacted; mediation group targets/mappings are restricted to this app and line CPM is USD micros.",
+      "output_shape": "{apps|ad_units|account|ad_sources|adapters|ad_unit_mappings|mediation_groups|rows, reportingTimeZone?, currencyCode?, header?, footer?, truncated?, monetary_unit?}"
+    },
+    {
       "id": "action:ads/add_account_negative_keywords",
       "namespace": "ads",
       "action": "add_account_negative_keywords",
