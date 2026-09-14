@@ -17,7 +17,7 @@
           "after": 324,
           "added": 32,
           "removed": 0,
-          "changed": 26
+          "changed": 30
         },
         "added": [
           {
@@ -183,6 +183,30 @@
         ],
         "removed": [],
         "changed": [
+          {
+            "id": "adjust/list_accounts",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "adjust/list_tools",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "adjust/query",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "adjust/request_change",
+            "fields": [
+              "input_params"
+            ]
+          },
           {
             "id": "ads/bulk_create_adsets",
             "fields": [

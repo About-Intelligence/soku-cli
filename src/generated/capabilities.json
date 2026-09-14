@@ -13,7 +13,7 @@
       "freshness_kind": "realtime",
       "see_also": [],
       "input_params": [],
-      "long_description": "Returns the Adjust accounts granted to the current brand (account_id + name). START HERE for any Adjust task: every other adjust action requires one of these account_ids. Do NOT ask the user for an account id — this action is the source of truth. Adjust supports multi-account, so one connected token can expose more than one account; each is pinned per request by its real account id.",
+      "long_description": "Returns the Adjust accounts granted to the current brand (account_id + name). START HERE for any Adjust task: every other adjust action requires one of these account_ids. Do NOT ask the user for an account id — this action is the source of truth. Adjust uses the account selected during authorization. These IDs identify Soku connections, not Adjust account IDs. Reauthorize as a new connection to select another account.",
       "output_shape": "data.rows[].{account_id, name}"
     },
     {
@@ -41,7 +41,7 @@
           "type": "string",
           "required": false,
           "description": "Exact Adjust tool name; when provided, returns that tool's full input schema.",
-          "example": "get_report"
+          "example": "reporting_tool"
         }
       ],
       "long_description": "Returns the live Adjust MCP tool catalog for one granted account, each annotated with `requires_review`. The default response is a slim catalog without input schemas. Pass `tool` to fetch one exact tool's full input schema before calling `adjust/query`. Tools with `requires_review=true` (anything not on our read-only allowlist) must go through `adjust/request_change`, not `adjust/query`. Data is live from Adjust (realtime, no cached pipeline); Adjust MCP is Early Access, so treat results as best-effort.",
@@ -72,7 +72,7 @@
           "type": "string",
           "required": true,
           "description": "Exact Adjust tool name from adjust/list_tools.",
-          "example": "get_report"
+          "example": "reporting_tool"
         },
         {
           "name": "arguments",
@@ -80,13 +80,7 @@
           "required": false,
           "description": "Tool arguments object per the tool's input schema.",
           "example": {
-            "app_token": "abc123",
-            "from": "2026-06-01",
-            "to": "2026-06-30",
-            "metrics": [
-              "installs",
-              "revenue"
-            ]
+            "report_question": "Show installs and revenue for the last 7 days"
           }
         }
       ],
@@ -118,7 +112,7 @@
           "type": "string",
           "required": true,
           "description": "Exact Adjust tool name.",
-          "example": "get_report"
+          "example": "reporting_tool"
         },
         {
           "name": "arguments",
@@ -126,7 +120,7 @@
           "required": false,
           "description": "Tool arguments object per the tool's input schema.",
           "example": {
-            "app_token": "abc123"
+            "report_question": "Show installs for the last 7 days"
           }
         }
       ],
