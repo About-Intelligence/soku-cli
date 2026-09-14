@@ -19501,6 +19501,325 @@
       "output_shape": "data.{account{...}, requested_columns[], window{start,end,days}, attribution, report_envelope, data_timezone, rows[], summary{row_count, totals{}, missing_columns[], unreadable_columns[]}, truncated}"
     },
     {
+      "id": "action:applovin_max/list_accounts",
+      "namespace": "applovin_max",
+      "action": "list_accounts",
+      "description": "List the current Brand's granted MAX accounts without an upstream call.",
+      "mode": "read",
+      "platforms": [
+        "applovin_max"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": "List the current Brand's granted MAX accounts without an upstream call. The last 1–2 hours may be incomplete. estimated_revenue is estimated USD revenue, not settled payment. Official reference: https://support.applovin.com/en/max/reporting-apis/revenue-reporting-api. The last 45 days are available; hour requires the last 30 days. Empty reports are valid. fill_rate means responses / attempts. requests cannot accompany network/network_placement/max_placement; attempts/responses/fill_rate require network or network_placement and forbid max_placement. App-level example: dimensions=[day,application], metrics=[estimated_revenue,impressions,requests]. Network example: dimensions=[day,network], metrics=[estimated_revenue,attempts,responses,fill_rate]. Use list_accounts to resolve a granted account; list_apps only lists apps with traffic in the window. Use filters.package_name for an app or filters.network_placement for a placement (slashes are valid). Totals cover only the fetched page. If truncated, repeat with limit<=100 and advance offset by upstream_count, not the displayed row count; never add a clipped page's totals again when paging over its rows. If possibly_more_rows is true, request the next page; a final empty page is valid. Do not sum ecpm/fill_rate or equate estimated revenue to settlement. No cohort, user-level data or writes. 429 is never retried automatically.",
+      "output_shape": "data.{accounts[], count, data_freshness, note}"
+    },
+    {
+      "id": "action:applovin_max/list_apps",
+      "namespace": "applovin_max",
+      "action": "list_apps",
+      "description": "List only apps with traffic in the detection window, not an authoritative app inventory.",
+      "mode": "read",
+      "platforms": [
+        "applovin_max"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted account id from applovin_max/list_accounts; optional for a single account.",
+          "source": "upstream:action:applovin_max/list_accounts"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD UTC; last 45 days only. Omit both dates for last 7 complete days.",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD UTC. At most 45 days; hour requires last 30 days and at most 30 days.",
+          "source": "user"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "description": "Exact-match column/value filters. Allowed: ['ad_format', 'ad_unit_waterfall_name', 'application', 'attempts', 'country', 'custom_network_name', 'day', 'device_type', 'ecpm', 'estimated_revenue', 'fill_rate', 'has_idfa', 'hour', 'impressions', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'requests', 'responses', 'store_id']. Parameter names are assembled server-side.",
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Sort column from ['ad_format', 'ad_unit_waterfall_name', 'application', 'attempts', 'country', 'custom_network_name', 'day', 'device_type', 'ecpm', 'estimated_revenue', 'fill_rate', 'has_idfa', 'hour', 'impressions', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'requests', 'responses', 'store_id']. Use sort for multiple ordered sort columns.",
+          "source": "user"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC; default DESC.",
+          "source": "user"
+        },
+        {
+          "name": "sort",
+          "type": "array<object>",
+          "required": false,
+          "description": "Ordered sorts, e.g. [{\"column\":\"day\",\"direction\":\"ASC\"},{\"column\":\"estimated_revenue\",\"direction\":\"DESC\"}]. Do not combine with sort_by/sort_direction.",
+          "source": "user"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Exclude rows whose numerical metrics are all zero; maps to upstream not_zero=1. Default false.",
+          "source": "user"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "required": false,
+          "description": "Upstream json (default) or csv. Both are parsed to normalized rows; never a download URL.",
+          "source": "user"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Upstream rows per request, 1–1000, default 200; display clips at 100 after totals.",
+          "source": "user"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Non-negative upstream pagination offset, default 0.",
+          "source": "user"
+        }
+      ],
+      "long_description": "List only apps with traffic in the detection window, not an authoritative app inventory. The last 1–2 hours may be incomplete. estimated_revenue is estimated USD revenue, not settled payment. Official reference: https://support.applovin.com/en/max/reporting-apis/revenue-reporting-api. The last 45 days are available; hour requires the last 30 days. Empty reports are valid. fill_rate means responses / attempts. requests cannot accompany network/network_placement/max_placement; attempts/responses/fill_rate require network or network_placement and forbid max_placement. App-level example: dimensions=[day,application], metrics=[estimated_revenue,impressions,requests]. Network example: dimensions=[day,network], metrics=[estimated_revenue,attempts,responses,fill_rate]. Use list_accounts to resolve a granted account; list_apps only lists apps with traffic in the window. Use filters.package_name for an app or filters.network_placement for a placement (slashes are valid). Totals cover only the fetched page. If truncated, repeat with limit<=100 and advance offset by upstream_count, not the displayed row count; never add a clipped page's totals again when paging over its rows. If possibly_more_rows is true, request the next page; a final empty page is valid. Do not sum ecpm/fill_rate or equate estimated revenue to settlement. No cohort, user-level data or writes. 429 is never retried automatically.",
+      "output_shape": "data.{account, requested_columns[], window, rows[], summary.{totals, unreadable_columns}, truncated, report_envelope, report_format, upstream_code, upstream_count, data_freshness, limit, offset, possibly_more_rows, unavailable_metrics?}"
+    },
+    {
+      "id": "action:applovin_max/revenue_performance",
+      "namespace": "applovin_max",
+      "action": "revenue_performance",
+      "description": "Query MAX revenue and compatible metrics by app, day, country or network.",
+      "mode": "read",
+      "platforms": [
+        "applovin_max"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted account id from applovin_max/list_accounts; optional for a single account.",
+          "source": "upstream:action:applovin_max/list_accounts"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD UTC; last 45 days only. Omit both dates for last 7 complete days.",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD UTC. At most 45 days; hour requires last 30 days and at most 30 days.",
+          "source": "user"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "description": "Exact-match column/value filters. Allowed: ['ad_format', 'ad_unit_waterfall_name', 'application', 'attempts', 'country', 'custom_network_name', 'day', 'device_type', 'ecpm', 'estimated_revenue', 'fill_rate', 'has_idfa', 'hour', 'impressions', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'requests', 'responses', 'store_id']. Parameter names are assembled server-side.",
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Sort column from ['ad_format', 'ad_unit_waterfall_name', 'application', 'attempts', 'country', 'custom_network_name', 'day', 'device_type', 'ecpm', 'estimated_revenue', 'fill_rate', 'has_idfa', 'hour', 'impressions', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'requests', 'responses', 'store_id']. Use sort for multiple ordered sort columns.",
+          "source": "user"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC; default DESC.",
+          "source": "user"
+        },
+        {
+          "name": "sort",
+          "type": "array<object>",
+          "required": false,
+          "description": "Ordered sorts, e.g. [{\"column\":\"day\",\"direction\":\"ASC\"},{\"column\":\"estimated_revenue\",\"direction\":\"DESC\"}]. Do not combine with sort_by/sort_direction.",
+          "source": "user"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Exclude rows whose numerical metrics are all zero; maps to upstream not_zero=1. Default false.",
+          "source": "user"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "required": false,
+          "description": "Upstream json (default) or csv. Both are parsed to normalized rows; never a download URL.",
+          "source": "user"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Upstream rows per request, 1–1000, default 200; display clips at 100 after totals.",
+          "source": "user"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Non-negative upstream pagination offset, default 0.",
+          "source": "user"
+        },
+        {
+          "name": "dimensions",
+          "type": "array<string>",
+          "required": false,
+          "description": "Group dimensions: ['ad_format', 'ad_unit_waterfall_name', 'application', 'country', 'custom_network_name', 'day', 'device_type', 'has_idfa', 'hour', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'store_id']; default day, application, country, ad_format, network.",
+          "source": "user"
+        },
+        {
+          "name": "metrics",
+          "type": "array<string>",
+          "required": false,
+          "description": "Optional metrics: estimated_revenue, impressions, ecpm, requests, responses, attempts, fill_rate. Omit for all metrics compatible with dimensions. requests cannot accompany network/network_placement/max_placement. attempts/responses/fill_rate require network or network_placement and forbid max_placement.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Query MAX revenue and compatible metrics by app, day, country or network. The last 1–2 hours may be incomplete. estimated_revenue is estimated USD revenue, not settled payment. Official reference: https://support.applovin.com/en/max/reporting-apis/revenue-reporting-api. The last 45 days are available; hour requires the last 30 days. Empty reports are valid. fill_rate means responses / attempts. requests cannot accompany network/network_placement/max_placement; attempts/responses/fill_rate require network or network_placement and forbid max_placement. App-level example: dimensions=[day,application], metrics=[estimated_revenue,impressions,requests]. Network example: dimensions=[day,network], metrics=[estimated_revenue,attempts,responses,fill_rate]. Use list_accounts to resolve a granted account; list_apps only lists apps with traffic in the window. Use filters.package_name for an app or filters.network_placement for a placement (slashes are valid). Totals cover only the fetched page. If truncated, repeat with limit<=100 and advance offset by upstream_count, not the displayed row count; never add a clipped page's totals again when paging over its rows. If possibly_more_rows is true, request the next page; a final empty page is valid. Do not sum ecpm/fill_rate or equate estimated revenue to settlement. No cohort, user-level data or writes. 429 is never retried automatically.",
+      "output_shape": "data.{account, requested_columns[], window, rows[], summary.{totals, unreadable_columns}, truncated, report_envelope, report_format, upstream_code, upstream_count, data_freshness, limit, offset, possibly_more_rows, unavailable_metrics?}"
+    },
+    {
+      "id": "action:applovin_max/run_report",
+      "namespace": "applovin_max",
+      "action": "run_report",
+      "description": "Query arbitrary closed-set MAX reporting columns; unknown columns are rejected locally.",
+      "mode": "read",
+      "platforms": [
+        "applovin_max"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted account id from applovin_max/list_accounts; optional for a single account.",
+          "source": "upstream:action:applovin_max/list_accounts"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD UTC; last 45 days only. Omit both dates for last 7 complete days.",
+          "source": "user"
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "Inclusive YYYY-MM-DD UTC. At most 45 days; hour requires last 30 days and at most 30 days.",
+          "source": "user"
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "required": false,
+          "description": "Exact-match column/value filters. Allowed: ['ad_format', 'ad_unit_waterfall_name', 'application', 'attempts', 'country', 'custom_network_name', 'day', 'device_type', 'ecpm', 'estimated_revenue', 'fill_rate', 'has_idfa', 'hour', 'impressions', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'requests', 'responses', 'store_id']. Parameter names are assembled server-side.",
+          "source": "user"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "required": false,
+          "description": "Sort column from ['ad_format', 'ad_unit_waterfall_name', 'application', 'attempts', 'country', 'custom_network_name', 'day', 'device_type', 'ecpm', 'estimated_revenue', 'fill_rate', 'has_idfa', 'hour', 'impressions', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'requests', 'responses', 'store_id']. Use sort for multiple ordered sort columns.",
+          "source": "user"
+        },
+        {
+          "name": "sort_direction",
+          "type": "string",
+          "required": false,
+          "description": "ASC or DESC; default DESC.",
+          "source": "user"
+        },
+        {
+          "name": "sort",
+          "type": "array<object>",
+          "required": false,
+          "description": "Ordered sorts, e.g. [{\"column\":\"day\",\"direction\":\"ASC\"},{\"column\":\"estimated_revenue\",\"direction\":\"DESC\"}]. Do not combine with sort_by/sort_direction.",
+          "source": "user"
+        },
+        {
+          "name": "exclude_zero_rows",
+          "type": "boolean",
+          "required": false,
+          "description": "Exclude rows whose numerical metrics are all zero; maps to upstream not_zero=1. Default false.",
+          "source": "user"
+        },
+        {
+          "name": "format",
+          "type": "string",
+          "required": false,
+          "description": "Upstream json (default) or csv. Both are parsed to normalized rows; never a download URL.",
+          "source": "user"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Upstream rows per request, 1–1000, default 200; display clips at 100 after totals.",
+          "source": "user"
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Non-negative upstream pagination offset, default 0.",
+          "source": "user"
+        },
+        {
+          "name": "columns",
+          "type": "array<string>",
+          "required": true,
+          "description": "Column names: ['ad_format', 'ad_unit_waterfall_name', 'application', 'attempts', 'country', 'custom_network_name', 'day', 'device_type', 'ecpm', 'estimated_revenue', 'fill_rate', 'has_idfa', 'hour', 'impressions', 'max_ad_unit', 'max_ad_unit_id', 'max_ad_unit_test', 'max_placement', 'network', 'network_placement', 'package_name', 'platform', 'requests', 'responses', 'store_id']. requests forbids network/network_placement/max_placement. attempts/responses/fill_rate require network or network_placement and forbid max_placement.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Query arbitrary closed-set MAX reporting columns; unknown columns are rejected locally. The last 1–2 hours may be incomplete. estimated_revenue is estimated USD revenue, not settled payment. Official reference: https://support.applovin.com/en/max/reporting-apis/revenue-reporting-api. The last 45 days are available; hour requires the last 30 days. Empty reports are valid. fill_rate means responses / attempts. requests cannot accompany network/network_placement/max_placement; attempts/responses/fill_rate require network or network_placement and forbid max_placement. App-level example: dimensions=[day,application], metrics=[estimated_revenue,impressions,requests]. Network example: dimensions=[day,network], metrics=[estimated_revenue,attempts,responses,fill_rate]. Use list_accounts to resolve a granted account; list_apps only lists apps with traffic in the window. Use filters.package_name for an app or filters.network_placement for a placement (slashes are valid). Totals cover only the fetched page. If truncated, repeat with limit<=100 and advance offset by upstream_count, not the displayed row count; never add a clipped page's totals again when paging over its rows. If possibly_more_rows is true, request the next page; a final empty page is valid. Do not sum ecpm/fill_rate or equate estimated revenue to settlement. No cohort, user-level data or writes. 429 is never retried automatically.",
+      "output_shape": "data.{account, requested_columns[], window, rows[], summary.{totals, unreadable_columns}, truncated, report_envelope, report_format, upstream_code, upstream_count, data_freshness, limit, offset, possibly_more_rows, unavailable_metrics?}"
+    },
+    {
       "id": "action:appsflyer/list_accounts",
       "namespace": "appsflyer",
       "action": "list_accounts",

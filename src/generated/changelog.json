@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 320,
-          "added": 28,
+          "after": 324,
+          "added": 32,
           "removed": 0,
           "changed": 26
         },
@@ -54,6 +54,26 @@
             "id": "ads/update_pmax_asset_group",
             "mode": "risk",
             "description": "Add or replace assets on an existing Google PMax asset group; review-gated."
+          },
+          {
+            "id": "applovin_max/list_accounts",
+            "mode": "read",
+            "description": "List the current Brand's granted MAX accounts without an upstream call."
+          },
+          {
+            "id": "applovin_max/list_apps",
+            "mode": "read",
+            "description": "List only apps with traffic in the detection window, not an authoritative app inventory."
+          },
+          {
+            "id": "applovin_max/revenue_performance",
+            "mode": "read",
+            "description": "Query MAX revenue and compatible metrics by app, day, country or network."
+          },
+          {
+            "id": "applovin_max/run_report",
+            "mode": "read",
+            "description": "Query arbitrary closed-set MAX reporting columns; unknown columns are rejected locally."
           },
           {
             "id": "creatives/apply_ops",
