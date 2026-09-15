@@ -23958,6 +23958,312 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
     },
     {
+      "id": "action:thinkingdata/list_events",
+      "namespace": "thinkingdata",
+      "action": "list_events",
+      "description": "List the events (physical and virtual) tracked in a ThinkingData project.",
+      "mode": "read",
+      "platforms": [
+        "thinkingdata"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted project key `host:port#projectId` from thinkingdata/list_projects; optional with a single granted project.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "project_id",
+          "type": "integer",
+          "required": false,
+          "description": "TA project id (integer) as an alternative selector; ambiguous across two clusters, then use connection_id.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "include_hidden",
+          "type": "boolean",
+          "required": false,
+          "description": "Include items the customer hid in TA. Default false.",
+          "source": "user"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Rows to return, 1–1000, default 200; `truncated` says whether more exist upstream.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Discovery step before any metric or SQL: the event names here are the `$part_event` values of ta.v_event_{projectId}. Physical events (`event`) have rows; virtual events (`event_v`) are saved rules. Hidden events are omitted unless include_hidden=true. The cluster is the customer's own, self-hosted TA/TE; every call spends their compute and shares a conservative per-connection quota, so do not poll. All times follow the TA project's time zone, not UTC. Read-only by construction on Soku's side (the Open API key itself is not read-only, which is why SQL is human-reviewed). Official reference: https://docs.thinkingdata.cn/ta-manual/latest/technical_document/open_api/open_api.html",
+      "output_shape": "{project, events[].{event_name, display_name, event_type, is_hidden, remark}, count, total_upstream, truncated, note}"
+    },
+    {
+      "id": "action:thinkingdata/list_metrics",
+      "namespace": "thinkingdata",
+      "action": "list_metrics",
+      "description": "List the business metrics the customer defined in ThinkingData.",
+      "mode": "read",
+      "platforms": [
+        "thinkingdata"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted project key `host:port#projectId` from thinkingdata/list_projects; optional with a single granted project.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "project_id",
+          "type": "integer",
+          "required": false,
+          "description": "TA project id (integer) as an alternative selector; ambiguous across two clusters, then use connection_id.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Rows to return, 1–1000, default 200; `truncated` says whether more exist upstream.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Preferred path for KPIs (DAU, retention_1, ARPU…): the customer already defined the metric in TA, so query_metric returns their number with their caveats. Check `time_granularities` before choosing a granularity in query_metric. Older TA 3.x clusters may not expose this endpoint; the error then says unsupported_by_upstream_version. The cluster is the customer's own, self-hosted TA/TE; every call spends their compute and shares a conservative per-connection quota, so do not poll. All times follow the TA project's time zone, not UTC. Read-only by construction on Soku's side (the Open API key itself is not read-only, which is why SQL is human-reviewed). Official reference: https://docs.thinkingdata.cn/ta-manual/latest/technical_document/open_api/open_api.html",
+      "output_shape": "{project, metrics[].{metric_id, metric_name, display_name, remark, mode, time_granularities[], format, updated_at}, count, total_upstream, truncated, note}"
+    },
+    {
+      "id": "action:thinkingdata/list_projects",
+      "namespace": "thinkingdata",
+      "action": "list_projects",
+      "description": "List the Brand's granted ThinkingData projects without an upstream call.",
+      "mode": "read",
+      "platforms": [
+        "thinkingdata"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": "Always call first: it returns the `connection_id` and `project_id` the other actions accept. Zero upstream calls, zero quota. Never ask the user for a project id — take it from here. The cluster is the customer's own, self-hosted TA/TE; every call spends their compute and shares a conservative per-connection quota, so do not poll. All times follow the TA project's time zone, not UTC. Read-only by construction on Soku's side (the Open API key itself is not read-only, which is why SQL is human-reviewed). Official reference: https://docs.thinkingdata.cn/ta-manual/latest/technical_document/open_api/open_api.html",
+      "output_shape": "{projects[].{connection_id, project_id, host, name, status, event_count_at_connect}, count, note}"
+    },
+    {
+      "id": "action:thinkingdata/list_props",
+      "namespace": "thinkingdata",
+      "action": "list_props",
+      "description": "List event or user properties of a ThinkingData project, optionally for one event.",
+      "mode": "read",
+      "platforms": [
+        "thinkingdata"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted project key `host:port#projectId` from thinkingdata/list_projects; optional with a single granted project.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "project_id",
+          "type": "integer",
+          "required": false,
+          "description": "TA project id (integer) as an alternative selector; ambiguous across two clusters, then use connection_id.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "table_type",
+          "type": "string",
+          "required": false,
+          "description": "`event` (default) or `user`.",
+          "enum": [
+            "event",
+            "user"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "event_name",
+          "type": "string",
+          "required": false,
+          "description": "Only with table_type=event: restrict to properties of this event (name from list_events).",
+          "source": "upstream:action:thinkingdata/list_events"
+        },
+        {
+          "name": "include_hidden",
+          "type": "boolean",
+          "required": false,
+          "description": "Include items the customer hid in TA. Default false.",
+          "source": "user"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Rows to return, 1–1000, default 200; `truncated` says whether more exist upstream.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Schema step before SQL (the equivalent of a table's column list). table_type=event lists event-table columns, optionally narrowed to one event_name; table_type=user lists ta.v_user_{projectId} columns. Preset columns start with `#` and must be double-quoted in SQL (\"#country_code\"). prop_type tells physical (prop_preset / prop_unpreset) from virtual (vprop_*) properties; virtual ones are computed, not stored. The cluster is the customer's own, self-hosted TA/TE; every call spends their compute and shares a conservative per-connection quota, so do not poll. All times follow the TA project's time zone, not UTC. Read-only by construction on Soku's side (the Open API key itself is not read-only, which is why SQL is human-reviewed). Official reference: https://docs.thinkingdata.cn/ta-manual/latest/technical_document/open_api/open_api.html",
+      "output_shape": "{project, table_type, event_name, properties[].{column_name, display_name, prop_type, value_type, table_type, is_hidden, remark, dict_props[]}, count, total_upstream, truncated, note}"
+    },
+    {
+      "id": "action:thinkingdata/query_metric",
+      "namespace": "thinkingdata",
+      "action": "query_metric",
+      "description": "Fetch customer-defined ThinkingData metrics over a time window, optionally grouped.",
+      "mode": "read",
+      "platforms": [
+        "thinkingdata"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted project key `host:port#projectId` from thinkingdata/list_projects; optional with a single granted project.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "project_id",
+          "type": "integer",
+          "required": false,
+          "description": "TA project id (integer) as an alternative selector; ambiguous across two clusters, then use connection_id.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "metrics",
+          "type": "array<string>",
+          "required": true,
+          "description": "1–10 metric names from list_metrics.",
+          "source": "upstream:action:thinkingdata/list_metrics"
+        },
+        {
+          "name": "time_granularity",
+          "type": "string",
+          "required": false,
+          "description": "timeParticleSize, one of ['minute', 'minute5', 'minute10', 'hour', 'day', 'week', 'month', 'total']; default day. Must be in the metric's time_granularities.",
+          "enum": [
+            "minute",
+            "minute5",
+            "minute10",
+            "hour",
+            "day",
+            "week",
+            "month",
+            "total"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "recent_days",
+          "type": "integer",
+          "required": false,
+          "description": "Relative window 1–366 days ending today (project time zone). Default 7 when no absolute window is given.",
+          "one_of_group": "window",
+          "source": "user"
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "required": false,
+          "description": "Absolute window start, `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS` (project time zone); requires end_time.",
+          "one_of_group": "window",
+          "source": "user"
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "required": false,
+          "description": "Absolute window end, same format; requires start_time.",
+          "source": "user"
+        },
+        {
+          "name": "group_by",
+          "type": "array<object>",
+          "required": false,
+          "description": "Up to 3 entries of {column_name, table_type?} (or bare column names), e.g. [{\"column_name\":\"#country_code\"}].",
+          "source": "upstream:action:thinkingdata/list_props"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Max groups per metric, 1–10000, default 100.",
+          "source": "user"
+        },
+        {
+          "name": "use_cache",
+          "type": "boolean",
+          "required": false,
+          "description": "Let TA serve a cached result (default true). Set false only when freshness matters more than the customer's compute.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Use metric names from list_metrics. Window is recent_days (default 7) or an absolute start_time/end_time in the project's time zone. group_by takes up to three property names (from list_props). Results come back as one series per metric×group with string `values` aligned to `x`; a group_cols of [\"total\"] is the ungrouped total. No global filters are supported in this version — narrow with group_by or fall back to query_sql. Empty windows return empty x/series rather than an error. The cluster is the customer's own, self-hosted TA/TE; every call spends their compute and shares a conservative per-connection quota, so do not poll. All times follow the TA project's time zone, not UTC. Read-only by construction on Soku's side (the Open API key itself is not read-only, which is why SQL is human-reviewed). Official reference: https://docs.thinkingdata.cn/ta-manual/latest/technical_document/open_api/open_api.html",
+      "output_shape": "{project, metrics[], time_granularity, window, x[], union_groups[], series[].{metric, group_cols[], group_num, values[]}, result_generate_time, group_limit, data_timezone, note}"
+    },
+    {
+      "id": "action:thinkingdata/query_sql",
+      "namespace": "thinkingdata",
+      "action": "query_sql",
+      "description": "Run one read-only SQL statement against the ThinkingData project. Always human-reviewed: a person reads the SQL before it runs.",
+      "mode": "risk",
+      "platforms": [
+        "thinkingdata"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted project key `host:port#projectId` from thinkingdata/list_projects; optional with a single granted project.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "project_id",
+          "type": "integer",
+          "required": false,
+          "description": "TA project id (integer) as an alternative selector; ambiguous across two clusters, then use connection_id.",
+          "source": "upstream:action:thinkingdata/list_projects"
+        },
+        {
+          "name": "sql",
+          "type": "string",
+          "required": true,
+          "description": "One SELECT statement (Presto/Trino dialect). Forwarded verbatim; shown to the reviewer as-is.",
+          "source": "user"
+        },
+        {
+          "name": "max_rows",
+          "type": "integer",
+          "required": false,
+          "description": "1–1000, default 100.",
+          "source": "user"
+        }
+      ],
+      "long_description": "Primary use:\nQuestions list_metrics cannot answer (LTV, custom cohorts, joins). The SQL is forwarded verbatim, so it is exactly what the reviewing human sees.\n\nHuman review:\n- ALWAYS goes through human approval: the first call returns 202 with a pending_review_id and runs nothing.\n- Requires chat_id and a _summary describing, in the user's words, what the query answers.\n- project_id (or connection_id) is required: it is part of what is approved.\n- Write one correct query, not a batch of exploratory ones.\n\nSchema:\n- Event table ta.v_event_{projectId}, user table ta.v_user_{projectId}; partition columns \"$part_date\" (date) and \"$part_event\" (event name). Preset columns start with `#` (\"#user_id\", \"#country_code\", \"#os\"). Any name containing `$` or `#` must be double-quoted. Always filter on \"$part_date\" and \"$part_event\".\n- ThinkingData documents that a project key's SQL may reach OTHER projects' tables by default. Only reference the granted project's tables.\n\nLimits:\n- Rows stop at max_rows (default 100, max 1000) or a 2 MiB response cap; `truncated` says so. Aggregate in SQL.\n- The query is cancelled upstream after 20 seconds; narrow it rather than retrying unchanged.\n- No DDL/DML: the reviewer will reject it, and the key was issued for reads. The cluster is the customer's own, self-hosted TA/TE; every call spends their compute and shares a conservative per-connection quota, so do not poll. All times follow the TA project's time zone, not UTC. Read-only by construction on Soku's side (the Open API key itself is not read-only, which is why SQL is human-reviewed). Official reference: https://docs.thinkingdata.cn/ta-manual/latest/technical_document/open_api/open_api.html",
+      "output_shape": "{project, headers[], rows[][], row_count, max_rows, truncated, byte_limited, upstream_timeout_seconds, data_timezone, note}"
+    },
+    {
       "id": "action:toast/get_order",
       "namespace": "toast",
       "action": "get_order",

@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 334,
-          "added": 42,
+          "after": 340,
+          "added": 48,
           "removed": 0,
           "changed": 30
         },
@@ -199,6 +199,36 @@
             "id": "gtm/request_change",
             "mode": "risk",
             "description": "Create or update GTM configuration, or compile a workspace version. Never publishes."
+          },
+          {
+            "id": "thinkingdata/list_events",
+            "mode": "read",
+            "description": "List the events (physical and virtual) tracked in a ThinkingData project."
+          },
+          {
+            "id": "thinkingdata/list_metrics",
+            "mode": "read",
+            "description": "List the business metrics the customer defined in ThinkingData."
+          },
+          {
+            "id": "thinkingdata/list_projects",
+            "mode": "read",
+            "description": "List the Brand's granted ThinkingData projects without an upstream call."
+          },
+          {
+            "id": "thinkingdata/list_props",
+            "mode": "read",
+            "description": "List event or user properties of a ThinkingData project, optionally for one event."
+          },
+          {
+            "id": "thinkingdata/query_metric",
+            "mode": "read",
+            "description": "Fetch customer-defined ThinkingData metrics over a time window, optionally grouped."
+          },
+          {
+            "id": "thinkingdata/query_sql",
+            "mode": "risk",
+            "description": "Run one read-only SQL statement against the ThinkingData project. Always human-reviewed: a person reads the SQL before it runs."
           },
           {
             "id": "topon/get_report",
