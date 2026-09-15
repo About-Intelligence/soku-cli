@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 340,
-          "added": 48,
+          "after": 343,
+          "added": 51,
           "removed": 0,
           "changed": 30
         },
@@ -199,6 +199,21 @@
             "id": "gtm/request_change",
             "mode": "risk",
             "description": "Create or update GTM configuration, or compile a workspace version. Never publishes."
+          },
+          {
+            "id": "sensortower/list_organizations",
+            "mode": "read",
+            "description": "List the Sensor Tower connections granted to this Brand (no upstream call)."
+          },
+          {
+            "id": "sensortower/query",
+            "mode": "read",
+            "description": "Run one Sensor Tower market-intelligence report (estimates, active users, retention, category totals, top advertisers, creatives, rankings) live."
+          },
+          {
+            "id": "sensortower/usage",
+            "mode": "read",
+            "description": "Read the organization's monthly Sensor Tower Call Credit usage and limit."
           },
           {
             "id": "thinkingdata/list_events",

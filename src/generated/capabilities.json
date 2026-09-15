@@ -23024,6 +23024,236 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
     },
     {
+      "id": "action:sensortower/list_organizations",
+      "namespace": "sensortower",
+      "action": "list_organizations",
+      "description": "List the Sensor Tower connections granted to this Brand (no upstream call).",
+      "mode": "read",
+      "platforms": [
+        "sensortower"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": "Start here. Returns each granted connection's `connection_id`, name, tier and the monthly Call Credit limit observed at connect time. Sensor Tower returns no organization id, so `connection_id` is Soku's key for the customer's API token. Costs nothing.",
+      "output_shape": "{organizations: [{connection_id, name, status, tier, monthly_limit_at_connect}], count, note}"
+    },
+    {
+      "id": "action:sensortower/query",
+      "namespace": "sensortower",
+      "action": "query",
+      "description": "Run one Sensor Tower market-intelligence report (estimates, active users, retention, category totals, top advertisers, creatives, rankings) live.",
+      "mode": "read",
+      "platforms": [
+        "sensortower"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "report",
+          "type": "string",
+          "required": true,
+          "description": "Which report to run.",
+          "enum": [
+            "app_estimates",
+            "category_breakdown",
+            "active_users",
+            "retention",
+            "top_advertisers",
+            "creatives",
+            "rankings"
+          ]
+        },
+        {
+          "name": "os",
+          "type": "string",
+          "required": true,
+          "description": "Store platform; allowed values depend on the report.",
+          "enum": [
+            "ios",
+            "android",
+            "unified"
+          ]
+        },
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted connection key from sensortower/list_organizations; optional when exactly one Sensor Tower connection is granted.",
+          "source": "upstream:action:sensortower/list_organizations"
+        },
+        {
+          "name": "app_ids",
+          "type": "string|list",
+          "required": false,
+          "description": "Sensor Tower app ids (numeric iOS id, Android package, or unified id); ≤500."
+        },
+        {
+          "name": "publisher_ids",
+          "type": "string|list",
+          "required": false,
+          "description": "app_estimates only: publisher ids instead of app_ids."
+        },
+        {
+          "name": "categories",
+          "type": "string|list",
+          "required": false,
+          "description": "category_breakdown: game category ids (iOS numeric / Android slug)."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": false,
+          "description": "rankings / top_advertisers: one category id."
+        },
+        {
+          "name": "countries",
+          "type": "string|list",
+          "required": false,
+          "description": "ISO country codes; `WW` = worldwide."
+        },
+        {
+          "name": "country",
+          "type": "string",
+          "required": false,
+          "description": "Single country code (rankings, top_advertisers, retention)."
+        },
+        {
+          "name": "date_granularity",
+          "type": "string",
+          "required": false,
+          "description": "app_estimates / category_breakdown: daily|weekly|monthly|quarterly; retention: all_time|quarterly."
+        },
+        {
+          "name": "time_period",
+          "type": "string",
+          "required": false,
+          "description": "active_users: day (DAU) | week (WAU) | month (MAU).",
+          "enum": [
+            "day",
+            "week",
+            "month"
+          ]
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": false,
+          "description": "YYYY-MM-DD."
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": false,
+          "description": "YYYY-MM-DD."
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "required": false,
+          "description": "rankings / top_advertisers: the single date (YYYY-MM-DD)."
+        },
+        {
+          "name": "chart_type",
+          "type": "string",
+          "required": false,
+          "description": "rankings: Sensor Tower chart type id (e.g. topfreeapplications)."
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "required": false,
+          "description": "top_advertisers: advertisers | publishers.",
+          "enum": [
+            "advertisers",
+            "publishers"
+          ]
+        },
+        {
+          "name": "period",
+          "type": "string",
+          "required": false,
+          "description": "top_advertisers: share-of-voice window.",
+          "enum": [
+            "week",
+            "month",
+            "quarter"
+          ]
+        },
+        {
+          "name": "network",
+          "type": "string",
+          "required": false,
+          "description": "top_advertisers: one ad network name or `All Networks`."
+        },
+        {
+          "name": "networks",
+          "type": "string|list",
+          "required": false,
+          "description": "creatives: ad network names (Sensor Tower spelling, e.g. TikTok, Unity, Applovin)."
+        },
+        {
+          "name": "ad_types",
+          "type": "string|list",
+          "required": false,
+          "description": "creatives: image | banner | video | video-rewarded | playable | …"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "creatives: 10|50|100; top_advertisers: 25|100|250."
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "description": "Page number (creatives, top_advertisers)."
+        },
+        {
+          "name": "new_creative",
+          "type": "boolean",
+          "required": false,
+          "description": "creatives: only creatives first seen in the window."
+        }
+      ],
+      "long_description": "One live call against the customer's own Sensor Tower Data Access Service subscription; every call consumes their monthly Call Credits (check sensortower/usage before batches). Parameters are validated locally against a closed set — unknown keys and values are refused with the legal list, never forwarded. Supported reports:\n- `app_estimates` → `/v1/{os}/sales_report_estimates`; os ∈ ['ios', 'android', 'unified']; required ['date_granularity', 'start_date', 'end_date']; optional ['app_ids', 'publisher_ids', 'countries']\n- `category_breakdown` → `/v1/{os}/games_breakdown`; os ∈ ['ios', 'android']; required ['categories', 'date_granularity', 'start_date', 'end_date']; optional ['countries']\n- `active_users` → `/v1/{os}/usage/active_users`; os ∈ ['ios', 'android', 'unified']; required ['app_ids', 'time_period', 'start_date', 'end_date']; optional ['countries']\n- `retention` → `/v1/{os}/usage/retention`; os ∈ ['ios', 'android']; required ['app_ids', 'date_granularity', 'start_date']; optional ['end_date', 'country']\n- `top_advertisers` → `/v1/{os}/ad_intel/top_apps`; os ∈ ['ios', 'android', 'unified']; required ['role', 'date', 'period', 'category', 'country', 'network']; optional ['limit', 'page'] (response shape undocumented upstream)\n- `creatives` → `/v1/{os}/ad_intel/creatives`; os ∈ ['ios', 'android', 'unified']; required ['app_ids', 'start_date', 'countries', 'networks', 'ad_types']; optional ['end_date', 'limit', 'page', 'new_creative'] (response shape undocumented upstream)\n- `rankings` → `/v1/{os}/ranking`; os ∈ ['ios', 'android']; required ['category', 'chart_type', 'country', 'date']; optional [] (response shape undocumented upstream)\nDate-window guard for `app_estimates` (Sensor Tower's own guidance, enforced locally): {'daily': 7, 'weekly': 93, 'monthly': 366, 'quarterly': 731}. `category_breakdown` needs start_date ≥ 2016-01-01. List responses are clipped to 500 rows (`truncated`). The upstream JSON is returned verbatim under `data`; three reports have no documented response shape (see `schema_note`).\nInterpretation rules that MUST accompany any number you report:\n1. `app_estimates` revenue is Sensor Tower's estimate of STORE (in-app purchase) revenue and excludes ad-monetization revenue. An ad-monetized (IAA) game will show high downloads and near-zero revenue — that is the metric's scope, not evidence the app earns nothing. Never conclude an IAA competitor 'does not monetize' from it.\n2. Sensor Tower re-estimates the most recent Google Play day; do not treat a single latest-day value as final.\n3. Every figure is a modelled estimate (Sensor Tower's ToS: provided 'AS IS' from panels and automated methods). Say 'estimated' and cite Sensor Tower as the source.\n4. EVERY revenue figure Sensor Tower returns is in USD CENTS (`ir`, `ar`, `r`, `*_revenue` in `app_estimates` and `category_breakdown`; `revenue_unit` on the response says so). Divide by 100 before reporting dollars. iOS and Android use different category ids — never mix them.\nField abbreviations in documented responses: iOS `app_estimates` rows use `aid` (app id), `cc` (country), `d` (date), `iu`/`ir` (iPhone downloads/revenue), `au`/`ar` (iPad downloads/revenue); Android rows use `aid`, `c`, `d`, `u`, `r`; `unified` rows use full names (`unified_units`, `unified_revenue`, …). `category_breakdown` rows use `ca` (category), `cc`, `d`, `iu`/`ir`/`au`/`ar` (iOS) or `u`/`r` (Android). `active_users` rows use `app_id`, `country`, `date` and `iphone_users`/`ipad_users` (iOS), `users` (Android), `android_users`/`iphone_users`/`ipad_users` (unified). `retention` returns `app_data[]` with `corrected_retention` as day-1..day-90 fractions.",
+      "output_shape": "{organization, report, os, request_params, data (upstream JSON, list or object), row_count, truncated, data_source, measure: 'estimate', revenue_unit: 'USD cents' | null, freshness_note, attribution, schema_note}"
+    },
+    {
+      "id": "action:sensortower/usage",
+      "namespace": "sensortower",
+      "action": "usage",
+      "description": "Read the organization's monthly Sensor Tower Call Credit usage and limit.",
+      "mode": "read",
+      "platforms": [
+        "sensortower"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "connection_id",
+          "type": "string",
+          "required": false,
+          "description": "Granted connection key from sensortower/list_organizations; optional when exactly one Sensor Tower connection is granted.",
+          "source": "upstream:action:sensortower/list_organizations"
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "required": false,
+          "description": "YYYY-MM-DD inside the month to report; default current month."
+        }
+      ],
+      "long_description": "Calls /v1/api_usage (one request). Use before a batch of queries: Call Credits do not roll over and overage can suspend the customer's access. `date` selects the month (day is ignored upstream); defaults to now.",
+      "output_shape": "{organization, month, usage, limit, tier, data_points: {usage, limit} | null, user_usage, note}"
+    },
+    {
       "id": "action:seo_hosting/delete_page",
       "namespace": "seo_hosting",
       "action": "delete_page",
