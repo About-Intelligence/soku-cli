@@ -17,7 +17,7 @@
           "after": 347,
           "added": 55,
           "removed": 0,
-          "changed": 30
+          "changed": 32
         },
         "added": [
           {
@@ -403,6 +403,12 @@
             ]
           },
           {
+            "id": "ads/gaql_search",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/get_account_info",
             "fields": [
               "long_description",
@@ -484,6 +490,12 @@
             "fields": [
               "input_params",
               "long_description"
+            ]
+          },
+          {
+            "id": "ga4/run_report",
+            "fields": [
+              "input_params"
             ]
           },
           {

@@ -8380,7 +8380,7 @@
           "description": "rows or summary."
         }
       ],
-      "long_description": "FALLBACK PATH for Google-native ads exploration.\n\nPrimary use:\nRealtime GAQL search for fields, segments, or dimension combinations that are not exposed by cached query_single_dimension or query_multi_dimension.\n\nUse when:\n- list_dimensions does not expose the field or segment the user needs.\n- query_multi_dimension returns unsupported_dimension_combination and a GAQL fallback is acceptable.\n- You need Google-native resource fields, raw.segments.*, raw.metrics.*, or deep attribute paths such as raw.ad_group_ad.ad.responsive_search_ad.headlines.\n\nFirst-class Google Ads readback dimensions:\n- Use dimensions=['campaign','bidding_strategy'] for campaign bidding strategy reports.\n- Use dimensions=['keyword_status'] with a raw.ad_group_criterion.criterion_id filter to read current keyword status after pause/enable actions; this pure entity read does not require date_range.\n\nDo not use when:\n- Cached business-layer analytics can answer the question. Use query_single_dimension or query_multi_dimension.\n- The user needs CPA, CPP, ROAS, Reg Rate, Pur Rate, or cg.{slug}.* fan-out. Use query_single_dimension.\n- The user needs platform-side change history. Use get_change_history.\n- The platform is Meta. This action is Google-only.\n\nWorkflow:\n1. Call list_dimensions first to confirm cached analytics cannot satisfy the query.\n2. Call get_resource_metadata if you do not know selectable/filterable/sortable Google fields for the target resource.\n3. Call this action with account_id, dimensions[], metrics[], optional resource_name, filters, date_range, order_by, limit, and mode. Set resource_name when the select list mixes the root resource with selectable-with related resources, such as FROM asset_group_asset selecting asset.* fields.\n\nOutput semantics:\n- Returns translated Google Ads query text in query.\n- columns contains normalized field arrays; rows may also be present for convenience.\n- Native Google Ads declares the v24 RPC before I/O. Responses are parsed as complete official protobuf responses, so lowerCamel fieldMask paths and row fields become canonical snake_case together.\n- Every returned field-mask path is validated against the official GoogleAdsRow descriptor. A response-shape violation returns gaql_response_contract_error (HTTP 424) with provider, api_version, rpc, field_path, and request_id; it is not an OAuth error.\n- account.data_freshness is realtime call time, not Parquet sync time.\n- No mapping-aware derived metrics or conversion-group fan-out are computed.",
+      "long_description": "FALLBACK PATH for Google-native ads exploration.\n\nPrimary use:\nRealtime GAQL search for fields, segments, or dimension combinations that are not exposed by cached query_single_dimension or query_multi_dimension.\n\nUse when:\n- list_dimensions does not expose the field or segment the user needs.\n- query_multi_dimension returns unsupported_dimension_combination and a GAQL fallback is acceptable.\n- You need Google-native resource fields, raw.segments.*, raw.metrics.*, or deep attribute paths such as raw.ad_group_ad.ad.responsive_search_ad.headlines.\n\nFirst-class Google Ads readback dimensions:\n- Use dimensions=['campaign','bidding_strategy'] for campaign bidding strategy reports.\n- Use dimensions=['keyword_status'] with a raw.ad_group_criterion.criterion_id filter to read current keyword status after pause/enable actions; this pure entity read does not require date_range.\n\nDo not use when:\n- Cached business-layer analytics can answer the question. Use query_single_dimension or query_multi_dimension.\n- The user needs CPA, CPP, ROAS, Reg Rate, Pur Rate, or cg.{slug}.* fan-out. Use query_single_dimension.\n- The user needs platform-side change history. Use get_change_history.\n- The platform is Meta. This action is Google-only.\n\nWorkflow:\n1. Call list_dimensions first to confirm cached analytics cannot satisfy the query.\n2. Call get_resource_metadata if you do not know selectable/filterable/sortable Google fields for the target resource.\n3. Call this action with account_id, dimensions[], metrics[], optional resource_name, filters, date_range, order_by, limit, and mode. Set resource_name when the select list mixes the root resource with selectable-with related resources, such as FROM asset_group_asset selecting asset.* fields.\n\nOutput semantics:\n- Returns translated Google Ads query text in query.\n- columns contains normalized field arrays; rows may also be present for convenience.\n- Native Google Ads declares the v24 RPC before I/O. Responses are parsed as complete official protobuf responses, so lowerCamel fieldMask paths and row fields become canonical snake_case together.\n- Every returned field-mask path is validated against the official GoogleAdsRow descriptor. A response-shape violation returns gaql_response_contract_error (HTTP 424) with provider, api_version, rpc, field_path, and request_id; it is not an OAuth error.\n- Unset protobuf fields with presence are null, not explicit zero/false. For device criteria, explicit bid_modifier=0 means exclusion (-100%), 1 means no adjustment, and null means unset/unknown. ENABLED alone does not prove device eligibility. Match customer/campaign/device and date window before comparing configuration with delivery; account totals cannot disprove one campaign's exclusion. Current settings do not establish historical state.\n- account.data_freshness is realtime call time, not Parquet sync time.\n- No mapping-aware derived metrics or conversion-group fan-out are computed.",
       "output_shape": "{\"account\": {\"platform\": \"google\", \"account_id\": \"123\", \"data_freshness\": \"ISO\"}, \"columns\": {<field>: [...]}, \"rows\": [...], \"row_count\": N, \"query\": \"<translated GAQL string>\"}"
     },
     {
@@ -22002,6 +22002,46 @@
           "example": [
             "sessions",
             "totalUsers"
+          ]
+        },
+        {
+          "name": "dimension_filter",
+          "type": "object",
+          "required": false,
+          "description": "Filter expression: field_name plus string_filter, in_list_filter, numeric_filter or between_filter; combine expressions with and_group/or_group arrays or not_expression.",
+          "example": {
+            "field_name": "eventName",
+            "in_list_filter": {
+              "values": [
+                "signup_start",
+                "signup_complete"
+              ]
+            }
+          }
+        },
+        {
+          "name": "metric_filter",
+          "type": "object",
+          "required": false,
+          "description": "Same filter expression DSL, applied to metrics after aggregation.",
+          "example": {
+            "field_name": "sessions",
+            "numeric_filter": {
+              "operation": "GREATER_THAN",
+              "value": 0
+            }
+          }
+        },
+        {
+          "name": "order_bys",
+          "type": "list",
+          "required": false,
+          "description": "Sort by requested fields with field and direction (asc or desc).",
+          "example": [
+            {
+              "field": "sessions",
+              "direction": "desc"
+            }
           ]
         },
         {
