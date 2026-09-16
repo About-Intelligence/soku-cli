@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { test } from 'node:test'
@@ -298,6 +298,61 @@ test('-o records the output path instead of being ignored', () => {
 
 test('-I requests a HEAD', () => {
   assert.equal(parseCurl(['curl', '-I', 'https://x.test/a']).method, 'HEAD')
+})
+
+// ── Glued `--flag=value` form ────────────────────────────────────────────────
+
+test('parses glued --flag=value the same as the space form', () => {
+  const glued = parseCurl(['curl', '--request=POST', '--url=https://x.test/a', '--header=X-Key: v', '--data={"a":1}'])
+  const spaced = parseCurl(['curl', '--request', 'POST', '--url', 'https://x.test/a', '--header', 'X-Key: v', '--data', '{"a":1}'])
+  assert.deepEqual(glued, spaced)
+  assert.equal(glued.method, 'POST')
+  assert.equal(glued.url, 'https://x.test/a')
+  assert.equal(glued.headers['x-key'], 'v')
+  assert.equal(glued.body?.toString(), '{"a":1}')
+})
+
+test('glued form works for every value-taking long option', () => {
+  const r = parseCurl([
+    'curl', '--url=https://x.test/a', '--output=out.bin', '--max-time=5', '--retry=2',
+    '--data-urlencode=q=a b', '--data-binary=x=1', '--data-ascii=y=2',
+  ])
+  assert.equal(r.output, 'out.bin')
+  assert.equal(r.body?.toString(), 'q=a+b&x=1&y=2')
+})
+
+test('splits glued --header on the first = only', () => {
+  const r = parseCurl(['curl', '--url=https://x.test/a', '--header=X-Foo: a=b'])
+  assert.equal(r.headers['x-foo'], 'a=b')
+})
+
+test('a glued unknown option is refused, not taken as the url', () => {
+  assert.throws(
+    () => parseCurl(['curl', 'https://api.example/real', '--referer=https://ref.example']),
+    (err: unknown) =>
+      err instanceof CurlUsageError && err.message === 'Unsupported curl flag: --referer=https://ref.example',
+  )
+})
+
+test('does not split a value that looks like a glued flag', () => {
+  const r = parseCurl(['curl', 'https://x.test/a', '--data', '--foo=bar'])
+  assert.equal(r.body?.toString(), '--foo=bar')
+})
+
+test('keeps a --data value that itself looks like a recognized glued option', () => {
+  const r = parseCurl(['curl', '--data', '--url=https://payload.invalid', 'https://target.invalid'])
+  assert.equal(r.method, 'POST')
+  assert.equal(r.url, 'https://target.invalid')
+  assert.equal(r.body?.toString(), '--url=https://payload.invalid')
+})
+
+test('glued --data-raw=@file reads the file, exactly like the space form', () => {
+  const file = join(mkdtempSync(join(tmpdir(), 'egress-data-')), 'body.json')
+  writeFileSync(file, '{"from":"file"}')
+  const glued = parseCurl(['curl', 'https://x.test/a', `--data-raw=@${file}`])
+  const spaced = parseCurl(['curl', 'https://x.test/a', '--data-raw', `@${file}`])
+  assert.equal(glued.body?.toString(), '{"from":"file"}')
+  assert.deepEqual(glued, spaced)
 })
 
 
