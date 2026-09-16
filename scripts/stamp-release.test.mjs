@@ -2,10 +2,15 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
 import {
+  MARKETPLACE_MANIFEST,
+  PLUGIN_MANIFESTS,
   stampChangelog,
+  stampMarketplace,
   stampPackage,
+  stampPluginManifest,
   stampSkill,
   stampVersionTs,
+  versionProblems,
 } from './stamp-release.mjs'
 
 test('stampPackage rewrites only the package version field', () => {
@@ -70,4 +75,58 @@ test('stampChangelog refuses to stamp a version that already exists', () => {
       ),
     /already has an entry/,
   )
+})
+
+test('every marketplace plugin manifest is on disk and carries a version', async () => {
+  const { readFileSync } = await import('node:fs')
+  const { join } = await import('node:path')
+  const root = join(import.meta.dirname, '..')
+  for (const file of [...PLUGIN_MANIFESTS, MARKETPLACE_MANIFEST]) {
+    const manifest = JSON.parse(readFileSync(join(root, file), 'utf8'))
+    assert.equal(manifest.name, 'soku', `${file} must be the soku plugin`)
+    if (file === MARKETPLACE_MANIFEST) {
+      assert.ok(manifest.plugins.every((p) => typeof p.version === 'string'), `${file} entries need a version`)
+    } else {
+      assert.match(manifest.version, /^\d+\.\d+\.\d+/, `${file} needs a semver version`)
+    }
+  }
+})
+
+test('stampPluginManifest rewrites only the top-level version', () => {
+  const before = '{\n  "name": "soku",\n  "version": "0.1.0-alpha.17",\n  "skills": ["./skills/soku/"]\n}'
+  const after = JSON.parse(stampPluginManifest(before, '0.1.0-alpha.18'))
+  assert.equal(after.version, '0.1.0-alpha.18')
+  assert.deepEqual(after.skills, ['./skills/soku/'])
+})
+
+test('stampMarketplace rewrites each plugin entry and leaves the catalog alone', () => {
+  const before = JSON.stringify({
+    name: 'soku',
+    version: '1',
+    plugins: [{ name: 'soku', source: './', version: '0.1.0-alpha.17' }],
+  })
+  const after = JSON.parse(stampMarketplace(before, '0.1.0-alpha.18'))
+  assert.equal(after.version, '1')
+  assert.equal(after.plugins[0].version, '0.1.0-alpha.18')
+  assert.equal(after.plugins[0].source, './')
+})
+
+test('versionProblems reports a plugin manifest left on an older version', () => {
+  const consistent = {
+    pkg: '0.1.0-alpha.18',
+    src: '0.1.0-alpha.18',
+    skill: '0.1.0-alpha.18',
+    changelog: changelog([{ version: '0.1.0-alpha.18', date: '2026-08-31' }]),
+    plugins: [{ file: '.claude-plugin/plugin.json', version: '0.1.0-alpha.18' }],
+    marketplace: [{ file: '.claude-plugin/marketplace.json (soku)', version: '0.1.0-alpha.18' }],
+  }
+  assert.deepEqual(versionProblems(consistent), [])
+
+  const stale = {
+    ...consistent,
+    plugins: [{ file: '.cursor-plugin/plugin.json', version: '0.1.0-alpha.17' }],
+  }
+  assert.deepEqual(versionProblems(stale), [
+    '.cursor-plugin/plugin.json version 0.1.0-alpha.17 != package.json 0.1.0-alpha.18',
+  ])
 })

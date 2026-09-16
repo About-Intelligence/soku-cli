@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "soku",
+  "description": "Official Soku plugin marketplace",
+  "owner": {
+    "name": "About Intelligence",
+    "url": "https://soku.ai"
+  },
+  "plugins": [
+    {
+      "name": "soku",
+      "source": "./",
+      "description": "Give any AI agent a secure command line to your growth stack through the Soku CLI.",
+      "version": "0.1.0-alpha.18",
+      "author": { "name": "About Intelligence" },
+      "homepage": "https://soku.ai/cli",
+      "repository": "https://github.com/About-Intelligence/soku-cli",
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": ["soku", "cli", "marketing", "google-ads", "meta-ads", "ga4", "posthog", "seo"]
+    }
+  ]
+}

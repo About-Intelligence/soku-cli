@@ -24,10 +24,39 @@ const VERSION_TS = join(ROOT, 'src/version.ts')
 const CHANGELOG = join(ROOT, 'src/generated/changelog.json')
 const SKILL = join(ROOT, 'skills/soku/SKILL.md')
 
+/**
+ * Marketplace plugin manifests. The repository root is the plugin root for
+ * Claude Code, Cursor and Codex; each manifest carries its own `version`, and
+ * Claude Code only offers users an update when that field changes. A manifest
+ * left behind on an older version silently freezes the plugin for everyone who
+ * installed it, so they are stamped and checked alongside the package version.
+ */
+export const PLUGIN_MANIFESTS = [
+  '.claude-plugin/plugin.json',
+  '.cursor-plugin/plugin.json',
+  '.codex-plugin/plugin.json',
+]
+/** Our own Claude Code marketplace catalog; its plugin entry repeats the version. */
+export const MARKETPLACE_MANIFEST = '.claude-plugin/marketplace.json'
+
 const VERSION_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/
 
 export function stampPackage(text, version) {
   return text.replace(/("version"\s*:\s*)"[^"]+"/, `$1"${version}"`)
+}
+
+/** Plugin manifests have a single top-level `version`; same rewrite as package.json. */
+export const stampPluginManifest = stampPackage
+
+/** The marketplace catalog's top-level `version` (if any) describes the catalog
+ * format, not the plugin, so only the plugin entries are stamped. */
+export function stampMarketplace(text, version) {
+  const catalog = JSON.parse(text)
+  return `${JSON.stringify(
+    { ...catalog, plugins: catalog.plugins.map((p) => ({ ...p, version })) },
+    null,
+    2,
+  )}\n`
 }
 
 export function stampVersionTs(text, version) {
@@ -66,11 +95,19 @@ function currentVersions() {
   const src = readFileSync(VERSION_TS, 'utf8').match(/CLI_VERSION = '([^']+)'/)?.[1]
   const skill = readFileSync(SKILL, 'utf8').match(/cliVersion:\s*"([^"]*)"/)?.[1]
   const changelog = JSON.parse(readFileSync(CHANGELOG, 'utf8'))
-  return { pkg, src, skill, changelog }
+  const plugins = PLUGIN_MANIFESTS.map((file) => ({
+    file,
+    version: JSON.parse(readFileSync(join(ROOT, file), 'utf8')).version,
+  }))
+  const marketplace = JSON.parse(readFileSync(join(ROOT, MARKETPLACE_MANIFEST), 'utf8')).plugins.map(
+    (p) => ({ file: `${MARKETPLACE_MANIFEST} (${p.name})`, version: p.version }),
+  )
+  return { pkg, src, skill, changelog, plugins, marketplace }
 }
 
-function check() {
-  const { pkg, src, skill, changelog } = currentVersions()
+/** Every version mismatch between package.json and the files that repeat it. Exported so the
+ * check is testable without touching the real tree. */
+export function versionProblems({ pkg, src, skill, changelog, plugins, marketplace }) {
   const problems = []
   if (pkg !== src) problems.push(`package.json ${pkg} != src/version.ts ${src}`)
   if (skill !== pkg) {
@@ -80,12 +117,22 @@ function check() {
   if (!stamped) {
     problems.push(`changelog has no entry for the current version ${pkg}`)
   }
+  for (const { file, version } of [...plugins, ...marketplace]) {
+    if (version !== pkg) problems.push(`${file} version ${version} != package.json ${pkg}`)
+  }
+  return problems
+}
+
+function check() {
+  const problems = versionProblems(currentVersions())
   if (problems.length > 0) {
     for (const p of problems) process.stderr.write(`  ${p}\n`)
     process.stderr.write('Run: node scripts/stamp-release.mjs <version>\n')
     process.exit(1)
   }
-  process.stdout.write(`version ${pkg} is consistent across all four files\n`)
+  process.stdout.write(
+    `version ${currentVersions().pkg} is consistent across package.json, src/version.ts, changelog.json, SKILL.md and the plugin manifests\n`,
+  )
 }
 
 function main() {
@@ -102,8 +149,16 @@ function main() {
   writeFileSync(SKILL, stampSkill(readFileSync(SKILL, 'utf8'), arg))
   const changelog = JSON.parse(readFileSync(CHANGELOG, 'utf8'))
   writeFileSync(CHANGELOG, `${JSON.stringify(stampChangelog(changelog, arg, today), null, 2)}\n`)
+  for (const file of PLUGIN_MANIFESTS) {
+    const path = join(ROOT, file)
+    writeFileSync(path, stampPluginManifest(readFileSync(path, 'utf8'), arg))
+  }
+  const marketplacePath = join(ROOT, MARKETPLACE_MANIFEST)
+  writeFileSync(marketplacePath, stampMarketplace(readFileSync(marketplacePath, 'utf8'), arg))
 
-  process.stdout.write(`stamped ${arg} (${today}) into package.json, src/version.ts, changelog.json, SKILL.md\n`)
+  process.stdout.write(
+    `stamped ${arg} (${today}) into package.json, src/version.ts, changelog.json, SKILL.md, ${PLUGIN_MANIFESTS.join(', ')}, ${MARKETPLACE_MANIFEST}\n`,
+  )
   process.stdout.write(`next: commit as "chore: release ${arg}", then tag soku-ai-cli-v${arg}\n`)
 }
 

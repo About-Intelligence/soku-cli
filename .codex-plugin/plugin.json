@@ -1,0 +1,45 @@
+{
+  "name": "soku",
+  "version": "0.1.0-alpha.18",
+  "description": "Give any AI agent a secure command line to your growth stack. Query Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog; publish SEO content; run review-gated campaign changes through the Soku CLI.",
+  "author": {
+    "name": "About Intelligence",
+    "url": "https://soku.ai"
+  },
+  "homepage": "https://soku.ai/cli",
+  "repository": "https://github.com/About-Intelligence/soku-cli",
+  "license": "MIT",
+  "keywords": [
+    "soku",
+    "cli",
+    "marketing",
+    "google-ads",
+    "meta-ads",
+    "chatgpt-ads",
+    "ga4",
+    "posthog",
+    "seo",
+    "analytics"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Soku",
+    "shortDescription": "Query ads, GA4 and PostHog data, publish SEO content, and ship review-gated campaign changes from Codex",
+    "longDescription": "Soku turns the ad platforms, analytics and growth tools already connected to your Soku workspace into typed, discoverable shell commands. This plugin teaches Codex how to install and sign in to the Soku CLI, select the right brand workspace, read Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog data, call covered third-party APIs with server-side credential injection, publish SEO pages, and create campaign changes that a human approves before anything goes live. Credentials never enter the prompt; every delivery-changing write is review-gated.",
+    "developerName": "About Intelligence",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://soku.ai",
+    "privacyPolicyURL": "https://soku.ai/privacy",
+    "termsOfServiceURL": "https://soku.ai/terms",
+    "defaultPrompt": [
+      "Install the Soku CLI, sign in, and run a read-only 30-day performance health check on my Google Ads account",
+      "Compare last month's Meta Ads spend with GA4 conversions for my brand",
+      "Draft a budget change for my top campaign and open it for human review"
+    ],
+    "composerIcon": "./assets/soku-logo.png",
+    "logo": "./assets/soku-logo.png",
+    "screenshots": [],
+    "brandColor": "#FF6B00"
+  }
+}

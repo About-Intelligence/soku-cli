@@ -77,6 +77,26 @@ soku --help
 
 No global install needed? Start with `npx @soku-ai/cli --help`.
 
+### Install as a plugin
+
+This repository is also a marketplace plugin for Claude Code, Cursor, and Codex.
+The plugin teaches the agent how to install, sign in to, and use the Soku CLI;
+it does not bundle the CLI itself, so `npm install -g @soku-ai/cli` still runs on
+your machine (the plugin's skill walks the agent through it).
+
+```bash
+# Claude Code
+claude plugin marketplace add About-Intelligence/soku-cli
+claude plugin install soku@soku
+```
+
+- **Cursor**: open **Customize → Plugins**, import `https://github.com/About-Intelligence/soku-cli`, and install `soku` at user or project scope.
+- **Codex / ChatGPT**: clone this repository; its `.agents/plugins/marketplace.json` registers the `soku` plugin in the local Plugins Directory.
+
+Business skills (`soku-ads-report`, `soku-google-ads`, …) are not part of the
+plugin. Install them on demand with `soku skill install <slug>`; `soku update
+skills` keeps them current.
+
 ## What can you do with it?
 
 ### Turn ad data into answers
