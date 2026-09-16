@@ -39,6 +39,33 @@ Read only the reference files needed for the user's task:
 For an installed business skill such as `soku-ads-report`, read that skill too.
 Business skills carry their own "Running this skill with the Soku CLI" section.
 
+## Prerequisite: The CLI Must Be Installed
+
+This skill only describes the `soku` command; it does not contain it. Check
+first:
+
+```bash
+soku --version
+```
+
+If the command is missing, install it (Node.js 20 or newer is required) and
+check again:
+
+```bash
+npm i -g @soku-ai/cli
+soku --version
+```
+
+If npm says `@soku-ai/cli` is not found, report that the official package is
+unavailable. Do not invent an unofficial package name.
+
+When this skill arrived as a marketplace plugin (Claude Code, Cursor, Codex),
+the CLI may also have installed its own copy under `~/.claude/skills/soku/`,
+`~/.codex/skills/soku/`, or `~/.cursor/skills/soku/`. Both copies are the same
+document at possibly different versions. The copy the CLI installed is refreshed
+together with the binary, so when the two disagree, prefer that one, and treat
+`soku --help` and `soku changelog` as the authority over either copy.
+
 ## Default Flow
 
 1. Check auth/workspace state:

@@ -1,0 +1,29 @@
+{
+  "name": "soku",
+  "displayName": "Soku",
+  "version": "0.1.0-alpha.18",
+  "description": "Give any AI agent a secure command line to your growth stack. Query Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog; publish SEO content; run review-gated campaign changes through the Soku CLI.",
+  "author": {
+    "name": "About Intelligence",
+    "url": "https://soku.ai"
+  },
+  "homepage": "https://soku.ai/cli",
+  "repository": "https://github.com/About-Intelligence/soku-cli",
+  "license": "MIT",
+  "logo": "assets/soku-logo.png",
+  "keywords": [
+    "soku",
+    "cli",
+    "marketing",
+    "google-ads",
+    "meta-ads",
+    "chatgpt-ads",
+    "ga4",
+    "posthog",
+    "seo",
+    "analytics"
+  ],
+  "category": "integrations",
+  "tags": ["soku", "marketing", "ads", "analytics", "seo", "cli"],
+  "skills": ["./skills/soku/"]
+}
