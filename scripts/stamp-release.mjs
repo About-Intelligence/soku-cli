@@ -104,7 +104,7 @@ function main() {
   writeFileSync(CHANGELOG, `${JSON.stringify(stampChangelog(changelog, arg, today), null, 2)}\n`)
 
   process.stdout.write(`stamped ${arg} (${today}) into package.json, src/version.ts, changelog.json, SKILL.md\n`)
-  process.stdout.write(`next: commit as "chore: release ${arg}", then tag soku-ai-cli-v${arg}\n`)
+  process.stdout.write(`next: commit as "chore: release ${arg}" and merge to main; CI tags soku-ai-cli-v${arg} and publishes to npm\n`)
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main()

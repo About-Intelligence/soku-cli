@@ -69,3 +69,34 @@ jobs:
           }
           console.log(`Packed ${pack.name}@${pack.version} with ${pack.files.length} files`)
           NODE
+
+  # Every push to main whose package.json version has no tag yet gets one, and
+  # that tag is what publishes to npm. A tag pushed with GITHUB_TOKEN does not
+  # fire `on: push: tags` (GitHub blocks workflow recursion), so publish.yml is
+  # dispatched explicitly on the new tag instead.
+  tag-release:
+    name: Tag release
+    needs: build-test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Tag the version and dispatch publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="soku-ai-cli-v$(node -p "require('./package.json').version")"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+            echo "$TAG already exists; nothing to release"
+            exit 0
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh workflow run publish.yml --ref "$TAG" -f dry_run=false
+          echo "tagged $TAG and dispatched publish"
