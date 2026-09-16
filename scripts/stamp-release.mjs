@@ -157,11 +157,9 @@ function main() {
   writeFileSync(marketplacePath, stampMarketplace(readFileSync(marketplacePath, 'utf8'), arg))
 
   process.stdout.write(
-    `stamped ${arg} (${today}) into package.json, src/version.ts, changelog.json, SKILL.md, ${PLUGIN_MANIFESTS.join(', ')}, ${MARKETPLACE_MANIFEST}
-`,
+    `stamped ${arg} (${today}) into package.json, src/version.ts, changelog.json, SKILL.md, ${PLUGIN_MANIFESTS.join(', ')}, ${MARKETPLACE_MANIFEST}\n`,
   )
-  process.stdout.write(`next: commit as "chore: release ${arg}" and merge to main; CI tags soku-ai-cli-v${arg} and publishes to npm
-`)
+  process.stdout.write(`next: commit as "chore: release ${arg}" and merge to main; CI tags soku-ai-cli-v${arg} and publishes to npm\n`)
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main()
