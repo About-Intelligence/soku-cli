@@ -5,3 +5,6 @@ node_modules/
 pnpm-debug.log
 npm-debug.log*
 .DS_Store
+
+# worktrees for claude
+.claude/worktrees

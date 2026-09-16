@@ -2,8 +2,8 @@
  *
  * The manifest (`src/generated/capabilities.json`, produced by
  * `scripts/gen_cli_capabilities.py`) is an offline snapshot of the backend
- * ActionSpec registry's full CLI surface — read + write + risk actions across
- * every granted resource. It is generated in-process (no live API / auth), and
+ * ActionSpec registry's full CLI surface — read + write + risk + generate
+ * actions across every granted resource. It is generated in-process (no live API / auth), and
  * a CI guard (`tests/unit/test_cli_capability_manifest_sync.py`) fails if it
  * drifts from the registry. Each action becomes a sub-command under its
  * namespace (e.g. `soku ads query-single-dimension`), with one flag per input
@@ -30,13 +30,19 @@ export interface ManifestParam {
   example?: unknown
 }
 
+/** Mirrors the backend registry's `Mode` literal. `generate` runs a paid model
+ * at a vendor and changes nothing in any customer system: not a write (no
+ * state), not a read (costs money). The registry forbids review-gating it, so
+ * the `--summary` injection below keys off `requires_review`, never `mode`. */
+export type ManifestMode = 'read' | 'write' | 'risk' | 'generate'
+
 export interface ManifestAction {
   id: string
   namespace: string
   action: string
   description: string
   long_description: string | null
-  mode: string
+  mode: ManifestMode
   platforms: string[]
   requires_review: boolean
   freshness_kind: string
@@ -91,6 +97,9 @@ function modeBadge(spec: ManifestAction): string {
     return spec.requires_review
       ? '[write] proposes a review; approve with `soku review approve <id>`'
       : '[write] executes immediately'
+  }
+  if (spec.mode === 'generate') {
+    return '[generate] runs a paid model and returns new content; changes nothing in customer systems; executes immediately'
   }
   return ''
 }

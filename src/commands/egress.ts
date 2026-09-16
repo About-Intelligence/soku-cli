@@ -156,6 +156,14 @@ const IGNORED_WITH_VALUE = new Set([
   '-D', '--dump-header',
 ])
 
+/** Long options that consume one value, and so also accept `--flag=value`. */
+const LONG_WITH_VALUE = new Set([
+  '--request', '--header',
+  '--data', '--data-raw', '--data-ascii', '--data-binary', '--data-urlencode',
+  '--url', '--output',
+  ...[...IGNORED_WITH_VALUE].filter((f) => f.startsWith('--')),
+])
+
 /** Expand a bundled short-flag token (`-sSL`) into its parts.
  *
  * Only bundles made entirely of no-value short flags expand; anything else is
@@ -197,9 +205,22 @@ export function parseCurl(tokens: string[]): ParsedCurl {
   }
 
   for (let i = 0; i < expanded.length; i++) {
-    const t = expanded[i]
+    let t = expanded[i]
+
+    // curl also accepts the glued `--flag=value` form. Un-glue only here, in
+    // option position, and only for long options we know take a value — so a
+    // VALUE that merely looks like one (`--data '--url=x'`) stays literal, and
+    // an unknown glued option still fails as unsupported instead of becoming
+    // the URL. Splits on the first `=`, so `--header=X: a=b` keeps `a=b`.
+    let inline: string | undefined
+    const eq = t.indexOf('=')
+    if (t.startsWith('--') && eq > 2 && LONG_WITH_VALUE.has(t.slice(0, eq))) {
+      inline = t.slice(eq + 1)
+      t = t.slice(0, eq)
+    }
 
     const requireValue = (flag: string): string => {
+      if (inline !== undefined) return inline
       const v = expanded[++i]
       if (v === undefined) throw new CurlUsageError(`${flag} expects a value.`)
       return v
