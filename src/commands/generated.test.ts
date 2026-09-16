@@ -45,6 +45,20 @@ const fixture: CapabilityManifest = {
       see_also: [],
     },
     {
+      id: 'action:ads/check_ad_compliance',
+      namespace: 'ads',
+      action: 'check_ad_compliance',
+      description: 'Advisory policy check.',
+      long_description: null,
+      mode: 'generate',
+      platforms: ['chatgpt_ads'],
+      requires_review: false,
+      freshness_kind: 'realtime',
+      input_params: [],
+      output_shape: null,
+      see_also: [],
+    },
+    {
       id: 'action:ads/gaql_search',
       namespace: 'ads',
       action: 'gaql_search',
@@ -152,6 +166,16 @@ test('gaql-search help warns that GAQL is a fallback path', () => {
   assert.match(help, /Raw call action: soku call ads gaql_search/)
 })
 
+test('generate-mode actions get a paid-generation badge and no --summary flag', () => {
+  const program = new Command()
+  buildGeneratedCommands(program, fixture)
+  const cmd = sub(group(program, 'ads'), 'check-ad-compliance')
+  const help = cmd.helpInformation()
+
+  assert.match(help, /\[generate\] runs a paid model/)
+  assert.doesNotMatch(help, /--summary/)
+})
+
 test('committed manifest parses and includes PostHog read commands', () => {
   // Read the source snapshot directly (the build-copied dist JSON is not
   // present in the test build output).
@@ -172,7 +196,7 @@ test('committed manifest parses and includes PostHog read commands', () => {
   for (const a of manifest.actions) {
     assert.ok(a.namespace && a.action, 'each action has namespace + action')
     assert.ok(Array.isArray(a.input_params), 'each action has input_params')
-    assert.ok(['read', 'write', 'risk'].includes(a.mode), `valid mode: ${a.mode}`)
+    assert.ok(['read', 'write', 'risk', 'generate'].includes(a.mode), `valid mode: ${a.mode}`)
     modes.add(a.mode)
   }
   // The manifest is the full CLI surface — read + write + risk — not the old
