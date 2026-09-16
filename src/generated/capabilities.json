@@ -20466,6 +20466,115 @@
       "output_shape": "{\"project_id\": \"my-analytics-prod\", \"connection_source\": \"service_account\", \"rows\": [{\"country\": \"US\", \"revenue\": 1234.5}], \"truncated\": false, \"total_bytes_processed\": \"2097152\", \"total_bytes_billed\": \"10485760\", \"cache_hit\": false} — or {\"dry_run\": true, \"total_bytes_processed\": \"2097152\", ...} when dry_run was set"
     },
     {
+      "id": "action:cloudx/list_operations",
+      "namespace": "cloudx",
+      "action": "list_operations",
+      "description": "Discover CloudX read/write operations and fetch an operation schema.",
+      "mode": "read",
+      "platforms": [
+        "cloudx"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "operation",
+          "type": "string",
+          "required": false,
+          "description": "Return the exact schema for one operation"
+        }
+      ],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
+      "id": "action:cloudx/list_resources",
+      "namespace": "cloudx",
+      "action": "list_resources",
+      "description": "List Brand-granted CloudX accounts.",
+      "mode": "read",
+      "platforms": [
+        "cloudx"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
+      "id": "action:cloudx/mutate",
+      "namespace": "cloudx",
+      "action": "mutate",
+      "description": "Edit or publish CloudX inventory configuration after approval.",
+      "mode": "risk",
+      "platforms": [
+        "cloudx"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "resource_id",
+          "type": "string",
+          "required": true,
+          "description": "Exact Brand-granted ID from cloudx/list_resources"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Operation from cloudx/list_operations"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": true,
+          "description": "Parameters matching the operation input_schema"
+        }
+      ],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
+      "id": "action:cloudx/query",
+      "namespace": "cloudx",
+      "action": "query",
+      "description": "Read CloudX reports, auctions or configuration on demand.",
+      "mode": "read",
+      "platforms": [
+        "cloudx"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "resource_id",
+          "type": "string",
+          "required": true,
+          "description": "Exact Brand-granted ID from cloudx/list_resources"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Operation from cloudx/list_operations"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": true,
+          "description": "Parameters matching the operation input_schema"
+        }
+      ],
+      "long_description": null,
+      "output_shape": "Provider content and structured result; no automatic pagination or data storage."
+    },
+    {
       "id": "action:composio/append_doc_from_markdown",
       "namespace": "composio",
       "action": "append_doc_from_markdown",

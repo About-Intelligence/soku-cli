@@ -14,8 +14,8 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 343,
-          "added": 51,
+          "after": 347,
+          "added": 55,
           "removed": 0,
           "changed": 30
         },
@@ -124,6 +124,26 @@
             "id": "applovin_max/run_report",
             "mode": "read",
             "description": "Query arbitrary closed-set MAX reporting columns; unknown columns are rejected locally."
+          },
+          {
+            "id": "cloudx/list_operations",
+            "mode": "read",
+            "description": "Discover CloudX read/write operations and fetch an operation schema."
+          },
+          {
+            "id": "cloudx/list_resources",
+            "mode": "read",
+            "description": "List Brand-granted CloudX accounts."
+          },
+          {
+            "id": "cloudx/mutate",
+            "mode": "risk",
+            "description": "Edit or publish CloudX inventory configuration after approval."
+          },
+          {
+            "id": "cloudx/query",
+            "mode": "read",
+            "description": "Read CloudX reports, auctions or configuration on demand."
           },
           {
             "id": "creatives/apply_ops",
