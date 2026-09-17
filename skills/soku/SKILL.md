@@ -3,22 +3,20 @@ name: soku
 description: >-
   Use when calling Soku CLI capabilities from a shell: auth, workspace
   selection, ads/GA4/PostHog data reads, typed ads writes, SEO Hosting,
-  automations, Context Hub files, migrating context or project files from
-  Claude, temporary file publishing, brand skills, third-party egress,
+  automations, Context Hub files, temporary file publishing, brand skills,
+  third-party egress,
   review-gated writes, skill installation, or CLI updates.
 license: MIT
-metadata:
-  author: About Intelligence
-  version: "0.5"
-  # CLI release this skill was written against. `soku changelog --since <that
-  # version>` lists what moved if the installed CLI is newer.
-  cliVersion: "0.1.0-alpha.18"
 ---
 
 # Soku CLI
 
-The `soku` CLI is the shell-native way for an AI agent to use Soku from Claude
-Code, Codex, Cursor, or any terminal. It talks to Soku over `/api/cli/*`; no MCP
+Written against Soku CLI release 0.1.0-alpha.18. If `soku --version` reports a
+newer release, run `soku changelog --since` that release before relying on
+details here.
+
+The `soku` CLI is the shell-native way for an AI agent to use Soku from your
+coding agent or any terminal. It talks to Soku over `/api/cli/*`; no MCP
 host is required. Treat this file as the router. Load the relevant reference
 file before acting on a detailed workflow.
 
@@ -34,7 +32,6 @@ Read only the reference files needed for the user's task:
 | SEO Hosting, automations, Context Hub files, temporary public file URLs | `references/seo-automation-files.md` |
 | Third-party APIs through server-side credential injection; security rules | `references/egress-security.md` |
 | Installing, updating, or removing Soku-managed local skills; finding out what an upgrade changed | `references/skills-updates.md` |
-| Migrate context, project files, or workspaces from Claude into Soku | Run `soku skill install migrate-from-claude`, then read the installed `soku-migrate-from-claude` skill. |
 
 For an installed business skill such as `soku-ads-report`, read that skill too.
 Business skills carry their own "Running this skill with the Soku CLI" section.
@@ -59,8 +56,8 @@ soku --version
 If npm says `@soku-ai/cli` is not found, report that the official package is
 unavailable. Do not invent an unofficial package name.
 
-When this skill arrived as a marketplace plugin (Claude Code, Cursor, Codex),
-the CLI may also have installed its own copy under `~/.claude/skills/soku/`,
+When this skill arrived as a marketplace plugin, the CLI may also have
+installed its own copy under `~/.claude/skills/soku/`,
 `~/.codex/skills/soku/`, or `~/.cursor/skills/soku/`. Both copies are the same
 document at possibly different versions. The copy the CLI installed is refreshed
 together with the binary, so when the two disagree, prefer that one, and treat
@@ -119,7 +116,7 @@ soku <namespace> <action> --help
   `soku egress -- curl ...` for covered third-party APIs.
 - A human must authorize every review-gated write — but don't force a
   copy-paste. If your harness prompts for explicit human confirmation before
-  each shell command (e.g. Claude Code's permission prompt), you MAY run
+  each shell command (a per-command permission prompt), you MAY run
   `soku review approve <id>` yourself after showing the user the diff/summary;
   that confirmation prompt is the human gate. Never allowlist or auto-approve
   `soku review approve`/`deny`, and never approve a write the user has not seen.

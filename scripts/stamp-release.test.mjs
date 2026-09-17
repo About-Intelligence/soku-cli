@@ -28,12 +28,11 @@ test('stampVersionTs rewrites CLI_VERSION and leaves the package name alone', ()
   assert.match(after, /CLI_PACKAGE_NAME = '@soku-ai\/cli'/)
 })
 
-test('stampSkill rewrites the cliVersion frontmatter field', () => {
-  const before = 'metadata:\n  version: "0.5"\n  cliVersion: "0.1.0-alpha.17"\n'
+test('stampSkill rewrites the release line under the title', () => {
+  const before = '# Soku CLI\n\nWritten against Soku CLI release 0.1.0-alpha.17. If `soku --version` reports a\nnewer release, run `soku changelog --since` that release.\n'
   const after = stampSkill(before, '0.1.0-alpha.18')
-  assert.match(after, /cliVersion: "0\.1\.0-alpha\.18"/)
-  // The skill's own doc version is independent and must not be touched.
-  assert.match(after, /version: "0\.5"/)
+  assert.match(after, /Written against Soku CLI release 0\.1\.0-alpha\.18\. If/)
+  assert.doesNotMatch(after, /alpha\.17/)
 })
 
 const changelog = (entries) => ({ schemaVersion: 1, historyStartsAt: '0.1.0-alpha.15', entries })
@@ -129,4 +128,19 @@ test('versionProblems reports a plugin manifest left on an older version', () =>
   assert.deepEqual(versionProblems(stale), [
     '.cursor-plugin/plugin.json version 0.1.0-alpha.17 != package.json 0.1.0-alpha.18',
   ])
+})
+
+test('the portable root manifest mirrors the Codex manifest', async () => {
+  // The OpenAI directory reads `.codex-plugin/plugin.json`; other agents read
+  // the Agent Plugins root manifest. Both carry the same listing copy, so an
+  // edit to one that forgets the other would ship two different descriptions.
+  const { readFileSync } = await import('node:fs')
+  const { join } = await import('node:path')
+  const root = join(import.meta.dirname, '..')
+  const portable = JSON.parse(readFileSync(join(root, 'plugin.json'), 'utf8'))
+  const codex = JSON.parse(readFileSync(join(root, '.codex-plugin/plugin.json'), 'utf8'))
+  for (const key of ['name', 'version', 'description', 'author', 'homepage', 'repository', 'license', 'keywords']) {
+    assert.deepEqual(portable[key], codex[key], `${key} differs between plugin.json and .codex-plugin/plugin.json`)
+  }
+  assert.deepEqual(portable.extensions['com.openai'].interface, codex.interface, 'interface block differs')
 })
