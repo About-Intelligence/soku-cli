@@ -1,7 +1,7 @@
 {
   "name": "soku",
   "version": "0.1.0-alpha.18",
-  "description": "Give any AI agent a secure command line to your growth stack. Query Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog; publish SEO content; run review-gated campaign changes through the Soku CLI.",
+  "description": "Soku is the AI marketing agent for ads and creatives. This plugin brings it into Codex and ChatGPT: analyze performance across Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog, audit spend, research competitors, publish SEO pages, and prepare campaign changes for your approval.",
   "author": {
     "name": "About Intelligence",
     "url": "https://soku.ai"
@@ -11,24 +11,34 @@
   "license": "MIT",
   "keywords": [
     "soku",
-    "cli",
     "marketing",
+    "ai-marketing-agent",
+    "ads",
+    "ad-creatives",
     "google-ads",
     "meta-ads",
+    "tiktok-ads",
     "chatgpt-ads",
     "ga4",
     "posthog",
     "seo",
-    "analytics"
+    "media-plan",
+    "competitor-research",
+    "analytics",
+    "cli"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Soku",
-    "shortDescription": "Query ads, GA4 and PostHog data, publish SEO content, and ship review-gated campaign changes from Codex",
-    "longDescription": "Soku turns the ad platforms, analytics and growth tools already connected to your Soku workspace into typed, discoverable shell commands. This plugin teaches Codex how to install and sign in to the Soku CLI, select the right brand workspace, read Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog data, call covered third-party APIs with server-side credential injection, publish SEO pages, and create campaign changes that a human approves before anything goes live. Credentials never enter the prompt; every delivery-changing write is review-gated.",
+    "shortDescription": "The AI marketing agent for ads and creatives, inside Codex and ChatGPT",
+    "longDescription": "Soku is the AI marketing agent for ads and creatives. This plugin brings it into Codex and ChatGPT through the Soku CLI.\n\nWhat it can do:\n- Analyze performance across Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog, and explain what changed and why.\n- Audit accounts, find wasted spend, compare ad spend with real conversions, and build media plans.\n- Research competitors' ads, keywords and landing pages.\n- Draft and publish SEO pages, and schedule recurring marketing reports.\n- Prepare campaign changes for your approval; nothing goes live until you say so.\n\nOne agent, every growth channel. Your accounts stay yours: Soku works on the data you already own and never asks for platform credentials. Built for marketers and agencies managing many brands.",
     "developerName": "About Intelligence",
-    "category": "Productivity",
-    "capabilities": ["Interactive", "Read", "Write"],
+    "category": "Business & Operations",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://soku.ai",
     "privacyPolicyURL": "https://soku.ai/privacy",
     "termsOfServiceURL": "https://soku.ai/terms",
@@ -37,8 +47,8 @@
       "Compare last month's Meta Ads spend with GA4 conversions for my brand",
       "Draft a budget change for my top campaign and open it for human review"
     ],
-    "composerIcon": "./assets/soku-logo.png",
-    "logo": "./assets/soku-logo.png",
+    "composerIcon": "./assets/soku-logo-plate.png",
+    "logo": "./assets/soku-logo-plate.png",
     "screenshots": [],
     "brandColor": "#FF6B00"
   }
