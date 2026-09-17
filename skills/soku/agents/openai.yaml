@@ -1,0 +1,4 @@
+interface:
+  display_name: "Soku CLI"
+  short_description: "Install, sign in to and operate the Soku CLI: ads, GA4 and PostHog reads, SEO publishing, review-gated campaign changes"
+  default_prompt: "Use $soku to install or update the Soku CLI, sign in, select my brand workspace, read my ads, GA4 and PostHog data, and prepare campaign changes for human review."

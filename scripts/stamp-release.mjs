@@ -26,12 +26,14 @@ const SKILL = join(ROOT, 'skills/soku/SKILL.md')
 
 /**
  * Marketplace plugin manifests. The repository root is the plugin root for
- * Claude Code, Cursor and Codex; each manifest carries its own `version`, and
+ * Claude Code, Cursor and Codex, and the root `plugin.json` is the portable
+ * Agent Plugins manifest the OpenAI directory reads; each manifest carries its own `version`, and
  * Claude Code only offers users an update when that field changes. A manifest
  * left behind on an older version silently freezes the plugin for everyone who
  * installed it, so they are stamped and checked alongside the package version.
  */
 export const PLUGIN_MANIFESTS = [
+  'plugin.json',
   '.claude-plugin/plugin.json',
   '.cursor-plugin/plugin.json',
   '.codex-plugin/plugin.json',
