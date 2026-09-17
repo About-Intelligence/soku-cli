@@ -14,12 +14,22 @@
       "capabilities": {
         "counts": {
           "before": 292,
-          "after": 347,
-          "added": 55,
+          "after": 349,
+          "added": 57,
           "removed": 0,
           "changed": 72
         },
         "added": [
+          {
+            "id": "adjust/get_report",
+            "mode": "read",
+            "description": "Read an Adjust Report Service report for one Brand-granted App using an API Token."
+          },
+          {
+            "id": "adjust/list_apps",
+            "mode": "read",
+            "description": "List Brand-granted Adjust Apps connected with an API Token (not MCP connections)."
+          },
           {
             "id": "admob/campaign_report",
             "mode": "read",

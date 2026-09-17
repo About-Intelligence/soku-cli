@@ -1,6 +1,83 @@
 {
   "actions": [
     {
+      "id": "action:adjust/get_report",
+      "namespace": "adjust",
+      "action": "get_report",
+      "description": "Read an Adjust Report Service report for one Brand-granted App using an API Token.",
+      "mode": "read",
+      "platforms": [
+        "adjust"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": true,
+          "description": "App resource ID from adjust/list_apps."
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD; max 366 days per query."
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "required": true,
+          "description": "Inclusive YYYY-MM-DD."
+        },
+        {
+          "name": "dimensions",
+          "type": "list",
+          "required": false,
+          "description": "Default day,network,campaign. Allowed: adgroup,adgroup_id_network,adgroup_network,app,app_token,campaign,campaign_id_network,campaign_network,channel,country,country_code,creative,creative_id_network,creative_network,currency,currency_code,day,device_type,hour,month,network,os_name,partner,partner_id,partner_name,platform,quarter,region,store_id,store_type,week,year"
+        },
+        {
+          "name": "metrics",
+          "type": "list",
+          "required": false,
+          "description": "Default installs. Allowed: ad_revenue_total_d0,ad_revenue_total_d1,ad_revenue_total_d120,ad_revenue_total_d14,ad_revenue_total_d3,ad_revenue_total_d30,ad_revenue_total_d60,ad_revenue_total_d7,ad_revenue_total_d90,clicks,cost,ecpi,events,impressions,installs,network_clicks,network_cost,network_ecpi,network_impressions,network_installs,retention_rate_d0,retention_rate_d1,retention_rate_d120,retention_rate_d14,retention_rate_d3,retention_rate_d30,retention_rate_d60,retention_rate_d7,retention_rate_d90,revenue,revenue_total_d0,revenue_total_d1,revenue_total_d120,revenue_total_d14,revenue_total_d3,revenue_total_d30,revenue_total_d60,revenue_total_d7,revenue_total_d90,roas_d0,roas_d1,roas_d120,roas_d14,roas_d3,roas_d30,roas_d60,roas_d7,roas_d90,sessions,skad_installs"
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "required": false,
+          "description": "ISO currency, default USD."
+        },
+        {
+          "name": "utc_offset",
+          "type": "string",
+          "required": false,
+          "description": "Report timezone offset, default +00:00."
+        },
+        {
+          "name": "cohort_maturity",
+          "type": "string",
+          "required": false,
+          "description": "immature (default) or mature."
+        },
+        {
+          "name": "attribution_source",
+          "type": "string",
+          "required": false,
+          "description": "dynamic (default) or first."
+        },
+        {
+          "name": "ad_spend_mode",
+          "type": "string",
+          "required": false,
+          "description": "network (default), adjust or mixed."
+        }
+      ],
+      "long_description": null,
+      "output_shape": "data.{app_id,rows,totals,warnings,query,truncated,total_rows,fetched_at,data_updated_at,data_source,note}"
+    },
+    {
       "id": "action:adjust/list_accounts",
       "namespace": "adjust",
       "action": "list_accounts",
@@ -15,6 +92,22 @@
       "input_params": [],
       "long_description": "Returns the Adjust accounts granted to the current brand (account_id + name). START HERE for any Adjust task: every other adjust action requires one of these account_ids. Do NOT ask the user for an account id — this action is the source of truth. Adjust uses the account selected during authorization. These IDs identify Soku connections, not Adjust account IDs. Reauthorize as a new connection to select another account.",
       "output_shape": "data.rows[].{account_id, name}"
+    },
+    {
+      "id": "action:adjust/list_apps",
+      "namespace": "adjust",
+      "action": "list_apps",
+      "description": "List Brand-granted Adjust Apps connected with an API Token (not MCP connections).",
+      "mode": "read",
+      "platforms": [
+        "adjust"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": null,
+      "output_shape": "data.rows[].{app_id,name}"
     },
     {
       "id": "action:adjust/list_tools",
