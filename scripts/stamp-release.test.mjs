@@ -28,8 +28,8 @@ test('stampVersionTs rewrites CLI_VERSION and leaves the package name alone', ()
   assert.match(after, /CLI_PACKAGE_NAME = '@soku-ai\/cli'/)
 })
 
-test('stampSkill rewrites the cliVersion frontmatter field', () => {
-  const before = 'metadata:\n  version: "0.5"\n  cliVersion: "0.1.0-alpha.17"\n'
+test('stampSkill rewrites the cliVersion note below the frontmatter', () => {
+  const before = '---\nlicense: MIT\n---\n\n<!-- cliVersion: "0.1.0-alpha.17" — written against. version: "0.5" -->\n'
   const after = stampSkill(before, '0.1.0-alpha.18')
   assert.match(after, /cliVersion: "0\.1\.0-alpha\.18"/)
   // The skill's own doc version is independent and must not be touched.

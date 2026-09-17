@@ -7,13 +7,13 @@ description: >-
   Claude, temporary file publishing, brand skills, third-party egress,
   review-gated writes, skill installation, or CLI updates.
 license: MIT
-metadata:
-  author: About Intelligence
-  version: "0.5"
-  # CLI release this skill was written against. `soku changelog --since <that
-  # version>` lists what moved if the installed CLI is newer.
-  cliVersion: "0.1.0-alpha.18"
 ---
+
+<!-- cliVersion: "0.1.0-alpha.18" — the CLI release this skill was written
+     against. `soku changelog --since <that version>` lists what moved if the
+     installed CLI is newer. Kept out of the frontmatter: the OpenAI plugin
+     directory flags a `metadata` block there as not configuring the skill
+     interface, and `scripts/stamp-release.mjs` reads this line by regex. -->
 
 # Soku CLI
 
