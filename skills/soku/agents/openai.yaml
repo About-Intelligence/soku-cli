@@ -1,0 +1,4 @@
+interface:
+  display_name: "Soku"
+  short_description: "The AI marketing agent for ads and creatives: analyze ad and analytics performance, audit spend, research competitors, publish SEO pages, and prepare campaign changes for your approval"
+  default_prompt: "Use $soku to set up the Soku CLI, sign in, pick my brand, and run a 30-day performance health check across my ad accounts and analytics."
