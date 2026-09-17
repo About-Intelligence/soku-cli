@@ -17,7 +17,7 @@
           "after": 347,
           "added": 55,
           "removed": 0,
-          "changed": 32
+          "changed": 36
         },
         "added": [
           {
@@ -489,6 +489,30 @@
             "id": "ads/upload_image",
             "fields": [
               "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/append_doc_from_markdown",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/create_doc_from_markdown",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/replace_doc_with_markdown",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/request_change",
+            "fields": [
               "long_description"
             ]
           },
