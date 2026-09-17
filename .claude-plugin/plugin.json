@@ -3,7 +3,7 @@
   "name": "soku",
   "displayName": "Soku",
   "version": "0.1.0-alpha.18",
-  "description": "Give any AI agent a secure command line to your growth stack. Query Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog; publish SEO content; run review-gated campaign changes through the Soku CLI.",
+  "description": "Soku is the AI marketing agent for ads and creatives. This plugin brings it into your coding agent: analyze performance across Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog, audit spend, research competitors, publish SEO pages, and prepare campaign changes for your approval.",
   "author": {
     "name": "About Intelligence",
     "url": "https://soku.ai"
@@ -13,15 +13,23 @@
   "license": "MIT",
   "keywords": [
     "soku",
-    "cli",
     "marketing",
+    "ai-marketing-agent",
+    "ads",
+    "ad-creatives",
     "google-ads",
     "meta-ads",
+    "tiktok-ads",
     "chatgpt-ads",
     "ga4",
     "posthog",
     "seo",
-    "analytics"
+    "media-plan",
+    "competitor-research",
+    "analytics",
+    "cli"
   ],
-  "skills": ["./skills/soku/"]
+  "skills": [
+    "./skills/soku/"
+  ]
 }
