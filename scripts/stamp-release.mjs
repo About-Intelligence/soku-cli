@@ -66,7 +66,7 @@ export function stampVersionTs(text, version) {
 }
 
 export function stampSkill(text, version) {
-  return text.replace(/(cliVersion:\s*)"[^"]*"/, `$1"${version}"`)
+  return text.replace(/(Written against Soku CLI release )[^\s.,]+(\.[^\s.,]+)*/, `$1${version}`)
 }
 
 /** Rename the `unreleased` entry to this version and date it.
@@ -95,7 +95,7 @@ export function stampChangelog(changelog, version, today) {
 function currentVersions() {
   const pkg = JSON.parse(readFileSync(PACKAGE, 'utf8')).version
   const src = readFileSync(VERSION_TS, 'utf8').match(/CLI_VERSION = '([^']+)'/)?.[1]
-  const skill = readFileSync(SKILL, 'utf8').match(/cliVersion:\s*"([^"]*)"/)?.[1]
+  const skill = readFileSync(SKILL, 'utf8').match(/Written against Soku CLI release (\S+)\.(?:\s|$)/)?.[1]
   const changelog = JSON.parse(readFileSync(CHANGELOG, 'utf8'))
   const plugins = PLUGIN_MANIFESTS.map((file) => ({
     file,
@@ -113,7 +113,7 @@ export function versionProblems({ pkg, src, skill, changelog, plugins, marketpla
   const problems = []
   if (pkg !== src) problems.push(`package.json ${pkg} != src/version.ts ${src}`)
   if (skill !== pkg) {
-    problems.push(`skills/soku/SKILL.md cliVersion ${skill} != package.json ${pkg}`)
+    problems.push(`skills/soku/SKILL.md release line ${skill} != package.json ${pkg}`)
   }
   const stamped = changelog.entries.some((e) => e.version === pkg)
   if (!stamped) {

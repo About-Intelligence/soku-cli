@@ -32,7 +32,7 @@
     "com.openai": {
       "interface": {
         "displayName": "Soku",
-        "shortDescription": "The AI marketing agent for ads and creatives, in your coding agent",
+        "shortDescription": "AI agent for ads and creatives",
         "longDescription": "Soku is the AI marketing agent for ads and creatives. This plugin brings it into your coding agent through the Soku CLI.\n\nWhat it can do:\n- Analyze performance across Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog, and explain what changed and why.\n- Audit accounts, find wasted spend, compare ad spend with real conversions, and build media plans.\n- Research competitors' ads, keywords and landing pages.\n- Draft and publish SEO pages, and schedule recurring marketing reports.\n- Prepare campaign changes for your approval; nothing goes live until you say so.\n\nOne agent, every growth channel. Your accounts stay yours: Soku works on the data you already own and never asks for platform credentials. Built for marketers and agencies managing many brands.",
         "developerName": "About Intelligence",
         "category": "Data & Analytics",

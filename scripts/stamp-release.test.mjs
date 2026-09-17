@@ -28,12 +28,11 @@ test('stampVersionTs rewrites CLI_VERSION and leaves the package name alone', ()
   assert.match(after, /CLI_PACKAGE_NAME = '@soku-ai\/cli'/)
 })
 
-test('stampSkill rewrites the cliVersion frontmatter field', () => {
-  const before = 'metadata:\n  version: "0.5"\n  cliVersion: "0.1.0-alpha.17"\n'
+test('stampSkill rewrites the release line under the title', () => {
+  const before = '# Soku CLI\n\nWritten against Soku CLI release 0.1.0-alpha.17. If `soku --version` reports a\nnewer release, run `soku changelog --since` that release.\n'
   const after = stampSkill(before, '0.1.0-alpha.18')
-  assert.match(after, /cliVersion: "0\.1\.0-alpha\.18"/)
-  // The skill's own doc version is independent and must not be touched.
-  assert.match(after, /version: "0\.5"/)
+  assert.match(after, /Written against Soku CLI release 0\.1\.0-alpha\.18\. If/)
+  assert.doesNotMatch(after, /alpha\.17/)
 })
 
 const changelog = (entries) => ({ schemaVersion: 1, historyStartsAt: '0.1.0-alpha.15', entries })

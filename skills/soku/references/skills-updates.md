@@ -107,6 +107,6 @@ binary that is running and needs no network call. It cannot speak for versions
 older than its `historyStartsAt`; when `--since` reaches past that, the response
 sets `truncated: true` and says so rather than implying nothing changed.
 
-This skill's frontmatter records the CLI release it was written against under
-`metadata.cliVersion`. If the installed CLI is newer, run the command above
-before relying on details in these reference files.
+This skill records the CLI release it was written against in the line right
+under its title. If the installed CLI is newer, run the command
+above before relying on details in these reference files.

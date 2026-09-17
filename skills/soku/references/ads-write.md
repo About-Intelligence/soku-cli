@@ -224,7 +224,7 @@ soku review show <review_id>
 
 As an agent, always show the review id and summary to the user first — a human
 must authorize the write. If your harness prompts for explicit human
-confirmation before each shell command (e.g. Claude Code's permission prompt),
+confirmation before each shell command (a per-command permission prompt),
 you MAY then run `soku review approve <id>` yourself: that prompt is the human
 gate, so never allowlist or auto-approve it. If your harness auto-runs commands
 without confirmation, do not self-approve — let the user run it. Approval is
