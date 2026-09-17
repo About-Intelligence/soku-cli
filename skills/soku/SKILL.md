@@ -125,6 +125,9 @@ soku <namespace> <action> --help
   `soku review approve`/`deny`, and never approve a write the user has not seen.
   If your harness runs commands without per-command human confirmation, do NOT
   self-approve — surface the `review_id` for the user to run.
+- An ads write that names an existing campaign / ad set / ad group / ad must
+  read that object back first and quote its current name and literal id in
+  `--summary`; the server rejects a summary that omits a literal target id.
 - Pass user values as separate argv elements. Do not build a shell command by
   string-concatenating untrusted values.
 - Do not scan local repo files, `AGENTS.md`, or `context/` folders for Soku
