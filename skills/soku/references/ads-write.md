@@ -114,12 +114,16 @@ soku ads meta creative create \
   --summary "Create Meta dynamic creative"
 ```
 
-Status controls exist at delivery levels:
+Status controls exist at delivery levels. A write that names an existing
+campaign / ad set / ad must first read that object back (`soku ads meta
+campaign get` / `adset get` / `ad get`, or the matching list command) and quote
+its current name **and** literal id in `--summary`; the server rejects a summary
+that omits a literal target id with `invalid_ads_payload`:
 
 ```bash
-soku ads meta campaign activate --campaign-id <campaign_id> --account-id <meta_account_id> --summary "Activate campaign"
-soku ads meta adset pause --adset-id <adset_id> --account-id <meta_account_id> --summary "Pause ad set"
-soku ads meta ad pause --ad-id <ad_id> --account-id <meta_account_id> --summary "Pause ad"
+soku ads meta campaign activate --campaign-id <campaign_id> --account-id <meta_account_id> --summary "Activate campaign 'Launch Test' (campaign_id <campaign_id>)"
+soku ads meta adset pause --adset-id <adset_id> --account-id <meta_account_id> --summary "Pause ad set 'US Prospecting' (adset_id <adset_id>)"
+soku ads meta ad pause --ad-id <ad_id> --account-id <meta_account_id> --summary "Pause ad 'Hero image ad' (ad_id <ad_id>)"
 ```
 
 ## Bulk Meta Create
@@ -223,7 +227,9 @@ soku review show <review_id>
 ```
 
 As an agent, always show the review id and summary to the user first — a human
-must authorize the write. If your harness prompts for explicit human
+must authorize the write. Do not tell the user a change is applied or live until
+`soku review show <review_id>` reports the execution result and the read-back
+matches; approval alone is not execution. If your harness prompts for explicit human
 confirmation before each shell command (a per-command permission prompt),
 you MAY then run `soku review approve <id>` yourself: that prompt is the human
 gate, so never allowlist or auto-approve it. If your harness auto-runs commands
