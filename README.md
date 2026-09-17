@@ -1,25 +1,15 @@
-<div align="center">
-  <a href="https://soku.ai">
-    <img src="./assets/soku-mark.svg" alt="Soku" width="104" />
-  </a>
-  <h1>Soku CLI</h1>
-  <p><strong>Give any AI agent a secure command line to your growth stack.</strong></p>
-  <p>
-    Query marketing data, manage campaigns, publish SEO content, and automate<br />
-    recurring work from Claude Code, Codex, Cursor, or any terminal.
-  </p>
-  <p>
-    <a href="https://www.npmjs.com/package/@soku-ai/cli"><img src="https://img.shields.io/npm/v/@soku-ai/cli?color=ff6b00&amp;label=npm" alt="npm version" /></a>
-    <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%3E%3D20-339933?logo=node.js&amp;logoColor=white" alt="Node.js 20 or newer" /></a>
-    <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-black.svg" alt="MIT license" /></a>
-  </p>
-  <p>
-    <a href="https://soku.ai">Website</a> ·
-    <a href="https://soku.ai/cli/skill.md">Agent guide</a> ·
-    <a href="https://www.npmjs.com/package/@soku-ai/cli">npm</a> ·
-    <a href="./CONTRIBUTING.md">Contributing</a>
-  </p>
-</div>
+# Soku CLI
+
+**Give any AI agent a secure command line to your growth stack.**
+
+Query marketing data, manage campaigns, publish SEO content, and automate
+recurring work from Claude Code, Codex, Cursor, or any terminal.
+
+[![npm version](https://img.shields.io/npm/v/@soku-ai/cli?color=ff6b00&label=npm)](https://www.npmjs.com/package/@soku-ai/cli)
+[![Node.js 20 or newer](https://img.shields.io/badge/Node.js-%3E%3D20-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MIT license](https://img.shields.io/badge/license-MIT-black.svg)](./LICENSE)
+
+[Website](https://soku.ai) · [Agent guide](https://soku.ai/cli/skill.md) · [npm](https://www.npmjs.com/package/@soku-ai/cli) · [Contributing](./CONTRIBUTING.md)
 
 ---
 
