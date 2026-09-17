@@ -74,10 +74,11 @@ Claude Code plugin also registers Soku's remote MCP server (name `soku`,
 - Sign in through the host's MCP authentication, never by pasting a token: in
   Claude Code run `/mcp` (or `claude mcp login soku` from a shell); in Cowork
   approve the Soku connector when the host asks. Both open a Soku login page.
-- The MCP tools cover the same brand-scoped reads, research and generation as
-  the CLI. A delivery-changing write is review-gated there too: Soku returns a
-  Live Surface link where a human approves it. Hand that link to the user; do
-  not try to approve on their behalf.
+- The MCP tools cover brand-scoped reads, research and generation. Writes on
+  MCP are limited to what Soku Connect publishes (today the creatives canvas
+  operations); they are review-gated, and Soku returns a Live Surface link
+  where a human approves them. Hand that link to the user; do not try to
+  approve on their behalf. Ads and SEO Hosting writes are CLI-only.
 - Local skill installation, Context Hub uploads from local files, memory and
   `soku review approve` exist only on the CLI. When a shell is available and
   `soku` can be installed, prefer the CLI.
