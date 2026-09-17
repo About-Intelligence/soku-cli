@@ -17,7 +17,7 @@
           "after": 347,
           "added": 55,
           "removed": 0,
-          "changed": 36
+          "changed": 72
         },
         "added": [
           {
@@ -323,6 +323,96 @@
             ]
           },
           {
+            "id": "ads/add_ad_group_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_callouts",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_webpage_exclusion",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_sitelinks",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_structured_snippets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/apply_ad_group_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/apply_campaign_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_ad",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_ads",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/bulk_create_adsets",
             "fields": [
               "long_description"
@@ -338,6 +428,7 @@
             "id": "ads/create_ad",
             "fields": [
               "input_params",
+              "long_description",
               "output_shape"
             ]
           },
@@ -352,6 +443,7 @@
             "id": "ads/create_ad_group",
             "fields": [
               "input_params",
+              "long_description",
               "output_shape"
             ]
           },
@@ -409,6 +501,12 @@
             ]
           },
           {
+            "id": "ads/generate_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/get_account_info",
             "fields": [
               "long_description",
@@ -450,7 +548,103 @@
             ]
           },
           {
+            "id": "ads/migrate_legacy_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_adset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_assets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_keyword",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/replace_campaign_ad_units",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/search_geo_locations",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_ad_schedule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_bid_modifier",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_final_url_suffix",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_geo_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_language_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_network_settings",
             "fields": [
               "long_description"
             ]
@@ -466,6 +660,7 @@
             "id": "ads/update_ad_group",
             "fields": [
               "input_params",
+              "long_description",
               "output_shape"
             ]
           },
@@ -483,6 +678,30 @@
               "input_params",
               "long_description",
               "output_shape"
+            ]
+          },
+          {
+            "id": "ads/update_gmv_max_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_keyword",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_smart_plus_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_smart_plus_campaign_status",
+            "fields": [
+              "long_description"
             ]
           },
           {
