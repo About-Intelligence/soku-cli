@@ -23,5 +23,11 @@
     "seo",
     "analytics"
   ],
-  "skills": ["./skills/soku/"]
+  "skills": ["./skills/soku/"],
+  "mcpServers": {
+    "soku": {
+      "type": "http",
+      "url": "https://api.soku.ai/mcp"
+    }
+  }
 }

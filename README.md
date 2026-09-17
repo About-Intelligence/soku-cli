@@ -90,6 +90,7 @@ claude plugin marketplace add About-Intelligence/soku-cli
 claude plugin install soku@soku
 ```
 
+- **Claude Cowork**: the Claude plugin also registers Soku's remote MCP server (`https://api.soku.ai/mcp`), so hosts without a shell can still read, research and prepare review-gated changes. Sign in when Cowork asks to authorize the `soku` connector.
 - **Cursor**: open **Customize → Plugins**, import `https://github.com/About-Intelligence/soku-cli`, and install `soku` at user or project scope.
 - **Codex / ChatGPT**: clone this repository; its `.agents/plugins/marketplace.json` registers the `soku` plugin in the local Plugins Directory.
 
