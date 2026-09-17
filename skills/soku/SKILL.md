@@ -16,9 +16,10 @@ newer release, run `soku changelog --since` that release before relying on
 details here.
 
 The `soku` CLI is the shell-native way for an AI agent to use Soku from your
-coding agent or any terminal. It talks to Soku over `/api/cli/*`; no MCP
-host is required. Treat this file as the router. Load the relevant reference
-file before acting on a detailed workflow.
+coding agent or any terminal. It talks to Soku over `/api/cli/*`; the CLI path
+needs no MCP host. Treat this file as the router. Load the relevant reference
+file before acting on a detailed workflow. If you have no usable shell, skip to
+"No Shell? Use the Soku MCP Connection".
 
 ## Reference Router
 
@@ -62,6 +63,24 @@ installed its own copy under `~/.claude/skills/soku/`,
 document at possibly different versions. The copy the CLI installed is refreshed
 together with the binary, so when the two disagree, prefer that one, and treat
 `soku --help` and `soku changelog` as the authority over either copy.
+
+## No Shell? Use the Soku MCP Connection
+
+Some hosts cannot run the CLI: Claude Cowork and claude.ai have no local shell,
+and a sandboxed environment may block npm or `api.soku.ai`. For those hosts the
+Claude Code plugin also registers Soku's remote MCP server (name `soku`,
+`https://api.soku.ai/mcp`, OAuth). Rules for that path:
+
+- Sign in through the host's MCP authentication, never by pasting a token: in
+  Claude Code run `/mcp` (or `claude mcp login soku` from a shell); in Cowork
+  approve the Soku connector when the host asks. Both open a Soku login page.
+- The MCP tools cover the same brand-scoped reads, research and generation as
+  the CLI. A delivery-changing write is review-gated there too: Soku returns a
+  Live Surface link where a human approves it. Hand that link to the user; do
+  not try to approve on their behalf.
+- Local skill installation, Context Hub uploads from local files, memory and
+  `soku review approve` exist only on the CLI. When a shell is available and
+  `soku` can be installed, prefer the CLI.
 
 ## Default Flow
 
