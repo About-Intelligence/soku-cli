@@ -311,25 +311,34 @@
           {
             "id": "adjust/list_accounts",
             "fields": [
-              "long_description"
+              "description",
+              "long_description",
+              "output_shape",
+              "see_also"
             ]
           },
           {
             "id": "adjust/list_tools",
             "fields": [
-              "input_params"
+              "description",
+              "input_params",
+              "long_description"
             ]
           },
           {
             "id": "adjust/query",
             "fields": [
-              "input_params"
+              "description",
+              "input_params",
+              "long_description"
             ]
           },
           {
             "id": "adjust/request_change",
             "fields": [
-              "input_params"
+              "description",
+              "input_params",
+              "long_description"
             ]
           },
           {
