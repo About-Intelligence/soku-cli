@@ -11,7 +11,7 @@ license: MIT
 
 # Soku CLI
 
-Written against Soku CLI release 0.1.0-alpha.18. If `soku --version` reports a
+Written against Soku CLI release 0.1.0-alpha.19. If `soku --version` reports a
 newer release, run `soku changelog --since` that release before relying on
 details here.
 

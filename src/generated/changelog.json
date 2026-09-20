@@ -3,8 +3,8 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
+      "version": "0.1.0-alpha.19",
+      "date": "2026-09-20",
       "notes": [
         "Sync September community skill commerce, vendor capability discovery/calls, explicit boolean values, and Google campaign tracking parameters."
       ],
