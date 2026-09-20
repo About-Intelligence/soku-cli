@@ -3,6 +3,94 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
+      "version": "unreleased",
+      "date": null,
+      "notes": [],
+      "commands": {
+        "added": [],
+        "changed": [],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 349,
+          "after": 350,
+          "added": 1,
+          "removed": 0,
+          "changed": 9
+        },
+        "added": [
+          {
+            "id": "bigquery/list_projects",
+            "mode": "read",
+            "description": "Discover BigQuery projects through a granted connection before asking for a project ID."
+          }
+        ],
+        "removed": [],
+        "changed": [
+          {
+            "id": "bigquery/get_table_schema",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "bigquery/list_datasets",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "bigquery/list_tables",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "bigquery/query",
+            "fields": [
+              "long_description",
+              "input_params"
+            ]
+          },
+          {
+            "id": "composio/graphql_mutate",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/graphql_query",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/list_accounts",
+            "fields": [
+              "long_description",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "composio/proxy_get",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/request_change",
+            "fields": [
+              "long_description"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0-alpha.19",
       "date": "2026-09-20",
       "notes": [
