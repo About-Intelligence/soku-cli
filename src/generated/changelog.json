@@ -5,10 +5,21 @@
     {
       "version": "unreleased",
       "date": null,
-      "notes": [],
+      "notes": [
+        "Sync September community skill commerce, vendor capability discovery/calls, explicit boolean values, and Google campaign tracking parameters."
+      ],
       "commands": {
-        "added": [],
-        "changed": [],
+        "added": [
+          "brand skill community list",
+          "brand skill community install",
+          "brand skill publish",
+          "egress capabilities",
+          "egress call (including --dry-run)"
+        ],
+        "changed": [
+          "Typed boolean flags accept --no-<flag> to send false without changing omitted defaults.",
+          "HTTP error envelopes preserve structured purchase and price-change details."
+        ],
         "removed": []
       },
       "capabilities": {
@@ -311,25 +322,34 @@
           {
             "id": "adjust/list_accounts",
             "fields": [
-              "long_description"
+              "description",
+              "long_description",
+              "output_shape",
+              "see_also"
             ]
           },
           {
             "id": "adjust/list_tools",
             "fields": [
-              "input_params"
+              "description",
+              "input_params",
+              "long_description"
             ]
           },
           {
             "id": "adjust/query",
             "fields": [
-              "input_params"
+              "description",
+              "input_params",
+              "long_description"
             ]
           },
           {
             "id": "adjust/request_change",
             "fields": [
-              "input_params"
+              "description",
+              "input_params",
+              "long_description"
             ]
           },
           {

@@ -96,3 +96,22 @@ success envelope. Soku-level failures use the normal CLI error envelope.
 - Pass user-provided values as separate argv elements.
 - Treat `verification_uri`, signed URLs, review ids, and provider URLs as
   opaque strings.
+
+## Discover And Call Endpoint Cards
+
+```bash
+soku egress capabilities --provider adyntel --query linkedin
+soku egress call adyntel linkedin_ads --args '{"company_domain":"example.com"}' --dry-run
+soku egress call adyntel linkedin_ads --args @arguments.json --output result.json
+```
+
+`capabilities` returns parameter contracts and quotes from the live server
+registry. `call --dry-run` validates and binds arguments on the server, then
+returns the request and `quote_usd_micros` without contacting the vendor or
+incurring vendor charges. Review the quote and intended call with the user
+before a paid execution. Removing `--dry-run` executes through the existing
+metered egress proxy and streams the upstream response verbatim; `--output`
+saves it to a file. Authentication stays server-side. A binding error stops
+before execution. Raw `soku egress -- curl ...` remains available for endpoints
+without published cards. Do not infer that an unlisted vendor is unsupported:
+BYOK providers may be host-discoverable without priced endpoint cards.

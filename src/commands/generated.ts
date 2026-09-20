@@ -231,7 +231,9 @@ export function buildGeneratedCommands(
       const flag = `--${toKebab(param.name)}`
       const desc = param.description || param.name
       if (param.type === 'boolean') {
-        cmd.option(flag, desc)
+        if (param.required) cmd.requiredOption(flag, desc)
+        else cmd.option(flag, desc)
+        cmd.option(`--no-${toKebab(param.name)}`, `Set ${param.name} to false`)
         continue
       }
       const valueFlag = `${flag} <value>`

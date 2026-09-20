@@ -110,3 +110,34 @@ sets `truncated: true` and says so rather than implying nothing changed.
 This skill records the CLI release it was written against in the line right
 under its title. If the installed CLI is newer, run the command
 above before relying on details in these reference files.
+
+## Community Skills In The Active Brand
+
+Local `soku skill install` installs a business skill into the calling agent.
+`brand skill` manages skills in the active Soku brand instead. Official catalog
+installs and community installs have separate commands:
+
+```bash
+soku workspace status
+soku brand skill community list --query "audit" --sort installs --limit 30 --offset 0
+soku brand skill community install growth-audit
+soku brand skill community install growth-audit --expected-price-credits 300
+soku brand skill publish my-skill --categories analytics,ads --price-credits 300
+```
+
+Browse first: the list includes price, entitlement, installed version, and
+available updates. Only pass `--expected-price-credits` after the user agrees
+to that skill's exact one-time price for the active organization. Without the
+flag, a paid skill needing purchase returns `purchase_required`; already owned,
+free, and publisher-entitled skills can install without a new purchase.
+A changed price returns `conflict` with `error.details.code = price_changed` and
+`error.details.price_credits`. Obtain agreement to the new price before retrying;
+never automatically restate the server's price. Reinstall upgrades an existing
+community copy. Read it first if the brand has local edits.
+
+`publish` publishes an uploaded private skill. Omit `--price-credits` to retain
+the listing price; use 0 for free or 100–20000 for paid. Publishing paid versions
+requires a paid plan and review: inspect `skill.status` and
+`skill.pending_version.review_status`, and never describe a pending version as
+live. New versions require a version bump in SKILL.md. These mutations are not
+ads review-gated and run immediately subject to server admission.

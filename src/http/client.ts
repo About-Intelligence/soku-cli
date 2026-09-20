@@ -29,6 +29,7 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly hint?: string,
+    readonly details?: Record<string, unknown>,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -74,9 +75,9 @@ export async function apiRequest<T = unknown>(path: string, opts: RequestOptions
   const base = resolveApiBaseUrl(opts.apiBase)
   // Status 0 marks a failure that never reached the server, so a caller
   // classifying retriability sees "no answer" rather than a fabricated code.
-  const fail = (type: string, message: string, status: number, code: ExitCodeValue, hint?: string): never => {
-    if (opts.throwOnError) throw new ApiError(type, message, status, hint)
-    return emitError(type, message, code, hint)
+  const fail = (type: string, message: string, status: number, code: ExitCodeValue, hint?: string, details?: Record<string, unknown>): never => {
+    if (opts.throwOnError) throw new ApiError(type, message, status, hint, details)
+    return emitError(type, message, code, hint, details)
   }
   let res: Response
   try {
@@ -135,6 +136,7 @@ export async function apiRequest<T = unknown>(path: string, opts: RequestOptions
       res.status,
       exitCodeForStatus(res.status),
       describeHint(parsed) ?? undefined,
+      describeDetails(parsed),
     )
   }
 
@@ -174,6 +176,14 @@ function describeCode(parsed: unknown): string | null {
   const err = dispatcherErrorObject(parsed)
   if (err?.code) return String(err.code)
   return null
+}
+
+function describeDetails(parsed: unknown): Record<string, unknown> | undefined {
+  const detail = detailObject(parsed)
+  const value = responseSchemaError(detail)?.details ?? detail?.details ?? dispatcherErrorObject(parsed)?.details
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
 }
 
 function describeHint(parsed: unknown): string | null {

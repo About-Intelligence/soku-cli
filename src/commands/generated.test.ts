@@ -268,3 +268,41 @@ test('committed manifest registers alongside the hand-written org command', () =
     assert.ok(sub(org, a.action.replace(/_/g, '-')), `org/${a.action} should be registered`)
   }
 })
+
+test('boolean flags preserve omitted, true, and explicit false states', async () => {
+  for (const [flags, expected] of [[[], undefined], [['--debug'], true], [['--no-debug'], false]] as const) {
+    const program = new Command()
+    buildGeneratedCommands(program, fixture)
+    const command = sub(group(program, 'ads'), 'query-single-dimension')
+    let value: unknown = 'not called'
+    command.action((opts) => { value = opts.debug })
+    await program.parseAsync(['ads', 'query-single-dimension', '--account-id', 'test', ...flags], { from: 'user' })
+    assert.equal(value, expected)
+  }
+})
+
+test('required boolean accepts explicit false and rejects omission', async () => {
+  const manifest: CapabilityManifest = { actions: [{ ...fixture.actions[0], input_params: [
+    { name: 'enabled', type: 'boolean', required: true, description: 'Enabled state' },
+  ] }] }
+  const program = new Command().exitOverride().configureOutput({ writeErr: () => {} })
+  buildGeneratedCommands(program, manifest)
+  const command = sub(group(program, 'ads'), 'list-ad-accounts')
+  let value: unknown
+  command.action((opts) => { value = opts.enabled })
+  await assert.rejects(program.parseAsync(['ads', 'list-ad-accounts'], { from: 'user' }), /required option/)
+  await program.parseAsync(['ads', 'list-ad-accounts', '--no-enabled'], { from: 'user' })
+  assert.equal(value, false)
+})
+
+test('latest manifest exposes campaign tracking and new integration opt-outs', () => {
+  const manifest = JSON.parse(readFileSync('src/generated/capabilities.json', 'utf8')) as CapabilityManifest
+  const program = new Command()
+  buildGeneratedCommands(program, manifest)
+  const campaign = sub(group(program, 'ads'), 'update-campaign')
+  for (const flag of ['--tracking-url-template', '--final-url-suffix']) {
+    assert.ok(campaign.options.some((option) => option.long === flag), flag)
+  }
+  assert.ok(sub(group(program, 'thinkingdata'), 'query-metric').options.some((option) => option.long === '--no-use-cache'))
+  assert.ok(sub(group(program, 'applovin_max'), 'run-report').options.some((option) => option.long === '--no-exclude-zero-rows'))
+})

@@ -14,7 +14,7 @@ import { createWriteStream, readFileSync } from 'node:fs'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 
-import { Command } from 'commander'
+import { Command, InvalidArgumentError } from 'commander'
 
 import { clearToken, loadToken } from '../auth/store.js'
 import { loadConfig, resolveApiBaseUrl } from '../config.js'
@@ -415,6 +415,35 @@ interface ProviderItem {
   auth: { location: string; name: string }
 }
 
+interface ProviderCapability {
+  provider: string
+  slug: string
+  title: string
+  summary: string
+  [key: string]: unknown
+}
+
+interface BoundCapabilityRequest {
+  method: string
+  url: string
+  headers: Record<string, string>
+  body: unknown
+  quote_usd_micros: number
+}
+
+function parseCapabilityArguments(raw: string): Record<string, unknown> {
+  let value: unknown
+  try {
+    value = JSON.parse(raw.startsWith('@') ? readFileSync(raw.slice(1), 'utf8') : raw)
+  } catch {
+    throw new InvalidArgumentError('Expected a JSON object or @path to a JSON file.')
+  }
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new InvalidArgumentError('Capability arguments must be a JSON object.')
+  }
+  return value as Record<string, unknown>
+}
+
 export function registerEgressCommands(program: Command): void {
   const egress = program
     .command('egress')
@@ -432,6 +461,45 @@ export function registerEgressCommands(program: Command): void {
         throw err
       }
       await runEgress(parsed)
+    })
+
+  egress.command('capabilities')
+    .description('Discover vendor endpoint parameter contracts and quotes')
+    .option('--provider <id>', 'Filter by exact provider ID')
+    .option('--query <text>', 'Search capability slug, title, and summary')
+    .action(async (opts: { provider?: string; query?: string }) => {
+      const data = await apiRequest<{ capabilities: ProviderCapability[]; count: number }>(
+        '/api/cli/egress/capabilities', { workspace: true },
+      )
+      const query = opts.query?.toLowerCase()
+      const capabilities = data.capabilities.filter((card) =>
+        (!opts.provider || card.provider === opts.provider) &&
+        (!query || `${card.slug} ${card.title} ${card.summary}`.toLowerCase().includes(query)),
+      )
+      emitSuccess({ capabilities, count: capabilities.length })
+    })
+
+  egress.command('call <provider> <capability>')
+    .description('Bind capability arguments on the server and execute through metered egress')
+    .option('--args <json-or-file>', 'JSON argument object, or @path to a JSON file', parseCapabilityArguments, {})
+    .option('--dry-run', 'Return the bound request and quote without calling or charging the vendor')
+    .option('-o, --output <file>', 'Write the upstream response body to this file')
+    .action(async (provider: string, capability: string, opts: { args: Record<string, unknown>; dryRun?: boolean; output?: string }) => {
+      const bound = await apiRequest<BoundCapabilityRequest>(
+        `/api/cli/egress/capabilities/${encodeURIComponent(provider)}/${encodeURIComponent(capability)}/request`,
+        { method: 'POST', workspace: true, body: { arguments: opts.args } },
+      )
+      if (opts.dryRun) emitSuccess(bound)
+      const hasBody = bound.body !== null && bound.body !== undefined
+      const headers = { ...bound.headers }
+      if (hasBody && !Object.keys(headers).some((name) => name.toLowerCase() === 'content-type')) {
+        headers['content-type'] = 'application/json'
+      }
+      await runEgress({
+        method: bound.method, url: bound.url, headers,
+        body: hasBody ? Buffer.from(JSON.stringify(bound.body)) : undefined,
+        output: opts.output,
+      })
     })
 
   egress

@@ -81,23 +81,26 @@
       "id": "action:adjust/list_accounts",
       "namespace": "adjust",
       "action": "list_accounts",
-      "description": "List the Adjust accounts this brand can query.",
+      "description": "List Brand-granted Adjust MCP connections only; API Token Apps use adjust/list_apps.",
       "mode": "read",
       "platforms": [
         "adjust"
       ],
       "requires_review": false,
       "freshness_kind": "realtime",
-      "see_also": [],
+      "see_also": [
+        "action:adjust/list_apps",
+        "action:adjust/get_report"
+      ],
       "input_params": [],
-      "long_description": "Returns the Adjust accounts granted to the current brand (account_id + name). START HERE for any Adjust task: every other adjust action requires one of these account_ids. Do NOT ask the user for an account id — this action is the source of truth. Adjust uses the account selected during authorization. These IDs identify Soku connections, not Adjust account IDs. Reauthorize as a new connection to select another account.",
-      "output_shape": "data.rows[].{account_id, name}"
+      "long_description": "Returns only MCP connections granted to the current brand (account_id + name). For API Token reporting, start with adjust/list_apps and then adjust/get_report. An empty MCP list does not mean no Adjust App is connected: check adjust/list_apps before asking the user to reconnect or enable MCP. For MCP, use these connection IDs with adjust/list_tools and adjust/query; never pass API App IDs to MCP actions. Do not ask users for IDs.",
+      "output_shape": "data.{rows[].{account_id, name}, note?}"
     },
     {
       "id": "action:adjust/list_apps",
       "namespace": "adjust",
       "action": "list_apps",
-      "description": "List Brand-granted Adjust Apps connected with an API Token (not MCP connections).",
+      "description": "Start here for Adjust API Token reports: list Brand-granted Apps, then call adjust/get_report. MCP connections use adjust/list_accounts.",
       "mode": "read",
       "platforms": [
         "adjust"
@@ -113,7 +116,7 @@
       "id": "action:adjust/list_tools",
       "namespace": "adjust",
       "action": "list_tools",
-      "description": "List the Adjust attribution/analytics tools available for an account.",
+      "description": "List MCP tools for an Adjust MCP connection; API reports use adjust/get_report.",
       "mode": "read",
       "platforms": [
         "adjust"
@@ -126,8 +129,8 @@
           "name": "project_id",
           "type": "string",
           "required": false,
-          "description": "Adjust account id (from adjust/list_accounts).",
-          "example": "adjust_acct_demo"
+          "description": "MCP connection ID from adjust/list_accounts; never an app: ID.",
+          "example": "connection:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         },
         {
           "name": "tool",
@@ -137,14 +140,14 @@
           "example": "reporting_tool"
         }
       ],
-      "long_description": "Returns the live Adjust MCP tool catalog for one granted account, each annotated with `requires_review`. The default response is a slim catalog without input schemas. Pass `tool` to fetch one exact tool's full input schema before calling `adjust/query`. Tools with `requires_review=true` (anything not on our read-only allowlist) must go through `adjust/request_change`, not `adjust/query`. Data is live from Adjust (realtime, no cached pipeline); Adjust MCP is Early Access, so treat results as best-effort.",
+      "long_description": "MCP connections only; API Token Apps use adjust/list_apps and adjust/get_report. Returns the live Adjust MCP tool catalog for one granted connection, each annotated with `requires_review`. The default response is a slim catalog without input schemas. Pass `tool` to fetch one exact tool's full input schema before calling `adjust/query`. Tools with `requires_review=true` (anything not on our read-only allowlist) must go through `adjust/request_change`, not `adjust/query`. Data is live from Adjust (realtime, no cached pipeline); Adjust MCP is Early Access, so treat results as best-effort.",
       "output_shape": "data.project_id, data.tools[].{name, description, requires_review[, input_schema when tool is provided]}"
     },
     {
       "id": "action:adjust/query",
       "namespace": "adjust",
       "action": "query",
-      "description": "Run a read-only Adjust tool (aggregated performance, cohorts, events, SKAN, app metadata).",
+      "description": "Run a read-only Adjust MCP tool (aggregated performance, cohorts, events, SKAN, app metadata).",
       "mode": "read",
       "platforms": [
         "adjust"
@@ -157,8 +160,8 @@
           "name": "project_id",
           "type": "string",
           "required": true,
-          "description": "Adjust account id (from adjust/list_accounts).",
-          "example": "adjust_acct_demo"
+          "description": "MCP connection ID from adjust/list_accounts; never an app: ID.",
+          "example": "connection:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         },
         {
           "name": "tool",
@@ -177,14 +180,14 @@
           }
         }
       ],
-      "long_description": "Forwards a read-only Adjust tool call for one granted account and returns live data (realtime — there is no cached sync pipeline). The hosted MCP exposes aggregated attribution/performance reporting (installs, cost, revenue, ROAS, retention by network/campaign/date), cohort and event aggregates, SKAN (iOS) data, and app metadata. Get the account_id from `adjust/list_accounts` (never ask the user for it). Only allowlisted read tools run immediately; anything else returns `requires_review` — call `adjust/request_change`. The response echoes which account was queried.",
+      "long_description": "MCP connections only; API Token Apps use adjust/get_report instead. Forwards a read-only Adjust tool call for one granted connection and returns live data (realtime — there is no cached sync pipeline). The hosted MCP exposes aggregated attribution/performance reporting (installs, cost, revenue, ROAS, retention by network/campaign/date), cohort and event aggregates, SKAN (iOS) data, and app metadata. Get the account_id from `adjust/list_accounts` (never ask the user for it). Only allowlisted read tools run immediately; anything else returns `requires_review` — call `adjust/request_change`. The response echoes which account was queried.",
       "output_shape": "data.{project_id, tool, is_error, content[], structured, truncated}"
     },
     {
       "id": "action:adjust/request_change",
       "namespace": "adjust",
       "action": "request_change",
-      "description": "Request a non-allowlisted Adjust tool (or a future write) via human approval.",
+      "description": "Request a non-allowlisted Adjust MCP tool (or a future write) via human approval.",
       "mode": "risk",
       "platforms": [
         "adjust"
@@ -197,8 +200,8 @@
           "name": "project_id",
           "type": "string",
           "required": true,
-          "description": "Adjust account id (from adjust/list_accounts).",
-          "example": "adjust_acct_demo"
+          "description": "MCP connection ID from adjust/list_accounts; never an app: ID.",
+          "example": "connection:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         },
         {
           "name": "tool",
@@ -217,7 +220,7 @@
           }
         }
       ],
-      "long_description": "Submits an Adjust tool call that is not on our read-only allowlist for human approval (HITL). Returns a pending_review_id immediately; the call is forwarded to Adjust only after a human approves. Use this for anything `adjust/query` rejected as requires_review. Note: account/org-wide listings (e.g. listing all accounts or users) are hard-hidden and never available, even here.",
+      "long_description": "MCP connections only; API Token reports use adjust/get_report and never require this action. Submits an Adjust tool call that is not on our read-only allowlist for human approval (HITL). Returns a pending_review_id immediately; the call is forwarded to Adjust only after a human approves. Use this for anything `adjust/query` rejected as requires_review. Note: account/org-wide listings (e.g. listing all accounts or users) are hard-hidden and never available, even here.",
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
     },
     {
@@ -17355,6 +17358,28 @@
           "source": "constant"
         },
         {
+          "name": "tracking_url_template",
+          "type": "string",
+          "required": false,
+          "description": "Google only: set a campaign-level third-party tracking template, such as a Sensors Data adlink containing the {lpurl} landing-page placeholder. A bare redirecting short link belongs in final_urls, not here. Empty string clears the template; omission preserves it.",
+          "example": "https://tracker.example/click?url={lpurl}",
+          "source": "user",
+          "platform": [
+            "google"
+          ]
+        },
+        {
+          "name": "final_url_suffix",
+          "type": "string",
+          "required": false,
+          "description": "Google only: set campaign-level tracking query parameters without a leading ? or &, e.g. UTM tags. Use tracking_url_template for a template containing {lpurl}; use final_urls for a bare short adlink. Empty string clears the suffix; omission preserves it.",
+          "example": "utm_source=google&utm_medium=cpc",
+          "source": "user",
+          "platform": [
+            "google"
+          ]
+        },
+        {
           "name": "start_date",
           "type": "string",
           "required": false,
@@ -17887,7 +17912,7 @@
           ]
         }
       ],
-      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros, asset_automation). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- When asset_automation is supplied, raw.asset_automation_settings is the COMPLETE merged list that was written (including entries you did not name), so it can be snapshotted as the approved intent.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Google asset_automation adds a third read (the campaign's current asset_automation_settings) before the mutate, and writes the merged list back under the bare 'asset_automation_settings' mask path. Two invariants are asserted before the mutate is sent: no automation type you did not name changes status, and no type appears twice; either failure returns success=false without touching the platform.\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Creation still sends the server-owned network_mode=openai under the private account-capability contract. A public generic advertiser-dashboard contract that describes server-managed allocation does not prove or replace that private contract.\n- Read action:ads/get_account_info first for identity, pixel and funding facts; it carries no activation verdict. Immediately before PATCH, Soku reads the exact Campaign and requires the same id and an explicitly non-active state. Identity-mismatched, active, or failed readback stops with no activation PATCH. Provider network_mode read metadata is unfinished and does not gate activation.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.\nMeta daily budgets are averages, not hard daily spend caps: eligible days may spend up to 75% above the daily budget, subject to the seven-day calendar-week limit of 7 times that budget. Explain this before promising a strict daily cap. Read back budget sharing and actual settings; do not infer them from a successful POST.\n\n\nReview summary contract:\n- Read the target object back in this turn and quote its current name AND literal id in the review summary, e.g. \"Rename campaign 'Summer Sale' (campaign_id 120210000000001)\". A summary that omits a literal hierarchy id (campaign_id / adset_id / ad_group_id / ad_id) present in the payload is rejected at submit with invalid_ads_payload; $op-N references are exempt.\n- Do not tell the user the change is done or will take effect until the review result reports success and the read-back matches the approved intent.\n- A budget increase must cite pacing (spend so far / daily budget / remaining window). When recent full days spent well under the daily budget, say budget is not the constraint instead of proposing more.",
+      "long_description": "Supported platforms: google, meta, tiktok, chatgpt_ads, linkedin. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nMutate an existing campaign's name, status, budget, bidding strategy, or platform-specific settings. This is the canonical way to activate, pause, rename, rebudget, or change campaign-level bidding.\n\nUse when:\n- The user wants to activate a paused campaign (status -> ENABLED on Google or ACTIVE on Meta).\n- The user wants to pause an active campaign or change its daily budget.\n- The user wants to change a Google campaign bidding strategy (MAXIMIZE_CLICKS, TARGET_CPA, TARGET_ROAS, etc.).\n- The user wants to retarget the Meta objective, bid_strategy, or spend_cap.\n\nDo not use when:\n- The campaign does not exist yet. Use action:ads/create_campaign.\n- The change touches ad groups, ad sets, ads, or keywords. Use the matching action:ads/update_ad_group / update_adset / update_ad / update_keyword.\n- The user wants targeting changes. Use action:ads/set_geo_targeting, set_language_targeting, set_network_settings, or set_bid_modifier.\n\nWorkflow:\n1. Call action:ads/list_campaigns to fetch the current state and capture old values for rollback.\n2. Submit via action:_batch/submit for HITL review.\n3. Verify via action:ads/list_campaigns or action:ads/gaql_search with dimensions=['campaign','bidding_strategy'].\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- Google raw.message lists the fields actually updated (name, status, start_date, end_date, budget_amount_micros, bidding_strategy, target_cpa_micros, target_roas, max_cpc_bid_micros, asset_automation, tracking_url_template, final_url_suffix). Returns success=false with 'No fields to update were provided.' if no mutable field is supplied.\n- When asset_automation is supplied, raw.asset_automation_settings is the COMPLETE merged list that was written (including entries you did not name), so it can be snapshotted as the approved intent.\n- Meta raw is the Graph API body: {success: true}.\n\nSide effects:\n- Modifies platform-side campaign settings; reversible only if the caller captured the prior value before the update.\n- Setting status to ENABLED (Google) or ACTIVE (Meta) resumes spend immediately if the campaign has non-zero budget.\n- Google performs at most two MutateOperations in one mutate: a Campaign update plus an optional CampaignBudget update for amount_micros. Google bidding changes update the Campaign bidding oneof; TARGET_CPA requires target_cpa_micros and TARGET_ROAS requires target_roas. MAXIMIZE_CONVERSIONS accepts an optional target_cpa_micros and MAXIMIZE_CONVERSION_VALUE an optional target_roas (Google's standard tCPA/tROAS forms); a target value that does not apply to the chosen strategy is rejected instead of silently dropped. Switching to MAXIMIZE_CONVERSIONS/MAXIMIZE_CONVERSION_VALUE without a target clears any existing target on the campaign (warning emitted).\n- Google asset_automation adds a third read (the campaign's current asset_automation_settings) before the mutate, and writes the merged list back under the bare 'asset_automation_settings' mask path. Two invariants are asserted before the mutate is sent: no automation type you did not name changes status, and no type appears twice; either failure returns success=false without touching the platform.\n- Reversibility: re-call with prior values to roll back.\n\nChatGPT Ads activation:\n- Keep creation paused. status=active is a separate risk write and requires its own explicit user approval.\n- Creation still sends the server-owned network_mode=openai under the private account-capability contract. A public generic advertiser-dashboard contract that describes server-managed allocation does not prove or replace that private contract.\n- Read action:ads/get_account_info first for identity, pixel and funding facts; it carries no activation verdict. Immediately before PATCH, Soku reads the exact Campaign and requires the same id and an explicitly non-active state. Identity-mismatched, active, or failed readback stops with no activation PATCH. Provider network_mode read metadata is unfinished and does not gate activation.\n- An activation-only HTTP 402 returns CHATGPT_ADS_BILLING_REQUIRED with a safe account-side funding handoff. Retry the same approved activation only after the account-side binding is complete.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.\nMeta daily budgets are averages, not hard daily spend caps: eligible days may spend up to 75% above the daily budget, subject to the seven-day calendar-week limit of 7 times that budget. Explain this before promising a strict daily cap. Read back budget sharing and actual settings; do not infer them from a successful POST.\n\n\nReview summary contract:\n- Read the target object back in this turn and quote its current name AND literal id in the review summary, e.g. \"Rename campaign 'Summer Sale' (campaign_id 120210000000001)\". A summary that omits a literal hierarchy id (campaign_id / adset_id / ad_group_id / ad_id) present in the payload is rejected at submit with invalid_ads_payload; $op-N references are exempt.\n- Do not tell the user the change is done or will take effect until the review result reports success and the read-back matches the approved intent.\n- A budget increase must cite pacing (spend so far / daily budget / remaining window). When recent full days spent well under the daily budget, say budget is not the constraint instead of proposing more.",
       "output_shape": "{\"success\": true, \"message\": \"Campaign updated: name, status, budget_amount_micros\", \"results\": [...]}  // Meta: {\"success\": true}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields.\nPost-write readback (cross-cutting): after a successful write on this action's registered platforms the resource is re-read and compared with the submitted intent; the success envelope carries a `readback` node with status one of verified | mismatch | unverified. verified: every intended field matched AND none stayed unconfirmed; readback.fields holds the platform's ACTUAL values and resource_id is the read-back id. mismatch: readback.mismatches[{field, intended, actual}] plus top-level outcome=partial — the platform silently altered a value; reconcile before further writes. Follow readback.guidance: disclose partial application and exact differences; do not call an unverified difference expected or equivalent. unverified: top-level outcome=unknown while the write STAYS successful — either the resource could not be read back, or (reason=unconfirmed_fields) intended fields never appeared on the read surface (readback.unconfirmed_fields) — do NOT recreate the resource and do NOT blindly retry the mutation; read the resource back first and reconcile."
     },
     {
