@@ -3,7 +3,7 @@ name: soku
 description: >-
   Use when calling Soku CLI capabilities from a shell: auth, workspace
   selection, ads/GA4/PostHog data reads, typed ads writes, SEO Hosting,
-  automations, Context Hub files, temporary file publishing, brand skills,
+  automations, Context Hub files, temporary file publishing, brand skills and community skill purchases/publishing,
   third-party egress,
   review-gated writes, skill installation, or CLI updates.
 license: MIT
@@ -11,7 +11,7 @@ license: MIT
 
 # Soku CLI
 
-Written against Soku CLI release 0.1.0-alpha.18. If `soku --version` reports a
+Written against Soku CLI release 0.1.0-alpha.19. If `soku --version` reports a
 newer release, run `soku changelog --since` that release before relying on
 details here.
 

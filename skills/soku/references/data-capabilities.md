@@ -31,7 +31,9 @@ soku ads query-multi-dimension \
 Use `query-single-dimension` for CPA, ROAS, conversion group fan-out, or one
 dimension. Use `query-multi-dimension` for raw multi-dimensional breakdowns.
 
-`--platform` accepts `google`, `meta`, `tiktok`, or `chatgpt_ads`:
+Platform support varies by action and rollout. Read the command help and
+connected accounts; do not assume every reporting action supports every ads
+platform. For example:
 
 ```bash
 soku ads list-ad-accounts --platform chatgpt_ads
@@ -138,3 +140,22 @@ soku call posthog query --payload '{"project_id":"12345","tool":"execute-sql","a
 ```
 
 Review-gated writes through `soku call` require `--summary`.
+
+## Recently Added Integrations And Parameters
+
+Discover the current command tree with `soku --help`. Recent data namespaces
+include `admob`, `applovin_max`, `topon`, `cloudx`, `sensortower`, `thinkingdata`,
+and Adjust API Token reporting (`adjust list-apps` / `adjust get-report`).
+They still require the corresponding connected account, brand access, and
+server rollout; command availability alone does not grant access. Soku-supplied
+providers such as AIsa and BYOK egress providers are discovered with
+`soku egress providers`, not a guessed data namespace.
+
+Boolean flags support both explicit values: `--use-cache` sends true and
+`--no-use-cache` sends false; omitting both leaves the server default intact.
+For example, `soku thinkingdata query-metric --help` and
+`soku applovin_max run-report --help` describe the relevant input flags.
+
+Google `soku ads update-campaign` accepts `--tracking-url-template` and
+`--final-url-suffix`. Omission preserves the current value; an explicitly empty
+string clears it. The existing ads review and readback requirements still apply.

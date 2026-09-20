@@ -23,6 +23,7 @@ export interface ErrorEnvelope {
     type: string
     message: string
     hint?: string
+    details?: Record<string, unknown>
   }
 }
 
@@ -199,6 +200,7 @@ export function emitError(
   message: string,
   code: ExitCodeValue = ExitCode.RUNTIME,
   hint?: string,
+  details?: Record<string, unknown>,
 ): never {
   if (isTty()) {
     let out = `${red('✖')} ${message}`
@@ -207,7 +209,7 @@ export function emitError(
   } else {
     const envelope: ErrorEnvelope = {
       ok: false,
-      error: { type, message, ...(hint ? { hint } : {}) },
+      error: { type, message, ...(hint ? { hint } : {}), ...(details ? { details } : {}) },
     }
     process.stderr.write(`${JSON.stringify(envelope)}\n`)
   }

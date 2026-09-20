@@ -10,7 +10,7 @@ import {
 } from 'node:fs'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 
-import { Command } from 'commander'
+import { Command, InvalidArgumentError, Option } from 'commander'
 import { zipSync } from 'fflate'
 
 import { apiRequest } from '../http/client.js'
@@ -61,6 +61,58 @@ interface CatalogSkill {
   state: 'installed' | 'uninstalled' | 'never_installed'
   installed: boolean
   modified: boolean
+}
+
+interface CommunitySkill {
+  slug: string
+  name: string
+  version: string
+  publisher_org_name: string
+  status: string
+  price_credits: number
+  entitlement: string | null
+  installed_version: string | null
+  update_available: boolean
+  pending_version?: { version: string; review_status: string; review_note?: string | null } | null
+}
+
+interface CommunitySkillListResponse {
+  brand_id: string
+  skills: CommunitySkill[]
+  count: number
+  total: number
+}
+
+function integerOption(min: number, max = Number.MAX_SAFE_INTEGER) {
+  return (raw: string): number => {
+    const value = Number(raw)
+    if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) || value < min || value > max) {
+      throw new InvalidArgumentError(`Expected an integer from ${min} to ${max}.`)
+    }
+    return value
+  }
+}
+
+export function renderCommunitySkills(data: CommunitySkillListResponse): string {
+  return `${table(data.skills.map((skill) => ({
+    slug: skill.slug,
+    name: skill.name,
+    version: skill.version,
+    publisher: skill.publisher_org_name,
+    credits: skill.price_credits,
+    entitlement: skill.entitlement ?? 'purchase required',
+    installed: skill.installed_version ?? '',
+    update: skill.update_available ? 'available' : '',
+  })), [
+    { key: 'slug', header: 'SLUG' },
+    { key: 'name', header: 'NAME' },
+    { key: 'version', header: 'VERSION' },
+    { key: 'publisher', header: 'PUBLISHER' },
+    { key: 'credits', header: 'CREDITS' },
+    { key: 'entitlement', header: 'ENTITLEMENT' },
+    { key: 'installed', header: 'INSTALLED' },
+    { key: 'update', header: 'UPDATE' },
+  ])}\nShowing ${data.count} of ${data.total}; use --offset to see more.`
 }
 
 interface BrandSkillListResponse {
@@ -357,6 +409,63 @@ export function registerBrandSkillCommands(brand: Command): void {
   const skill = brand
     .command('skill')
     .description('Manage skills in the active brand workspace (requires brand-skills)')
+
+  const community = skill.command('community').description('Browse and install community skills')
+
+  community.command('list')
+    .description('List community skills with prices, purchase eligibility, and brand install state')
+    .option('--query <text>', 'Search name and description')
+    .option('--category <slug>', 'Filter by category')
+    .addOption(new Option('--sort <order>', 'Sort order').choices(['recent', 'installs']).default('recent'))
+    .option('--limit <n>', 'Page size (1-100)', integerOption(1, 100), 30)
+    .option('--offset <n>', 'Pagination offset', integerOption(0), 0)
+    .action(async (opts: { query?: string; category?: string; sort: string; limit: number; offset: number }) => {
+      const query = new URLSearchParams({ sort: opts.sort, limit: String(opts.limit), offset: String(opts.offset) })
+      if (opts.query !== undefined) query.set('q', opts.query)
+      if (opts.category !== undefined) query.set('category', opts.category)
+      const data = await apiRequest<CommunitySkillListResponse>(`${BRAND_SKILLS_PATH}/community?${query}`, { workspace: true })
+      emitSuccess(data, renderCommunitySkills)
+    })
+
+  community.command('install <slug>')
+    .description('Install or upgrade a community skill; a paid purchase requires an explicitly agreed price')
+    .option('--expected-price-credits <credits>', 'Authorize this one-time purchase at the exact agreed price', integerOption(0))
+    .action(async (slug: string, opts: { expectedPriceCredits?: number }) => {
+      validateSlug(slug)
+      const data = await apiRequest<BrandSkillMutationResponse & { upgraded: boolean }>(
+        `${BRAND_SKILLS_PATH}/community/${encodeURIComponent(slug)}/install`,
+        {
+          method: 'POST', workspace: true,
+          body: opts.expectedPriceCredits === undefined ? undefined : { expected_price_credits: opts.expectedPriceCredits },
+        },
+      )
+      emitSuccess(data, (result) => `${renderMutation(result)} (${result.upgraded ? 'upgraded' : 'installed'})`)
+    })
+
+  skill.command('publish <slug>')
+    .description('Publish an uploaded private skill; paid versions require review before going live')
+    .option('--categories <slugs>', 'Comma-separated listing categories (at most 4)')
+    .option('--price-credits <credits>', '0 for free or 100-20000; omit to preserve the listing price', (raw: string) => {
+      const value = integerOption(0, 20000)(raw)
+      if (value > 0 && value < 100) throw new InvalidArgumentError('Price must be 0 or at least 100 credits.')
+      return value
+    })
+    .action(async (slug: string, opts: { categories?: string; priceCredits?: number }) => {
+      validateSlug(slug)
+      const body: { categories?: string[]; price_credits?: number } = {}
+      if (opts.categories !== undefined) {
+        body.categories = [...new Set(opts.categories.split(',').map((value) => value.trim().toLowerCase()))]
+        if (body.categories.length > 4 || body.categories.some((value) => !/^[a-z][a-z0-9_-]{0,63}$/.test(value))) {
+          emitError('usage', 'Provide one to four lowercase category slugs.', ExitCode.USAGE)
+        }
+      }
+      if (opts.priceCredits !== undefined) body.price_credits = opts.priceCredits
+      const data = await apiRequest<{ brand_id: string; skill: CommunitySkill; version: { version: string } }>(
+        `${BRAND_SKILLS_PATH}/uploaded/${encodeURIComponent(slug)}/publish`,
+        { method: 'POST', workspace: true, body },
+      )
+      emitSuccess(data)
+    })
 
   skill
     .command('list')

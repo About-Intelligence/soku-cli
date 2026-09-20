@@ -3,12 +3,23 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.19",
+      "date": "2026-09-20",
+      "notes": [
+        "Sync September community skill commerce, vendor capability discovery/calls, explicit boolean values, and Google campaign tracking parameters."
+      ],
       "commands": {
-        "added": [],
-        "changed": [],
+        "added": [
+          "brand skill community list",
+          "brand skill community install",
+          "brand skill publish",
+          "egress capabilities",
+          "egress call (including --dry-run)"
+        ],
+        "changed": [
+          "Typed boolean flags accept --no-<flag> to send false without changing omitted defaults.",
+          "HTTP error envelopes preserve structured purchase and price-change details."
+        ],
         "removed": []
       },
       "capabilities": {
