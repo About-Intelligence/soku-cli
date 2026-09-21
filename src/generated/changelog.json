@@ -17,7 +17,7 @@
           "after": 350,
           "added": 1,
           "removed": 0,
-          "changed": 9
+          "changed": 17
         },
         "added": [
           {
@@ -29,31 +29,79 @@
         "removed": [],
         "changed": [
           {
+            "id": "ads/build_batch_retry_template",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/get_data_readiness",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_ad_accounts",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_brand_campaigns",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_dimensions",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/list_operation_records",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/query_single_dimension",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
+            "id": "ads/resolve_terms",
+            "fields": [
+              "platforms"
+            ]
+          },
+          {
             "id": "bigquery/get_table_schema",
             "fields": [
-              "long_description",
-              "input_params"
+              "input_params",
+              "long_description"
             ]
           },
           {
             "id": "bigquery/list_datasets",
             "fields": [
-              "long_description",
-              "input_params"
+              "input_params",
+              "long_description"
             ]
           },
           {
             "id": "bigquery/list_tables",
             "fields": [
-              "long_description",
-              "input_params"
+              "input_params",
+              "long_description"
             ]
           },
           {
             "id": "bigquery/query",
             "fields": [
-              "long_description",
-              "input_params"
+              "input_params",
+              "long_description"
             ]
           },
           {
