@@ -4788,12 +4788,12 @@
           "name": "campaign_draft",
           "type": "object",
           "required": false,
-          "description": "Preferred ChatGPT Ads create source: the complete Dashboard CampaignDraft tree. The server replaces every group brandName with the authoritative current Brand name, derives the exact provider request, saves the draft for Dashboard editing, and binds Review approval to that saved version. Do not combine it with direct Campaign fields. Required keys are schema_version=1, campaign, and groups. When editing a returned Draft, preserve every field the user did not change and never invent imagePath. campaign.budgetType is daily (default) or total; totalBudget is USD and requires endDate plus runUntilPaused=false. Each Ad may set landingPage; blank inherits its Group destination. Preserve URL query parameters exactly. After approval, report raw.campaign.delivery_status/delivery_issues, nested Ad network_review, and audit_schedule_status; pending or missing values mean work remains, so never promise automatic review, delivery, or display. If a previously published local Draft now reads as archived or the provider reads draft, inactive, or missing, report the current archived state; never infer it was never materialized or recommend reactivation without explicit user intent.",
+          "description": "Preferred ChatGPT Ads create source: the complete Dashboard CampaignDraft tree. The server replaces every group brandName with the authoritative current Brand name, derives the exact provider request, saves the draft for Dashboard editing, and binds Review approval to that saved version. Do not combine it with direct Campaign fields. Required keys are schema_version=1, campaign, and groups. When editing a returned Draft, preserve every field the user did not change and never invent imagePath. campaign.budgetType is daily (default) or total; totalBudget is USD and requires endDate plus runUntilPaused=false. Each Ad may set landingPage; blank inherits its Group destination. Preserve URL query parameters exactly. After approval, report raw.campaign.delivery_status/delivery_issues, nested Ad network_review, and audit_schedule_status; pending or missing values mean work remains, so never promise automatic review, delivery, or display. If a previously published local Draft now reads as archived or the provider reads draft, inactive, or missing, report the current archived state; never infer it was never materialized or recommend reactivation without explicit user intent. ChatGPT Ads daily mode requires at least $50.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "example": {
             "schema_version": 1,
             "campaign": {
               "name": "US conversions",
-              "dailyBudget": "25",
+              "dailyBudget": "50.0",
               "budgetType": "daily",
               "totalBudget": "",
               "objective": "Conversions",
@@ -4906,7 +4906,7 @@
           "name": "budget_daily_micros",
           "type": "integer",
           "required": false,
-          "description": "Google only (required) / Meta: daily budget in micros (1 USD = 1_000_000). Backend rejects with HTTP 400 if omitted for Google. For Meta this is the ONLY campaign-level daily budget input (becomes daily_budget in Meta native units) and becomes mandatory when bid_strategy is supplied at the campaign level; use lifetime_budget instead for a fixed-duration budget. Source: user-provided budget amount converted to micros.",
+          "description": "Google only (required) / Meta: daily budget in micros (1 USD = 1_000_000). Backend rejects with HTTP 400 if omitted for Google. For Meta this is the ONLY campaign-level daily budget input (becomes daily_budget in Meta native units) and becomes mandatory when bid_strategy is supplied at the campaign level; use lifetime_budget instead for a fixed-duration budget. Source: user-provided budget amount converted to micros. ChatGPT Ads daily mode requires at least $50.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "example": 50000000,
           "platform": [
             "google",
@@ -5400,7 +5400,7 @@
           "name": "daily_budget",
           "type": "number",
           "required": false,
-          "description": "ChatGPT Ads only: daily budget in USD for budget_type=daily. Prefer budget_daily_micros for cross-platform payloads; either field satisfies the daily budget. For total use total_budget, never a daily conversion.",
+          "description": "ChatGPT Ads only: daily budget in USD for budget_type=daily. Prefer budget_daily_micros for cross-platform payloads; either field satisfies the daily budget. For total use total_budget, never a daily conversion. ChatGPT Ads daily mode requires at least $50.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "example": 300,
           "platform": [
             "google",
@@ -17405,7 +17405,7 @@
           "name": "budget_daily_micros",
           "type": "integer",
           "required": false,
-          "description": "Daily budget in micros (1 USD = 1_000_000). Google updates the linked CampaignBudget; Meta converts to daily_budget in Meta native units.",
+          "description": "Daily budget in micros (1 USD = 1_000_000). Google updates the linked CampaignBudget; Meta converts to daily_budget in Meta native units. ChatGPT Ads daily mode requires at least $50.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "example": 50000000,
           "platform": [
             "google",
@@ -17783,7 +17783,7 @@
           "name": "daily_budget",
           "type": "number",
           "required": false,
-          "description": "",
+          "description": " ChatGPT Ads daily mode requires at least $50.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "platform": [
             "chatgpt_ads"
           ]
