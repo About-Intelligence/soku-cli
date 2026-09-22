@@ -3,12 +3,16 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.20",
+      "date": "2026-09-22",
+      "notes": [
+        "Surface the server's actionable error message on every failed `/api/cli` request instead of printing the error code twice."
+      ],
       "commands": {
         "added": [],
-        "changed": [],
+        "changed": [
+          "HTTP errors from `/api/cli/*` now report the server's `error` code as the envelope type and its `message` as the message (previously `request_failed` / the bare code, which hid e.g. which field the Ads validator rejected)."
+        ],
         "removed": []
       },
       "capabilities": {
