@@ -159,11 +159,12 @@ function describeError(parsed: unknown): string | null {
   const err = dispatcherErrorObject(parsed)
   if (err?.message) return String(err.message)
   if (err?.code) return String(err.code)
-  if (parsed && typeof parsed === 'object') {
-    const obj = parsed as Record<string, unknown>
-    if (obj.error) return String(obj.error)
-    if (obj.message) return String(obj.message)
-  }
+  const flat = flatErrorObject(parsed)
+  // Flat `/api/cli/*` shape: `{"error": "<code>", "message": "<detail>"}`.
+  // The message carries the actionable text (e.g. which field the static Ads
+  // validator rejected); the code is the fallback, never the other way round.
+  if (flat?.message) return String(flat.message)
+  if (flat?.error) return String(flat.error)
   return null
 }
 
@@ -175,6 +176,9 @@ function describeCode(parsed: unknown): string | null {
   if (detail?.code) return String(detail.code)
   const err = dispatcherErrorObject(parsed)
   if (err?.code) return String(err.code)
+  const flat = flatErrorObject(parsed)
+  if (flat?.error) return String(flat.error)
+  if (flat?.code) return String(flat.code)
   return null
 }
 
@@ -193,7 +197,20 @@ function describeHint(parsed: unknown): string | null {
   if (detail?.hint) return String(detail.hint)
   const err = dispatcherErrorObject(parsed)
   if (err?.hint) return String(err.hint)
+  const flat = flatErrorObject(parsed)
+  if (flat?.hint) return String(flat.hint)
   return null
+}
+
+/** The flat `/api/cli/*` error body: `error` is a string code, `message`
+ * the human text, optionally `hint`. Object-valued `error` is the dispatcher
+ * shape and is handled by `dispatcherErrorObject` instead. */
+function flatErrorObject(parsed: unknown): Record<string, unknown> | null {
+  if (!parsed || typeof parsed !== 'object') return null
+  const obj = parsed as Record<string, unknown>
+  if (obj.error !== undefined && typeof obj.error !== 'string') return null
+  if (typeof obj.error !== 'string' && typeof obj.message !== 'string') return null
+  return obj
 }
 
 function detailObject(parsed: unknown): Record<string, unknown> | null {
