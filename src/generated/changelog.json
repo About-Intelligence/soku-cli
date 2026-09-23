@@ -3,12 +3,16 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.21",
+      "date": "2026-09-23",
+      "notes": [
+        "Fix generated command validation so Meta writes no longer require TikTok-only parameters; clarify the default music opt-out and how to preserve explicit audio."
+      ],
       "commands": {
         "added": [],
-        "changed": [],
+        "changed": [
+          "Generated commands honor platform and required_platforms metadata, reject inapplicable fields, and label conditional requirements in help."
+        ],
         "removed": []
       },
       "capabilities": {
@@ -17,7 +21,7 @@
           "after": 350,
           "added": 0,
           "removed": 0,
-          "changed": 2
+          "changed": 3
         },
         "added": [],
         "removed": [],
@@ -34,6 +38,12 @@
             "fields": [
               "long_description",
               "output_shape"
+            ]
+          },
+          {
+            "id": "ads/create_ad_creative",
+            "fields": [
+              "input_params"
             ]
           }
         ]

@@ -7,6 +7,56 @@ import { Command } from 'commander'
 import { buildGeneratedCommands, type CapabilityManifest } from './generated.js'
 import { registerOrgCommands } from './org.js'
 
+test('generated ads commands enforce only the selected platform requirements before dispatch', async () => {
+  const manifest = JSON.parse(readFileSync('src/generated/capabilities.json', 'utf8')) as CapabilityManifest
+  const common = ['--account-id', 'test-account', '--campaign-id', 'test-campaign', '--name', 'test', '--optimization-goal', 'REACH', '--summary', 'test']
+  const meta = ['--platform', 'meta', ...common, '--billing-event', 'IMPRESSIONS', '--targeting', '{}']
+  const tiktok = ['--platform', 'tiktok', ...common, '--schedule-type', 'SCHEDULE_FROM_NOW', '--schedule-start-time', '2026-10-01 00:00:00', '--budget-mode', 'BUDGET_MODE_DAY', '--budget', '20']
+  const ad = ['--platform', 'meta', '--account-id', 'test-account', '--name', 'test', '--adset-id', 'test-adset', '--creative-id', 'test-creative', '--summary', 'test']
+  const cases: Array<[string, string[], RegExp | null]> = [
+    ['create-adset', meta, null],
+    ['create-adset', tiktok, null],
+    ['create-ad', ad, null],
+    ['create-adset', meta.filter((_, i) => ![meta.indexOf('--billing-event'), meta.indexOf('--billing-event') + 1].includes(i)), /--billing-event is required for platform meta/],
+    ['create-ad', ad.filter((_, i) => ![ad.indexOf('--adset-id'), ad.indexOf('--adset-id') + 1].includes(i)), /--adset-id is required for platform meta/],
+    ['create-adset', ['--platform', 'tiktok', ...common], /--schedule-type is required for platform tiktok/],
+    ['create-ad', ['--platform', 'tiktok', '--account-id', 'test-account', '--adset-id', 'test-adset', '--summary', 'test'], /--creatives is required for platform tiktok/],
+    ['create-adset', [...meta, '--budget', '0'], /--budget does not apply to platform meta/],
+    ['create-ad', [...ad, '--creatives', '[]'], /--creatives does not apply to platform meta/],
+    ['create-adset', ['--platform', 'unknown', ...common], /--platform must be one of/],
+  ]
+  for (const [name, args, error] of cases) {
+    const program = new Command().exitOverride().configureOutput({ writeErr: () => {} })
+    buildGeneratedCommands(program, manifest)
+    const command = sub(group(program, 'ads'), name)
+    let dispatched = false
+    // Replace only the network action; the generated parsing and preAction remain real.
+    command.action(() => { dispatched = true })
+    const parse = () => program.parseAsync(['ads', name, ...args], { from: 'user' })
+    if (error) await assert.rejects(parse, error)
+    else await parse()
+    assert.equal(dispatched, error === null, `${name}: ${args.join(' ')}`)
+  }
+})
+
+test('platform-scoped false and zero count as supplied; help names required platforms', async () => {
+  const manifest: CapabilityManifest = { actions: [{
+    ...fixture.actions[0], platforms: ['meta'], input_params: [
+      { name: 'enabled', type: 'boolean', required: true, platform: ['meta'], description: 'Toggle.' },
+      { name: 'amount', type: 'number', required: false, required_platforms: ['meta'], description: 'Amount.' },
+    ],
+  }] }
+  const program = new Command().exitOverride()
+  buildGeneratedCommands(program, manifest)
+  const command = sub(group(program, 'ads'), 'list-ad-accounts')
+  let parsed: Record<string, unknown> | undefined
+  command.action(options => { parsed = options })
+  await program.parseAsync(['ads', 'list-ad-accounts', '--no-enabled', '--amount', '0'], { from: 'user' })
+  assert.equal(parsed?.enabled, false)
+  assert.equal(parsed?.amount, 0)
+  assert.match(command.helpInformation(), /Required for: meta/)
+})
+
 const fixture: CapabilityManifest = {
   actions: [
     {

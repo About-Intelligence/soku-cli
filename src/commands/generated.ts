@@ -28,6 +28,8 @@ export interface ManifestParam {
   required: boolean
   description: string
   example?: unknown
+  platform?: string[]
+  required_platforms?: string[]
 }
 
 /** Mirrors the backend registry's `Mode` literal. `generate` runs a paid model
@@ -229,9 +231,17 @@ export function buildGeneratedCommands(
 
     for (const param of spec.input_params) {
       const flag = `--${toKebab(param.name)}`
-      const desc = param.description || param.name
+      const desc = [
+        param.description || param.name,
+        param.platform?.length ? `Applies to: ${param.platform.join(', ')}.` : '',
+        param.required_platforms?.length
+          ? `Required for: ${param.required_platforms.join(', ')}.`
+          : param.required && param.platform?.length
+            ? `Required for: ${param.platform.join(', ')}.` : '',
+      ].filter(Boolean).join(' ')
+      const unconditional = param.required && !param.platform?.length
       if (param.type === 'boolean') {
-        if (param.required) cmd.requiredOption(flag, desc)
+        if (unconditional) cmd.requiredOption(flag, desc)
         else cmd.option(flag, desc)
         cmd.option(`--no-${toKebab(param.name)}`, `Set ${param.name} to false`)
         continue
@@ -242,7 +252,7 @@ export function buildGeneratedCommands(
         : isNumberType(param.type)
           ? (v: string) => parseNumberFlag(param.name, v)
           : undefined
-      if (param.required) {
+      if (unconditional) {
         if (coerce) cmd.requiredOption(valueFlag, desc, coerce)
         else cmd.requiredOption(valueFlag, desc)
       } else {
@@ -260,6 +270,32 @@ export function buildGeneratedCommands(
         'Human-readable description of this write; becomes the review approval card header',
       )
     }
+
+    cmd.hook('preAction', () => {
+      const options = cmd.opts()
+      const platform = options.platform ?? (spec.platforms.length === 1 ? spec.platforms[0] : undefined)
+      if (platform !== undefined && spec.platforms.length && !spec.platforms.includes(platform)) {
+        cmd.error(`--platform must be one of: ${spec.platforms.join(', ')}.`, { exitCode: ExitCode.USAGE })
+      }
+      for (const param of spec.input_params) {
+        const value = options[toCamel(param.name)]
+        const scoped = Boolean(param.platform?.length || param.required_platforms?.length)
+        if (!scoped) continue
+        if (platform === undefined) {
+          if (value !== undefined || param.required || param.required_platforms?.length) {
+            cmd.error(`--platform is required to validate --${toKebab(param.name)}.`, { exitCode: ExitCode.USAGE })
+          }
+          continue
+        }
+        const applies = !param.platform?.length || param.platform.includes(platform)
+        if (!applies && value !== undefined) {
+          cmd.error(`--${toKebab(param.name)} does not apply to platform ${platform}.`, { exitCode: ExitCode.USAGE })
+        }
+        if (applies && (param.required || param.required_platforms?.includes(platform)) && value === undefined) {
+          cmd.error(`--${toKebab(param.name)} is required for platform ${platform}.`, { exitCode: ExitCode.USAGE })
+        }
+      }
+    })
 
     cmd.action(async (opts: Record<string, unknown>) => {
       const payload: Record<string, unknown> = {}

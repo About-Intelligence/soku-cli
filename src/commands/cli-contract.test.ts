@@ -147,6 +147,28 @@ test('generated boolean values survive JSON serialization at the HTTP boundary',
   }
 })
 
+test('Meta generated writes reach HTTP without TikTok fields', async (t) => {
+  const payloads = [
+    ['create_adset', { platform: 'meta', account_id: 'test-account', campaign_id: 'test-campaign', name: 'test', optimization_goal: 'REACH', billing_event: 'IMPRESSIONS', targeting: { geo_locations: { countries: ['US'] } } }],
+    ['create_ad', { platform: 'meta', account_id: 'test-account', adset_id: 'test-adset', creative_id: 'test-creative', name: 'test' }],
+  ] as const
+  for (const [action, payload] of payloads) {
+    await t.test(action, async child => {
+      const args = ['ads', action.replace(/_/g, '-'), '--summary', 'test']
+      for (const [key, value] of Object.entries(payload)) {
+        args.push(`--${key.replace(/_/g, '-')}`, typeof value === 'object' ? JSON.stringify(value) : value)
+      }
+      const result = await runCliCommand(child, args, { status: 'pending_review', pending_review_id: 'test-review' }, 202,
+        program => { buildGeneratedCommands(program, loadManifest()) })
+      assert.equal(result.requests.length, 1)
+      assert.equal(result.requests[0].url, `https://cli-contract.invalid/api/cli/call/ads/${action}`)
+      assert.deepEqual(JSON.parse(String(result.requests[0].init?.body)), { ...payload, _summary: 'test' })
+      assert.equal(result.output.data.review_id, 'test-review')
+      assert.equal(result.code, 0)
+    })
+  }
+})
+
 
 test('egress discovery preserves full card contracts while filtering', async (t) => {
   const card = { provider: 'adyntel', slug: 'linkedin_ads', title: 'LinkedIn ads', summary: 'Search ads', params: [{ name: 'company_domain', type: 'string', location: 'body' }], quote_usd_micros: 1000 }

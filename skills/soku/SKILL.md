@@ -11,7 +11,7 @@ license: MIT
 
 # Soku CLI
 
-Written against Soku CLI release 0.1.0-alpha.20. If `soku --version` reports a
+Written against Soku CLI release 0.1.0-alpha.21. If `soku --version` reports a
 newer release, run `soku changelog --since` that release before relying on
 details here.
 
@@ -177,6 +177,11 @@ soku call ads query_single_dimension --payload '{"account_id":"123","dimension":
 
 Prefer typed commands when they exist. Use `soku call` only as a forward-compatible
 escape hatch for a newer action or an action not yet exposed ergonomically.
+
+For generated multi-platform commands, select `--platform` first. Parameter
+requirements follow that platform: Meta does not require TikTok scheduling,
+budget, or `creatives` fields. Help labels platform-specific requirements;
+passing a field for another platform is rejected before any request.
 
 ## Installed Skill Names
 
