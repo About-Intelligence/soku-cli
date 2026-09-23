@@ -17,11 +17,23 @@
           "after": 350,
           "added": 0,
           "removed": 0,
-          "changed": 1
+          "changed": 3
         },
         "added": [],
         "removed": [],
         "changed": [
+          {
+            "id": "ads/create_campaign",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
+            "fields": [
+              "input_params"
+            ]
+          },
           {
             "id": "bigquery/query",
             "fields": [
