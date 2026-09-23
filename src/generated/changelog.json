@@ -17,7 +17,7 @@
           "after": 350,
           "added": 0,
           "removed": 0,
-          "changed": 1
+          "changed": 2
         },
         "added": [],
         "removed": [],
@@ -25,8 +25,15 @@
           {
             "id": "ads/create_campaign",
             "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/suggest_conversion_group_setup",
+            "fields": [
               "long_description",
-              "input_params"
+              "output_shape"
             ]
           }
         ]
