@@ -14,12 +14,18 @@
       "capabilities": {
         "counts": {
           "before": 350,
-          "after": 350,
-          "added": 0,
+          "after": 351,
+          "added": 1,
           "removed": 0,
-          "changed": 5
+          "changed": 7
         },
-        "added": [],
+        "added": [
+          {
+            "id": "guardrails/decline_bid_setup",
+            "mode": "write",
+            "description": "Stop recommending a bid guardrail to this brand (user declined)."
+          }
+        ],
         "removed": [],
         "changed": [
           {
@@ -37,6 +43,7 @@
           {
             "id": "ads/update_adset",
             "fields": [
+              "input_params",
               "long_description"
             ]
           },
@@ -49,6 +56,20 @@
           {
             "id": "bigquery/query",
             "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "guardrails/list_rules",
+            "fields": [
+              "long_description",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "guardrails/set_rule",
+            "fields": [
+              "input_params",
               "long_description"
             ]
           }

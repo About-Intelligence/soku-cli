@@ -16940,12 +16940,9 @@
         },
         {
           "name": "bid_amount",
-          "type": "integer",
+          "type": "number",
           "required": false,
-          "description": "Bid in Meta native units.",
-          "platform": [
-            "meta"
-          ]
+          "description": "Bid in Meta native units. TikTok only: new manual bid as a positive float in the account currency (not Meta's integer native units). Only ad groups with bid_type=BID_TYPE_CUSTOM (Cost Cap) have a bid; Maximum Delivery (BID_TYPE_NO_BID) ad groups are refused. Written to bid_price for CPC/CPM/CPV and to conversion_bid_price for OCPM, chosen from the ad group's own billing event. Must stay below the ad group budget. The result carries previous_bid."
         },
         {
           "name": "daily_budget",
@@ -22823,6 +22820,29 @@
       "output_shape": "{active: false, changed, stop_id, snapshot_id, restore_targets: [{campaign_pk, platform, account_id, campaign_id, name, prior_status, pause_outcome}], resume: {resumed, skipped, failed, total, complete}|null}"
     },
     {
+      "id": "action:guardrails/decline_bid_setup",
+      "namespace": "guardrails",
+      "action": "decline_bid_setup",
+      "description": "Stop recommending a bid guardrail to this brand (user declined).",
+      "mode": "write",
+      "platforms": [
+        "chatgpt_ads",
+        "google",
+        "linkedin",
+        "meta",
+        "tiktok"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:guardrails/list_rules",
+        "action:guardrails/set_rule"
+      ],
+      "input_params": [],
+      "long_description": "Call only when the user explicitly says they do not want a bid gate (not interested, no thanks) after Soku recommended one. It changes no rule and loosens nothing; it only records the decline so list_rules reports bid_setup.status=declined and Soku stops offering it. The user can still ask for a bid rule later via guardrails/set_rule.",
+      "output_shape": "{bid_setup: {status: declined}}"
+    },
+    {
       "id": "action:guardrails/list_rules",
       "namespace": "guardrails",
       "action": "list_rules",
@@ -22843,8 +22863,8 @@
         "action:guardrails/set_emergency_stop"
       ],
       "input_params": [],
-      "long_description": "Primary use: explain the brand's current write limits to the user, or check state before proposing a rule change. Returns every guardrail rule (target coordinate, who, limits, on_violation, source), the emergency-stop state, and whether the factory default pack is fully seeded. When rule_count is 0 (setup_suggested=true) the brand has no bottom-line gate at all — offer to run guardrails/seed_default_pack. While the emergency stop is ACTIVE, emergency_stop.pause carries the live per-campaign outcome. Lead with unconfirmed_live: that many campaigns were delivering at the last platform sync and this server has NOT confirmed them stopped, so money may still be going out — say so, do not report the stop as simply engaged. unconfirmed_idle is the rest of still_running: not confirmed stopped either, but last seen paused, so it is normally just the background pass working through idempotent no-op writes — mention it as unfinished work, not as an alarm. still_running (= unconfirmed_live + unconfirmed_idle) is what keeps complete false. Use when the user asks what limits exist, why a write was escalated to review, or before guardrails/set_rule.",
-      "output_shape": "{workspace_id, rules: [{id, target, who, limits, on_violation, source, created_by_user_id, updated_at}], rule_count, default_pack: {seeded, missing_coordinates}, emergency_stop: {active, reason, activated_at, cleared_at, pause: {paused, already_paused, failed, pending, unknown, total, still_running, unconfirmed_live, unconfirmed_idle, complete, snapshot_id}|null}, setup_suggested}"
+      "long_description": "Primary use: explain the brand's current write limits to the user, or check state before proposing a rule change. Returns every guardrail rule (target coordinate, who, limits, on_violation, source), the emergency-stop state, and whether the factory default pack is fully seeded. When rule_count is 0 (setup_suggested=true) the brand has no bottom-line gate at all — offer to run guardrails/seed_default_pack. While the emergency stop is ACTIVE, emergency_stop.pause carries the live per-campaign outcome. Lead with unconfirmed_live: that many campaigns were delivering at the last platform sync and this server has NOT confirmed them stopped, so money may still be going out — say so, do not report the stop as simply engaged. unconfirmed_idle is the rest of still_running: not confirmed stopped either, but last seen paused, so it is normally just the background pass working through idempotent no-op writes — mention it as unfinished work, not as an alarm. still_running (= unconfirmed_live + unconfirmed_idle) is what keeps complete false. Use when the user asks what limits exist, why a write was escalated to review, or before guardrails/set_rule. bid_setup is the bid-gate recommendation: while status=unset the brand has no bid rule and has not declined one — when the user schedules or automates bid changes, recommend a gate using suggested_rules as a starting point (the user may adjust or add max_value/min_value), and submit each accepted rule via guardrails/set_rule with recommendation=bid_gate. If the user says they are not interested, call guardrails/decline_bid_setup; a Deny on a recommended card is recorded automatically. Never recommend again once status is declined or configured unless the user asks.",
+      "output_shape": "{workspace_id, rules: [{id, target, who, limits, on_violation, source, created_by_user_id, updated_at}], rule_count, default_pack: {seeded, missing_coordinates}, emergency_stop: {active, reason, activated_at, cleared_at, pause: {paused, already_paused, failed, pending, unknown, total, still_running, unconfirmed_live, unconfirmed_idle, complete, snapshot_id}|null}, setup_suggested, bid_setup: {status: configured|declined|unset, suggested_rules?: [{target, who, limits, on_violation}]}}"
     },
     {
       "id": "action:guardrails/remove_rule",
@@ -23033,7 +23053,7 @@
           "name": "limits",
           "type": "object",
           "required": true,
-          "description": "Constraint object; allowed keys: allowed_values, max_delta_pct, max_value. Budget values are in micros (1 unit = 1,000,000).",
+          "description": "Constraint object; allowed keys: allowed_values, delta_basis, max_delta_pct, max_value, min_value. Budget and bid values are in micros (1 unit = 1,000,000).",
           "example": {
             "max_value": 500000000,
             "max_delta_pct": 30
@@ -23052,6 +23072,16 @@
           "source": "user"
         },
         {
+          "name": "recommendation",
+          "type": "string",
+          "required": false,
+          "description": "Set to bid_gate when this rule comes from list_rules bid_setup.suggested_rules; a human Deny on the card then records that the brand declined the bid gate.",
+          "enum": [
+            "bid_gate"
+          ],
+          "source": "upstream:action:guardrails/list_rules"
+        },
+        {
           "name": "chat_id",
           "type": "string",
           "required": true,
@@ -23064,7 +23094,7 @@
           "description": "Short human-readable sentence describing this change for the review card."
         }
       ],
-      "long_description": "Primary use: turn the user's sentence 'who may change what, by how much' into the one rule at (target, who). Re-configuring the same coordinate replaces the previous rule — no stacking. limits is a closed set of three per-parameter bounds, each decided from this write alone: max_value (absolute cap), max_delta_pct (max relative move vs the current platform value), allowed_values (closed value list). There is no total-spend limit here — a brand's overall daily spend is capped by the ad platform's own account-level daily budget. on_violation require_human downgrades auto approvals to a human card; deny hard-rejects. Every set_rule itself goes through human review — never applied silently. Do not use for pausing everything now: that is guardrails/set_emergency_stop.",
+      "long_description": "Primary use: turn the user's sentence 'who may change what, by how much' into the one rule at (target, who). Re-configuring the same coordinate replaces the previous rule — no stacking. limits is a closed set of four per-parameter bounds, each decided from this write alone: max_value (absolute cap), min_value (absolute floor), max_delta_pct (max relative move vs the current platform value; on bid coordinates delta_basis picks the reference: daily_sync = the bid at the last daily sync, so a day's bids stay in one corridor; last_change = the last bid Soku verifiably wrote, so every change is bounded — ask the user which they want), allowed_values (closed value list). Bids are guarded on ads/update_adset.bid_amount_micros (TikTok and Meta, converted to account-currency micros whatever unit the platform uses) and ads/update_ad_group.cpc_bid_micros (Google). There is no total-spend limit here — a brand's overall daily spend is capped by the ad platform's own account-level daily budget. on_violation require_human downgrades auto approvals to a human card; deny hard-rejects. Every set_rule itself goes through human review — never applied silently. Do not use for pausing everything now: that is guardrails/set_emergency_stop.",
       "output_shape": "{change: created|updated, rule: {id, target, who, limits, on_violation, ...}}"
     },
     {
