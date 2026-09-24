@@ -17,15 +17,27 @@
           "after": 350,
           "added": 0,
           "removed": 0,
-          "changed": 3
+          "changed": 5
         },
         "added": [],
         "removed": [],
         "changed": [
           {
+            "id": "ads/create_adset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/create_campaign",
             "fields": [
               "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_adset",
+            "fields": [
+              "long_description"
             ]
           },
           {
