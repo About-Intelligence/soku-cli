@@ -18,8 +18,11 @@ import { basename } from 'node:path'
 
 import { Command } from 'commander'
 
+import { ApiError } from '../http/client.js'
 import { emitError, ExitCode } from '../output/envelope.js'
+import { registerMetaVideoAdCommands, registerMetaVideoAssetCommands } from './ads-video.js'
 import { buildGeneratedCommands, callTypedAction, loadManifest } from './generated.js'
+import { mediaContentType, uploadMediaFile } from './media-upload.js'
 
 type AdsPlatform = 'google' | 'meta' | 'chatgpt_ads'
 
@@ -197,7 +200,12 @@ interface UploadImageItem {
   name: string
   image_url?: string
   bytes_base64?: string
+  media_asset_id?: string
 }
+
+/** Stores a local image in Soku and returns its `media_asset_id`, or `null`
+ * when this file has to go inline instead (see `uploadLocalImage`). */
+export type LocalImageUploader = (file: string) => Promise<string | null>
 
 function nameFromUrl(rawUrl: string, index: number): string {
   try {
@@ -226,16 +234,21 @@ export async function buildUploadImages(
   files: string[],
   urls: string[],
   namePrefix?: string,
+  uploadLocal?: LocalImageUploader,
 ): Promise<UploadImageItem[]> {
   const items: UploadImageItem[] = []
   for (const file of files) {
-    const bytes = readLocalImageBytes(file)
     const fileName = basename(file)
-    items.push({
-      client_ref: file,
-      bytes_base64: bytes.toString('base64'),
-      name: namePrefix ? `${namePrefix}-${fileName}` : fileName,
-    })
+    const name = namePrefix ? `${namePrefix}-${fileName}` : fileName
+    // A stored image keeps the review small and has no 25 MB-per-proposal
+    // ceiling; the server reads the bytes when the approved upload runs.
+    const mediaAssetId = uploadLocal ? await uploadLocal(file) : null
+    if (mediaAssetId) {
+      items.push({ client_ref: file, media_asset_id: mediaAssetId, name })
+      continue
+    }
+    const bytes = readLocalImageBytes(file)
+    items.push({ client_ref: file, bytes_base64: bytes.toString('base64'), name })
   }
   urls.forEach((url, index) => {
     const urlName = nameFromUrl(url, index)
@@ -246,6 +259,25 @@ export async function buildUploadImages(
     })
   })
   return items
+}
+
+/** Store a local image in Soku for an image upload. Falls back to sending the
+ * bytes inline (`null`) when the file is not one of the image types the media
+ * upload takes, or when the server predates `/api/cli/media/uploads` (404), so
+ * an older deployment keeps working exactly as before. */
+async function uploadLocalImage(file: string): Promise<string | null> {
+  if (typeof mediaContentType(file, 'image') !== 'string') return null
+  try {
+    return (await uploadMediaFile(file, 'image')).media_asset_id
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null
+    return emitError(
+      'upload_failed',
+      `Could not upload ${file}: ${(err as Error).message}`,
+      ExitCode.RUNTIME,
+      'Nothing was submitted for approval.',
+    )
+  }
 }
 
 /** Default approval header for an image upload, built only from what the
@@ -351,7 +383,7 @@ function registerMetaAssetCommands(meta: Command): void {
             ExitCode.USAGE,
           )
         }
-        const images = await buildUploadImages(files, urls, opts.namePrefix)
+        const images = await buildUploadImages(files, urls, opts.namePrefix, uploadLocalImage)
         await callTypedAction('ads', 'upload_images', {
           platform: 'meta',
           account_id: opts.accountId,
@@ -365,6 +397,8 @@ function registerMetaAssetCommands(meta: Command): void {
         })
       },
     )
+
+  registerMetaVideoAssetCommands(asset)
 }
 
 function registerMetaAccountCommands(meta: Command): void {
@@ -817,6 +851,8 @@ function registerMetaAdCommands(meta: Command): void {
     )
 
   addMetaBulkCreate(ad, 'bulk_create_ads', 'ads')
+
+  registerMetaVideoAdCommands(ad, collectParam)
 
   ad
     .command('update')
