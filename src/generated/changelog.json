@@ -3,12 +3,21 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.22",
+      "date": "2026-09-25",
+      "notes": [
+        "Review-gated writes now hand the user a Soku approval link (`approve_url`, plus `inbox_url` for everything pending) instead of asking for `soku review approve` in a terminal; `review wait` lets an agent continue once the user decides. Fix `ads meta asset upload-images`, which sent no review summary and was refused on every call."
+      ],
       "commands": {
-        "added": [],
-        "changed": [],
+        "added": [
+          "review open",
+          "review wait"
+        ],
+        "changed": [
+          "Pending reviews print and return approve_url / inbox_url; writes an Always rule approved print their result marked auto_approved.",
+          "review list ends with the approval inbox link when anything is pending.",
+          "ads meta asset upload-images sends a review summary (auto-built; override with --summary)."
+        ],
         "removed": []
       },
       "capabilities": {

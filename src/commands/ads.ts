@@ -248,6 +248,16 @@ export async function buildUploadImages(
   return items
 }
 
+/** Default approval header for an image upload, built only from what the
+ * payload itself carries so it never claims more than the person approves. */
+export function uploadImagesSummary(accountId: string, images: UploadImageItem[]): string {
+  const names = images.map((image) => image.name)
+  const shown = names.slice(0, 5).join(', ')
+  const more = names.length > 5 ? ` and ${names.length - 5} more` : ''
+  const noun = images.length === 1 ? 'image' : 'images'
+  return `Upload ${images.length} ${noun} to Meta ad account ${accountId}: ${shown}${more}`
+}
+
 /** Add `activate` / `pause` convenience verbs to a platform-specific entity
  * group. The public command tree already determines the platform; the helper
  * only injects the right active/paused status literals and payload id field.
@@ -318,10 +328,20 @@ function registerMetaAssetCommands(meta: Command): void {
     .option('--url <url>', 'Public https image URL (repeatable)', collectString, [])
     .option('--concurrency <n>', 'Bulk upload concurrency (server clamps to 1-10)')
     .option('--name-prefix <prefix>', 'Prefix uploaded asset names')
+    .option(
+      '--summary <text>',
+      'Approval card header (default: "Upload N image(s) to Meta ad account <id>: <names>")',
+    )
     .action(
       async (
         files: string[],
-        opts: { accountId: string; url: string[]; concurrency?: string; namePrefix?: string },
+        opts: {
+          accountId: string
+          url: string[]
+          concurrency?: string
+          namePrefix?: string
+          summary?: string
+        },
       ) => {
         const urls = opts.url ?? []
         if (files.length === 0 && urls.length === 0) {
@@ -339,6 +359,9 @@ function registerMetaAssetCommands(meta: Command): void {
           concurrency: opts.concurrency
             ? parseIntFlag('--concurrency', opts.concurrency)
             : undefined,
+          // upload_images is review-gated like every ads write; the server
+          // refuses a review without a human-readable header.
+          _summary: opts.summary?.trim() || uploadImagesSummary(opts.accountId, images),
         })
       },
     )

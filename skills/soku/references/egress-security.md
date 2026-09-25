@@ -87,10 +87,10 @@ success envelope. Soku-level failures use the normal CLI error envelope.
 
 - Never print the Soku access token.
 - Prefer `SOKU_TOKEN` for CI and headless agents.
-- Never approve a review-gated write the user has not seen, and never allowlist
-  or auto-approve `soku review approve`. Self-approving is allowed only when the
-  harness prompts for explicit human confirmation before each command (see the
-  review-gate rule in `references/ads-write.md`).
+- Never approve a review-gated write yourself and never allowlist or
+  auto-approve `soku review approve` / `deny`. Hand the user the `approve_url`
+  and wait with `soku review wait` (see the review-gate rule in
+  `references/ads-write.md`).
 - Avoid literal secret argv values. For Cloudflare Worker setup use
   `--cf-token-env` or `--cf-token-stdin`.
 - Pass user-provided values as separate argv elements.

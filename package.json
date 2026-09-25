@@ -1,6 +1,6 @@
 {
   "name": "@soku-ai/cli",
-  "version": "0.1.0-alpha.21",
+  "version": "0.1.0-alpha.22",
   "description": "Soku CLI \u2014 call Soku ads/GA4/PostHog data capabilities from any AI agent or shell.",
   "license": "MIT",
   "author": "About Intelligence",

@@ -1,15 +1,29 @@
-/** `soku review list | show <id> | approve <id> | deny <id>`
+/** `soku review list | show <id> | open [id] | wait <id...> | approve <id> | deny <id>`
  *
  * HITL for review-gated write actions: a `soku call` of a write action returns
- * a pending review id; the user approves it here, which executes the action.
+ * a pending review id and an `approve_url`. The person opens that link in a
+ * browser where they are signed in to Soku and decides there; an agent waits
+ * for the decision with `soku review wait`. `approve` / `deny` remain for a
+ * person deciding in their own terminal.
  */
 
 import { Command } from 'commander'
+import open from 'open'
 
 import { apiRequest } from '../http/client.js'
-import { cyan, dim, emitSuccess, green, red, table } from '../output/envelope.js'
+import {
+  cyan,
+  dim,
+  emitError,
+  emitSuccess,
+  emitSuccessExit,
+  ExitCode,
+  green,
+  red,
+  table,
+} from '../output/envelope.js'
 
-interface Review {
+export interface Review {
   id: string
   namespace: string
   action: string
@@ -20,6 +34,59 @@ interface Review {
   error?: unknown
   execution_task_id?: string | null
   created_at?: string | null
+  auto_approved?: boolean
+  approve_url?: string | null
+}
+
+/** A review is settled once it is neither waiting for a person nor running. */
+export function isSettled(status: string): boolean {
+  return status !== 'pending' && status !== 'executing'
+}
+
+export interface WaitOptions {
+  timeoutMs: number
+  /** First poll gap; doubles up to `maxIntervalMs`. */
+  intervalMs?: number
+  maxIntervalMs?: number
+  now?: () => number
+  sleep?: (ms: number) => Promise<void>
+}
+
+export interface WaitOutcome {
+  settled: Review[]
+  unsettled: Review[]
+}
+
+/** Poll each review until it settles or the deadline passes.
+ *
+ * Pure apart from the injected fetch, clock and sleep, so the command's
+ * behaviour is testable without waiting in real time.
+ */
+export async function waitForReviews(
+  ids: string[],
+  fetchReview: (id: string) => Promise<Review>,
+  opts: WaitOptions,
+): Promise<WaitOutcome> {
+  const now = opts.now ?? Date.now
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)))
+  const maxInterval = opts.maxIntervalMs ?? 15_000
+  let interval = opts.intervalMs ?? 3_000
+  const deadline = now() + opts.timeoutMs
+  const latest = new Map<string, Review>()
+  for (;;) {
+    for (const id of ids) {
+      const previous = latest.get(id)
+      if (previous && isSettled(previous.status)) continue
+      latest.set(id, await fetchReview(id))
+    }
+    const reviews = ids.map((id) => latest.get(id) as Review)
+    const unsettled = reviews.filter((r) => !isSettled(r.status))
+    if (unsettled.length === 0 || now() >= deadline) {
+      return { settled: reviews.filter((r) => isSettled(r.status)), unsettled }
+    }
+    await sleep(Math.min(interval, Math.max(0, deadline - now())))
+    interval = Math.min(interval * 2, maxInterval)
+  }
 }
 
 function statusMark(status: string): string {
@@ -75,11 +142,15 @@ export function registerReviewCommands(program: Command): void {
     .option('--status <status>', 'Filter: pending | executing | approved | failed | rejected')
     .action(async (opts: { status?: string }) => {
       const q = opts.status ? `?status=${encodeURIComponent(opts.status)}` : ''
-      const data = await apiRequest<{ reviews: Review[]; count: number }>(`/api/cli/reviews${q}`, {
+      const data = await apiRequest<{
+        reviews: Review[]
+        count: number
+        inbox_url?: string | null
+      }>(`/api/cli/reviews${q}`, {
         workspace: true,
       })
-      emitSuccess(data, (d) =>
-        table(
+      emitSuccess(data, (d) => {
+        const rows = table(
           d.reviews.map((r) => ({
             id: r.id,
             action: `${r.namespace}/${r.action}`,
@@ -92,8 +163,12 @@ export function registerReviewCommands(program: Command): void {
             { key: 'status', header: 'STATUS' },
             { key: 'summary', header: 'SUMMARY' },
           ],
-        ),
-      )
+        )
+        const pending = d.reviews.some((r) => r.status === 'pending')
+        return pending && d.inbox_url
+          ? `${rows}\n${dim('Approve pending reviews in Soku:')} ${d.inbox_url}`
+          : rows
+      })
     })
 
   review
@@ -106,8 +181,83 @@ export function registerReviewCommands(program: Command): void {
     })
 
   review
+    .command('open [id]')
+    .description(
+      'Open the approval page for a review in your browser (all pending reviews when no id is given)',
+    )
+    .action(async (id?: string) => {
+      const url = id
+        ? (
+            await apiRequest<Review>(`/api/cli/reviews/${encodeURIComponent(id)}`, {
+              workspace: true,
+            })
+          ).approve_url
+        : (
+            await apiRequest<{ inbox_url?: string | null }>('/api/cli/reviews?status=pending', {
+              workspace: true,
+            })
+          ).inbox_url
+      if (!url) {
+        return emitError(
+          'no_approval_link',
+          'Soku did not return an approval page for this workspace.',
+          ExitCode.RUNTIME,
+          id ? `Approve in this terminal with: soku review approve ${id}` : undefined,
+        )
+      }
+      // Best effort: a headless shell has no browser; the URL is printed either way.
+      await open(url).catch(() => undefined)
+      emitSuccess({ url }, (d) => `Opened ${d.url}`)
+    })
+
+  review
+    .command('wait <ids...>')
+    .description(
+      'Wait until reviews are decided and executed, then print the outcome (exit 5 if any was denied or failed)',
+    )
+    .option('--timeout <seconds>', 'Stop waiting after this many seconds', '540')
+    .action(async (ids: string[], opts: { timeout: string }) => {
+      const seconds = Number(opts.timeout)
+      if (!Number.isFinite(seconds) || seconds <= 0) {
+        return emitError('usage', '--timeout must be a positive number of seconds.', ExitCode.USAGE)
+      }
+      const outcome = await waitForReviews(
+        ids,
+        (id) => apiRequest<Review>(`/api/cli/reviews/${encodeURIComponent(id)}`, { workspace: true }),
+        { timeoutMs: seconds * 1000 },
+      )
+      if (outcome.unsettled.length > 0) {
+        const links = outcome.unsettled
+          .map((r) => `${r.id}: ${r.approve_url ?? `soku review approve ${r.id}`}`)
+          .join('; ')
+        return emitError(
+          'review_wait_timeout',
+          `Still waiting on ${outcome.unsettled.length} review(s).`,
+          ExitCode.RUNTIME,
+          `Ask the user to decide: ${links}. Run \`soku review wait\` again to keep waiting.`,
+          { pending: outcome.unsettled.map((r) => ({ id: r.id, status: r.status, approve_url: r.approve_url ?? null })) },
+        )
+      }
+      const allApproved = outcome.settled.every((r) => r.status === 'approved')
+      return emitSuccessExit(
+        { reviews: outcome.settled },
+        allApproved ? ExitCode.OK : ExitCode.RUNTIME,
+        (d) =>
+          d.reviews
+            .map((r) => {
+              const head = `${statusIcon(r.status)} ${statusMark(r.status)}: ${cyan(`${r.namespace}/${r.action}`)} ${dim(r.id)}`
+              const errMsg = describeReviewError(r)
+              return errMsg ? `${head}\n  ${red('error')} ${errMsg}` : head
+            })
+            .join('\n'),
+      )
+    })
+
+  review
     .command('approve <id>')
-    .description('Approve a review — executes or queues the write action')
+    .description(
+      'Approve a review from this terminal — executes or queues the write (for people; agents hand the user the approve_url instead)',
+    )
     .action(async (id: string) => {
       const r = await apiRequest<Review>(`/api/cli/reviews/${encodeURIComponent(id)}/respond`, {
         method: 'POST',

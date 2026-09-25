@@ -216,3 +216,90 @@ test('egress binder rejection stops before the metered call', async (t) => {
   assert.equal(result.output.error.type, 'invalid_arguments')
   assert.notEqual(result.code, 0)
 })
+
+// ── Review-gated writes: summaries, approval links, Always rules ─────────────
+
+const gatedActions = new Set(
+  loadManifest().actions.filter((a) => a.requires_review).map((a) => `${a.namespace}/${a.action}`),
+)
+
+test('every hand-written ads call to a review-gated action sends a _summary', () => {
+  // The server refuses a review-gated call without `_summary` (400
+  // summary_required). Generated commands inject `--summary` from the
+  // manifest; hand-written ones must add it themselves, and `upload-images`
+  // once did not — every call failed. This reads the source so a new
+  // hand-written call site cannot reintroduce that.
+  const source = readFileSync(join(process.cwd(), 'src/commands/ads.ts'), 'utf8')
+  const literalCalls = [...source.matchAll(/callTypedAction\('(\w+)', '(\w+)', \{([\s\S]*?)\n\s*\}\)/g)]
+  assert.ok(literalCalls.length > 0, 'expected literal callTypedAction sites')
+  for (const [, namespace, action, body] of literalCalls) {
+    if (gatedActions.has(`${namespace}/${action}`)) {
+      assert.match(body, /_summary:/, `${namespace}/${action} is review-gated but sends no _summary`)
+    }
+  }
+  for (const [, action] of source.matchAll(/runChatgptRead\('(\w+)'/g)) {
+    assert.ok(!gatedActions.has(`ads/${action}`), `runChatgptRead reaches review-gated ads/${action}`)
+  }
+  const runAdsWrite = source.slice(source.indexOf('function runAdsWrite('))
+  assert.match(runAdsWrite.slice(0, runAdsWrite.indexOf('\n}\n')), /payload\._summary = opts\.summary/)
+})
+
+test('upload-images sends a summary built from the upload', async (t) => {
+  const { registerAdsCommands } = await import('./ads.js')
+  const dir = mkdtempSync(join(tmpdir(), 'soku-upload-images-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  const image = join(dir, 'hero.png')
+  writeFileSync(image, 'png-bytes')
+  const result = await runCliCommand(
+    t,
+    ['ads', 'meta', 'asset', 'upload-images', '--account-id', 'act_1', image],
+    { status: 'pending_review', pending_review_id: 'test-review' },
+    202,
+    registerAdsCommands,
+  )
+  const payload = JSON.parse(String(result.requests[0].init?.body))
+  assert.equal(payload._summary, 'Upload 1 image to Meta ad account act_1: hero.png')
+  assert.equal(result.code, 0)
+})
+
+test('a pending review hands the agent the approval links', async (t) => {
+  const spec = loadManifest().actions.find((a) => a.namespace === 'ads' && a.action === 'create_ad')
+  assert.ok(spec)
+  const links = {
+    approve_url: 'https://soku.test/o/acme/b/blue/approvals/test-review',
+    inbox_url: 'https://soku.test/o/acme/b/blue/approvals',
+  }
+  const result = await runCliCommand(
+    t,
+    ['ads', 'create-ad', '--summary', 'test', '--platform', 'meta', '--account-id', 'a', '--adset-id', 'b', '--creative-id', 'c', '--name', 'n'],
+    { status: 'pending_review', pending_review_id: 'test-review', summary: 'test', ...links },
+    202,
+    (program) => { buildGeneratedCommands(program, { actions: [spec] }) },
+  )
+  assert.deepEqual(result.output.data, {
+    status: 'pending_review', review_id: 'test-review', summary: 'test', ...links,
+  })
+})
+
+test('a write an Always rule approved prints its result, not a pending review', async (t) => {
+  const spec = loadManifest().actions.find((a) => a.namespace === 'ads' && a.action === 'create_ad')
+  assert.ok(spec)
+  const result = await runCliCommand(
+    t,
+    ['ads', 'create-ad', '--summary', 'test', '--platform', 'meta', '--account-id', 'a', '--adset-id', 'b', '--creative-id', 'c', '--name', 'n'],
+    { ok: true, data: { ad_id: '42' }, error: null, review_id: 'test-review', auto_approved: true },
+    200,
+    (program) => { buildGeneratedCommands(program, { actions: [spec] }) },
+  )
+  assert.deepEqual(result.output.data, { ad_id: '42' })
+  assert.equal(result.code, 0)
+})
+
+test('review wait exits non-zero when the person denies the write', async (t) => {
+  const { registerReviewCommands } = await import('./review.js')
+  const denied = { id: 'r1', namespace: 'ads', action: 'create_ad', status: 'rejected', summary: 's' }
+  const result = await runCliCommand(t, ['review', 'wait', 'r1'], denied, 200, registerReviewCommands)
+  assert.match(result.requests[0].url, /\/api\/cli\/reviews\/r1$/)
+  assert.deepEqual(result.output.data.reviews.map((r: { status: string }) => r.status), ['rejected'])
+  assert.equal(result.code, 5)
+})
