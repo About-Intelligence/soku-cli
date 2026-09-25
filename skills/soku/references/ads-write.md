@@ -53,6 +53,50 @@ soku ads meta asset upload-images --account-id <meta_account_id> \
 soku review wait <review_id>   # then read image_hash from the result
 ```
 
+Local files are stored in Soku first and the review carries only their id, so
+an approval that comes hours later still works. Never publish a local file with
+`soku files publish` to get a URL for an ad upload: that link expires in 30
+minutes.
+
+## Meta Video Ads
+
+To put local videos into an ad set, use one command and one approval. It
+uploads every file to Soku, and once the user approves it uploads them to the
+ad account, waits for Meta to process them, and creates one creative plus one
+**PAUSED** ad per video:
+
+```bash
+soku ads meta ad deploy-videos ./clip1.mp4 ./clip2.mp4 ./clip3.mp4 \
+  --account-id <meta_account_id> --adset-id <adset_id> --page-id <page_id> \
+  --message "Primary text" --headline "Headline" \
+  --link https://example.com --cta LEARN_MORE --destination WEBSITE_AND_SHOP_OPT_OUT
+soku review wait <review_id>
+```
+
+- Copy the flags from an existing ad in the same ad set when the user asks to
+  "match" it (read it with `soku ads meta ad get`); ask when copy is unknown.
+- Per-video copy: `--items-file items.json`, a JSON array whose items name one
+  of `file` / `video_id` / `media_asset_id`, plus optional `name`, `message`,
+  `headline`, `description`, `link`, `thumbnail_url`.
+- Videos already in the ad library: `--video-id <id>` (repeatable).
+- With `--link` on Meta v26, ask the user for `--destination` before
+  submitting.
+- Lead ads (`--lead-gen-form-id`) need a thumbnail per video
+  (`thumbnail_url` or `thumbnail_image_hash` in `--items-file`).
+- Read the result per item: `stage=ad` with `ad_id` means done.
+  `META_VIDEO_NOT_READY` means Meta was still processing that video: check
+  it with `soku ads meta asset video --video-id <id> --account-id <id>`, then
+  deploy it again with `--video-id`. The other items were still deployed.
+- The ads are paused. Activating them is a separate write the user decides on.
+
+Library-only upload (no ads), one approval per file; the inbox link approves
+them together:
+
+```bash
+soku ads meta asset upload-video --account-id <meta_account_id> ./clip1.mp4 ./clip2.mp4
+soku review wait <review_id...>   # each result carries video_id and video_status
+```
+
 ## Meta Single-Object Flow
 
 Always inspect help for the exact flags before using a new command:

@@ -3,6 +3,36 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
+      "version": "0.1.0-alpha.23",
+      "date": "2026-09-25",
+      "notes": [
+        "Meta video ads from local files: `ads meta ad deploy-videos` uploads the videos to Soku and asks for one approval that uploads them to the ad account, waits for Meta to process them and creates one paused ad per video. `ads meta asset upload-video` adds videos to the ad library and `ads meta asset video` checks whether one is ready. Local files become a Soku media id instead of an expiring link, so an approval hours later still works; `upload-images` now does the same for local images (falling back to inline bytes on older servers)."
+      ],
+      "commands": {
+        "added": [
+          "ads meta ad deploy-videos",
+          "ads meta asset upload-video",
+          "ads meta asset video"
+        ],
+        "changed": [
+          "ads meta asset upload-images stores local images in Soku and sends their media_asset_id; on a server without media uploads it sends the bytes inline as before."
+        ],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 351,
+          "after": 351,
+          "added": 0,
+          "removed": 0,
+          "changed": 0
+        },
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
       "version": "0.1.0-alpha.22",
       "date": "2026-09-25",
       "notes": [

@@ -229,7 +229,9 @@ test('every hand-written ads call to a review-gated action sends a _summary', ()
   // manifest; hand-written ones must add it themselves, and `upload-images`
   // once did not — every call failed. This reads the source so a new
   // hand-written call site cannot reintroduce that.
-  const source = readFileSync(join(process.cwd(), 'src/commands/ads.ts'), 'utf8')
+  const source = ['src/commands/ads.ts', 'src/commands/ads-video.ts']
+    .map((path) => readFileSync(join(process.cwd(), path), 'utf8'))
+    .join('\n')
   const literalCalls = [...source.matchAll(/callTypedAction\('(\w+)', '(\w+)', \{([\s\S]*?)\n\s*\}\)/g)]
   assert.ok(literalCalls.length > 0, 'expected literal callTypedAction sites')
   for (const [, namespace, action, body] of literalCalls) {
@@ -244,7 +246,34 @@ test('every hand-written ads call to a review-gated action sends a _summary', ()
   assert.match(runAdsWrite.slice(0, runAdsWrite.indexOf('\n}\n')), /payload\._summary = opts\.summary/)
 })
 
-test('upload-images sends a summary built from the upload', async (t) => {
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+}
+
+/** Server answers for one stored-media upload (presign, PUT, confirm), shaped
+ * like apps/api/routers/cli/media.py. */
+function mediaUploadResponses(assetId: string, contentType: string): Response[] {
+  return [
+    json({
+      upload_url: `https://storage.invalid/put/${assetId}`,
+      object_key: `media-assets/o/cli/b/${assetId}.bin`,
+      content_type: contentType,
+      expires_in_seconds: 3600,
+    }),
+    new Response(null, { status: 200 }),
+    json({ media_asset_id: assetId, kind: contentType.split('/')[0], size_bytes: 9, content_type: contentType, filename: 'f' }),
+  ]
+}
+
+function scripted(responses: Response[]): (n: number) => Response {
+  return (n: number) => {
+    const next = responses[n - 1]
+    if (!next) throw new Error(`unexpected request #${n}`)
+    return next
+  }
+}
+
+test('upload-images stores a local image in Soku and sends its id, not its bytes', async (t) => {
   const { registerAdsCommands } = await import('./ads.js')
   const dir = mkdtempSync(join(tmpdir(), 'soku-upload-images-'))
   t.after(() => rmSync(dir, { recursive: true, force: true }))
@@ -253,12 +282,141 @@ test('upload-images sends a summary built from the upload', async (t) => {
   const result = await runCliCommand(
     t,
     ['ads', 'meta', 'asset', 'upload-images', '--account-id', 'act_1', image],
-    { status: 'pending_review', pending_review_id: 'test-review' },
-    202,
+    scripted([
+      ...mediaUploadResponses('img-1', 'image/png'),
+      json({ status: 'pending_review', pending_review_id: 'test-review' }, 202),
+    ]),
+    200,
     registerAdsCommands,
   )
-  const payload = JSON.parse(String(result.requests[0].init?.body))
+  const [presign, put, confirm, call] = result.requests
+  assert.equal(new URL(presign.url).pathname, '/api/cli/media/uploads')
+  assert.deepEqual(JSON.parse(String(presign.init?.body)), {
+    filename: 'hero.png', content_type: 'image/png', size: 9, kind: 'image',
+  })
+  assert.equal(put.init?.method, 'PUT')
+  assert.deepEqual(put.init?.headers, { 'Content-Type': 'image/png' })
+  assert.equal(new URL(confirm.url).pathname, '/api/cli/media/uploads/confirm')
+  const payload = JSON.parse(String(call.init?.body))
+  assert.equal(new URL(call.url).pathname, '/api/cli/call/ads/upload_images')
+  assert.deepEqual(payload.images, [{ client_ref: image, media_asset_id: 'img-1', name: 'hero.png' }])
   assert.equal(payload._summary, 'Upload 1 image to Meta ad account act_1: hero.png')
+  assert.equal(result.code, 0)
+})
+
+test('upload-images sends the bytes inline when the server has no media upload', async (t) => {
+  const { registerAdsCommands } = await import('./ads.js')
+  const dir = mkdtempSync(join(tmpdir(), 'soku-upload-images-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  const image = join(dir, 'hero.png')
+  writeFileSync(image, 'png-bytes')
+  const result = await runCliCommand(
+    t,
+    ['ads', 'meta', 'asset', 'upload-images', '--account-id', 'act_1', image],
+    scripted([
+      json({ detail: 'Not Found' }, 404),
+      json({ status: 'pending_review', pending_review_id: 'test-review' }, 202),
+    ]),
+    200,
+    registerAdsCommands,
+  )
+  const payload = JSON.parse(String(result.requests[1].init?.body))
+  assert.equal(payload.images[0].bytes_base64, Buffer.from('png-bytes').toString('base64'))
+  assert.equal(payload.images[0].media_asset_id, undefined)
+  assert.equal(result.code, 0)
+})
+
+test('deploy-videos uploads each file and asks for one approval for the whole batch', async (t) => {
+  const { registerAdsCommands } = await import('./ads.js')
+  const dir = mkdtempSync(join(tmpdir(), 'soku-deploy-videos-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  const first = join(dir, 'TalkingHead_01.mp4')
+  const second = join(dir, 'TalkingHead_02.MOV')
+  writeFileSync(first, 'mp4-bytes')
+  writeFileSync(second, 'mov-bytes')
+  const links = {
+    approve_url: 'https://soku.test/o/acme/b/blue/approvals/test-review',
+    inbox_url: 'https://soku.test/o/acme/b/blue/approvals',
+  }
+  const result = await runCliCommand(
+    t,
+    [
+      'ads', 'meta', 'ad', 'deploy-videos', first, second,
+      '--account-id', 'act_1', '--adset-id', '120250667120980043', '--page-id', '555',
+      '--video-id', '9001', '--message', 'Watch this',
+    ],
+    scripted([
+      ...mediaUploadResponses('vid-1', 'video/mp4'),
+      ...mediaUploadResponses('vid-2', 'video/quicktime'),
+      json({ status: 'pending_review', pending_review_id: 'test-review', summary: 's', ...links }, 202),
+    ]),
+    200,
+    registerAdsCommands,
+  )
+  assert.equal(result.requests.length, 7)
+  assert.equal(JSON.parse(String(result.requests[0].init?.body)).kind, 'video')
+  assert.deepEqual(result.requests[4].init?.headers, { 'Content-Type': 'video/quicktime' })
+  const call = result.requests[6]
+  assert.equal(new URL(call.url).pathname, '/api/cli/call/ads/deploy_video_ads_batch')
+  const payload = JSON.parse(String(call.init?.body))
+  assert.deepEqual(payload.items, [
+    { client_ref: 'TalkingHead_01', name: 'TalkingHead_01', media_asset_id: 'vid-1' },
+    { client_ref: 'TalkingHead_02', name: 'TalkingHead_02', media_asset_id: 'vid-2' },
+    { client_ref: 'video-9001', name: 'Video 9001', video_id: '9001' },
+  ])
+  assert.equal(payload.adset_id, '120250667120980043')
+  assert.equal(payload.message, 'Watch this')
+  // The server requires every literal target id in the summary.
+  assert.match(payload._summary, /\b120250667120980043\b/)
+  assert.equal(result.output.data.approve_url, links.approve_url)
+  assert.equal(result.code, 0)
+})
+
+test('deploy-videos refuses a file it cannot send before uploading anything', async (t) => {
+  const { registerAdsCommands } = await import('./ads.js')
+  const result = await runCliCommand(
+    t,
+    ['ads', 'meta', 'ad', 'deploy-videos', 'notes.txt', '--account-id', 'a', '--adset-id', 'b', '--page-id', 'c'],
+    scripted([]),
+    200,
+    registerAdsCommands,
+  )
+  assert.equal(result.requests.length, 0)
+  assert.notEqual(result.code, 0)
+})
+
+test('upload-video asks for one approval per file and hands over the inbox', async (t) => {
+  const { registerAdsCommands } = await import('./ads.js')
+  const dir = mkdtempSync(join(tmpdir(), 'soku-upload-video-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  const clips = ['a.mp4', 'b.mp4'].map((name) => {
+    const path = join(dir, name)
+    writeFileSync(path, 'bytes')
+    return path
+  })
+  const inbox = 'https://soku.test/o/acme/b/blue/approvals'
+  const pending = (id: string) =>
+    json({ status: 'pending_review', pending_review_id: id, approve_url: `${inbox}/${id}`, inbox_url: inbox }, 202)
+  const result = await runCliCommand(
+    t,
+    ['ads', 'meta', 'asset', 'upload-video', ...clips, '--account-id', 'act_1'],
+    scripted([
+      ...mediaUploadResponses('vid-a', 'video/mp4'),
+      pending('r-a'),
+      ...mediaUploadResponses('vid-b', 'video/mp4'),
+      pending('r-b'),
+    ]),
+    200,
+    registerAdsCommands,
+  )
+  const calls = result.requests.filter((r) => r.url.includes('/api/cli/call/'))
+  assert.deepEqual(
+    calls.map((c) => JSON.parse(String(c.init?.body)).media_asset_id),
+    ['vid-a', 'vid-b'],
+  )
+  assert.equal(JSON.parse(String(calls[0].init?.body))._summary, 'Upload video a.mp4 to Meta ad account act_1')
+  assert.deepEqual(result.output.data.review_ids, ['r-a', 'r-b'])
+  assert.equal(result.output.data.inbox_url, inbox)
   assert.equal(result.code, 0)
 })
 

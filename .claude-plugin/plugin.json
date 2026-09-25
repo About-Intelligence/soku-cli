@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "soku",
   "displayName": "Soku",
-  "version": "0.1.0-alpha.22",
+  "version": "0.1.0-alpha.23",
   "description": "Soku is the AI marketing agent for ads and creatives. This plugin brings it into your coding agent: analyze performance across Google, Meta, TikTok and ChatGPT Ads, GA4 and PostHog, audit spend, research competitors, publish SEO pages, and prepare campaign changes for your approval.",
   "author": {
     "name": "About Intelligence",
