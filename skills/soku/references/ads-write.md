@@ -12,8 +12,9 @@ soku workspace status
 soku ads list-ad-accounts --platform meta
 ```
 
-A default login can reach ads writes (no resource needed); each
-delivery-changing write still returns a pending review for a human to approve.
+A default login can reach ads writes (no resource needed); every ads write,
+including asset uploads, returns a pending review with an `approve_url` the
+user opens to approve it (see "Review Gate" below).
 
 ## Meta Account Helpers
 
@@ -40,13 +41,16 @@ the ad account — connect it in Business Manager first.
 
 ## Meta Assets
 
-Image upload mutates the Meta asset library but does not change delivery, so it
-executes immediately and returns `image_hash` values:
+Image upload only adds to the Meta asset library, but it is still a
+review-gated write: it returns a pending review, and the `image_hash` values
+arrive in the review result once the user approves. The command writes the
+approval header for you (override with `--summary`):
 
 ```bash
 soku ads meta asset upload-images --account-id <meta_account_id> ./hero.png ./square.jpg
 soku ads meta asset upload-images --account-id <meta_account_id> \
   --url https://example.com/hero.png --name-prefix launch
+soku review wait <review_id>   # then read image_hash from the result
 ```
 
 ## Meta Single-Object Flow
@@ -138,9 +142,11 @@ soku ads meta creative bulk-create --account-id <meta_account_id> --items-file c
 soku ads meta ad bulk-create --account-id <meta_account_id> --items-file ads.json --summary "Bulk-create ads"
 ```
 
-After approval, bulk reviews execute asynchronously. Poll with:
+After approval, bulk reviews execute asynchronously. `soku review wait` waits
+through both the decision and the execution; `show` reads the current state:
 
 ```bash
+soku review wait <review_id>
 soku review show <review_id>
 ```
 
@@ -219,19 +225,30 @@ Groups and authored Ads).
 
 ## Review Gate
 
-Review-gated commands return a review id:
+Review-gated commands return a review id plus `approve_url` / `inbox_url`:
 
 ```bash
-soku review list
+soku review list            # ends with the inbox link when anything is pending
 soku review show <review_id>
 ```
 
-As an agent, always show the review id and summary to the user first — a human
-must authorize the write. Do not tell the user a change is applied or live until
-`soku review show <review_id>` reports the execution result and the read-back
-matches; approval alone is not execution. If your harness prompts for explicit human
-confirmation before each shell command (a per-command permission prompt),
-you MAY then run `soku review approve <id>` yourself: that prompt is the human
-gate, so never allowlist or auto-approve it. If your harness auto-runs commands
-without confirmation, do not self-approve — let the user run it. Approval is
-single-use; failed approval is terminal, so create a fresh review for retry.
+As an agent, never approve a write yourself. Give the user the `approve_url`
+from the pending response (or `inbox_url` when you parked several) with one
+line on what they are approving, then wait for their decision:
+
+```bash
+soku review wait <review_id> [<review_id> ...]   # exits 5 on deny or failure
+soku review open <review_id>                    # opens the page in the user's browser
+```
+
+Do not tell the user a change is applied or live until the review reports the
+execution result and the read-back matches; approval alone is not execution.
+`soku review approve` / `deny` are for a person deciding in their own terminal:
+never run or allowlist them. If a pending response has no `approve_url` (an
+older Soku API), ask the user to run `soku review approve <review_id>`
+themselves. Approval is single-use; failed approval is terminal, so create a
+fresh review for retry.
+
+A command the user chose to "Always approve" in Soku (chat or the approval
+page) runs at submit and returns its result marked `auto_approved`; a
+`require_human` guardrail still turns it back into a pending review.

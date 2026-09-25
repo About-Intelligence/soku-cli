@@ -11,7 +11,7 @@ license: MIT
 
 # Soku CLI
 
-Written against Soku CLI release 0.1.0-alpha.21. If `soku --version` reports a
+Written against Soku CLI release 0.1.0-alpha.22. If `soku --version` reports a
 newer release, run `soku changelog --since` that release before relying on
 details here.
 
@@ -80,7 +80,7 @@ Claude Code plugin also registers Soku's remote MCP server (name `soku`,
   where a human approves them. Hand that link to the user; do not try to
   approve on their behalf. Ads and SEO Hosting writes are CLI-only.
 - Local skill installation, Context Hub uploads from local files, memory and
-  `soku review approve` exist only on the CLI. When a shell is available and
+  `soku review wait` exist only on the CLI. When a shell is available and
   `soku` can be installed, prefer the CLI.
 
 ## Default Flow
@@ -134,14 +134,19 @@ soku <namespace> <action> --help
 - Never ask the user to paste third-party provider keys for covered providers.
 - Do not fail just because an upstream provider key env var is unset. Use
   `soku egress -- curl ...` for covered third-party APIs.
-- A human must authorize every review-gated write — but don't force a
-  copy-paste. If your harness prompts for explicit human confirmation before
-  each shell command (a per-command permission prompt), you MAY run
-  `soku review approve <id>` yourself after showing the user the diff/summary;
-  that confirmation prompt is the human gate. Never allowlist or auto-approve
-  `soku review approve`/`deny`, and never approve a write the user has not seen.
-  If your harness runs commands without per-command human confirmation, do NOT
-  self-approve — surface the `review_id` for the user to run.
+- A human authorizes every review-gated write, in Soku, not through you. The
+  pending response carries `approve_url` (this review) and `inbox_url` (every
+  pending review in the brand). Give the user the link with one line on what
+  they are approving, then run `soku review wait <review_id>` to continue once
+  they decide; it exits 5 if they deny it or the write fails. For several
+  reviews, send the inbox link and wait on all ids at once. Never run
+  `soku review approve`/`deny` yourself and never allowlist them — they are for
+  a person deciding in their own terminal. If a pending response has no
+  `approve_url` (an older Soku API), ask the user to run
+  `soku review approve <review_id>` themselves.
+- A write the user chose to "Always approve" in Soku comes back as a normal
+  result marked `auto_approved` instead of a pending review. Treat it like any
+  other executed write: read it back before telling the user it landed.
 - An ads write that names an existing campaign / ad set / ad group / ad must
   read that object back first and quote its current name and literal id in
   `--summary`; the server rejects a summary that omits a literal target id.

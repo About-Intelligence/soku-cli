@@ -93,11 +93,11 @@ function parseNumberFlag(param: string, raw: string): number {
 /** Short tag describing an action's write semantics, shown in `--help`. */
 function modeBadge(spec: ManifestAction): string {
   if (spec.mode === 'risk') {
-    return '[risk] mutates live ad state — proposes a review; approve with `soku review approve <id>`'
+    return '[risk] mutates live ad state — proposes a review the user approves at the returned approve_url'
   }
   if (spec.mode === 'write') {
     return spec.requires_review
-      ? '[write] proposes a review; approve with `soku review approve <id>`'
+      ? '[write] proposes a review the user approves at the returned approve_url'
       : '[write] executes immediately'
   }
   if (spec.mode === 'generate') {
@@ -120,23 +120,82 @@ export async function callTypedAction(
   return emitActionResult(result, action)
 }
 
+interface PendingReviewBody {
+  status: 'pending_review'
+  pending_review_id?: string
+  summary?: string
+  approve_url?: string | null
+  inbox_url?: string | null
+}
+
+interface AutoApprovedBody {
+  review_id?: string
+  auto_approved?: boolean
+  status?: string
+  summary?: string
+}
+
+/** Human rendering of a parked review: the approval link first, because the
+ * person — not the agent — is the one who decides. `soku review approve` is
+ * named only as the fallback when the server gave no link (an older API, or a
+ * deployment without a public web address). */
+export function renderPendingReview(d: {
+  review_id?: string
+  summary?: string
+  approve_url?: string | null
+}): string {
+  const lines = [`Pending review ${d.review_id}${d.summary ? `: ${d.summary}` : ''}`]
+  if (d.approve_url) {
+    lines.push(`  ${dim('Approve in Soku:')} ${d.approve_url}`)
+    lines.push(`  ${dim('Continue when decided:')} soku review wait ${d.review_id}`)
+  } else {
+    lines.push(`  ${dim('Approve with:')} soku review approve ${d.review_id}`)
+  }
+  return lines.join('\n')
+}
+
 /** Normalize a data-action result and emit it. Review-gated writes return 202 +
  * a pending-review id; we surface a unified `review_id` (not the wire
- * `pending_review_id`) with the approve hint, instead of letting
- * `unwrapDispatch` treat the non-envelope body as opaque data. Non-review
- * writes and reads pass through. Exported so `soku call` reuses the same
- * normalization. */
+ * `pending_review_id`) together with the web approval links, instead of
+ * letting `unwrapDispatch` treat the non-envelope body as opaque data. A write
+ * an "Always" rule approved at submit comes back as a normal result (or, for
+ * bulk writes, as `executing`) marked `auto_approved`. Non-review writes and
+ * reads pass through. Exported so `soku call` reuses the same normalization. */
 export function emitActionResult(result: unknown, action?: string): never {
   if (
     result &&
     typeof result === 'object' &&
     (result as { status?: unknown }).status === 'pending_review'
   ) {
-    const r = result as { pending_review_id?: string; summary?: string }
+    const r = result as PendingReviewBody
     return emitSuccess(
-      { status: 'pending_review', review_id: r.pending_review_id, summary: r.summary },
-      (d) =>
-        `Pending review ${d.review_id}\n  ${dim('Approve with:')} soku review approve ${d.review_id}`,
+      {
+        status: 'pending_review',
+        review_id: r.pending_review_id,
+        summary: r.summary,
+        approve_url: r.approve_url ?? null,
+        inbox_url: r.inbox_url ?? null,
+      },
+      renderPendingReview,
+    )
+  }
+  if (
+    result &&
+    typeof result === 'object' &&
+    (result as AutoApprovedBody).auto_approved === true
+  ) {
+    const r = result as AutoApprovedBody
+    if (r.status === 'executing') {
+      // A bulk write an "Always" rule approved: it is running on the worker.
+      return emitSuccess(
+        { status: 'executing', review_id: r.review_id, summary: r.summary, auto_approved: true },
+        (d) =>
+          `Approved by an Always rule; running now (review ${d.review_id})\n  ${dim('Wait for the result:')} soku review wait ${d.review_id}`,
+      )
+    }
+    const data = unwrapDispatch(result)
+    return emitSuccess(data, () =>
+      `${renderHumanData(data)}\n${dim(`(approved by an Always rule — review ${r.review_id})`)}`,
     )
   }
   // An empty `rows` array on a query action is usually "no spend/activities in
