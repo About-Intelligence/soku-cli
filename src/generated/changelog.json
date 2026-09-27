@@ -53,12 +53,22 @@
       "capabilities": {
         "counts": {
           "before": 350,
-          "after": 351,
-          "added": 1,
+          "after": 353,
+          "added": 3,
           "removed": 0,
-          "changed": 7
+          "changed": 11
         },
         "added": [
+          {
+            "id": "ads/deploy_video_ads_batch",
+            "mode": "write",
+            "description": "Create many Meta video creatives and paused ads in one approved operation, uploading the videos first when needed; review-gated bulk write."
+          },
+          {
+            "id": "ads/get_video",
+            "mode": "read",
+            "description": "Read one Meta ad-library video by id: whether Meta has finished processing it, its title, length and thumbnail."
+          },
           {
             "id": "guardrails/decline_bid_setup",
             "mode": "write",
@@ -80,6 +90,12 @@
             ]
           },
           {
+            "id": "ads/deploy_image_ads_batch",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/update_adset",
             "fields": [
               "input_params",
@@ -90,6 +106,29 @@
             "id": "ads/update_campaign",
             "fields": [
               "input_params"
+            ]
+          },
+          {
+            "id": "ads/upload_image",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_images",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/upload_video",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "output_shape",
+              "see_also"
             ]
           },
           {

@@ -7988,8 +7988,170 @@
           ]
         }
       ],
-      "long_description": "Primary use:\nDeploy a batch of Meta image ads after images have already been uploaded. The handler creates AdCreatives in Graph Batch, then creates PAUSED Ads in Graph Batch using the returned creative ids.\n\nUse when:\n- The user has many uploaded Meta image_hash values and wants to create matching creatives + ads in one approved operation.\n- The adset/page/link and optional lead_gen_form_id are shared across the batch, with item-level copy/image variations.\n\nDo not use when:\n- Images are not uploaded yet. Use upload_images first.\n- The user needs videos, carousel creatives, or Google ads. Use the platform-specific primitive actions instead.\n- The request previously returned META_BATCH_AMBIGUOUS. Query Meta by client_ref/name before retrying; do not automatically resubmit.\n\nWorkflow:\n1. Use upload_images to get image_hash values, or reuse known hashes for the same Meta ad account.\n2. Build items[] with stable client_ref, image_hash, and name. client_ref is appended to creative/ad names so ambiguous recovery can query by name. On v26, obtain an explicit destination_spec choice shared by the batch or overridden per item.\n3. For lead-gen, provide lead_gen_form_id and page_id. The handler preflights destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n4. Submit via action:_batch/submit for HITL review.\n5. Verify via list_ads filtered by adset_id or by the deterministic names.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.items[] preserves input order and includes client_ref, creative_id, ad_id, stage, success, ambiguous, error, and error_code.\n- raw.success=false with META_BATCH_AMBIGUOUS means a non-idempotent Graph Batch write may have reached Meta but no reliable response was received. Do not retry without manual/query confirmation.\n- Partial item failures leave successful creative/ad ids in raw.items[].\n- Each created creative gets one immediate readback in raw.items[].readback. Mismatches propagate outcome=partial; unavailable evidence propagates outcome=unknown.\n\nSide effects:\n- Creates Meta AdCreatives under the supplied account.\n- Creates Meta Ads under the supplied adset with status=PAUSED.\n- No immediate spend; activation requires update_ad with status=ACTIVE.\n- Non-idempotent creative/ad create batches are not automatically whole-batch retried on request-level unknown outcome.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.\n\nReview summary contract:\n- Read the target object back in this turn and quote its current name AND literal id in the review summary, e.g. \"Rename campaign 'Summer Sale' (campaign_id 120210000000001)\". A summary that omits a literal hierarchy id (campaign_id / adset_id / ad_group_id / ad_id) present in the payload is rejected at submit with invalid_ads_payload; $op-N references are exempt.\n- Do not tell the user the change is done or will take effect until the review result reports success and the read-back matches the approved intent.",
+      "long_description": "Primary use:\nDeploy a batch of Meta image ads after images have already been uploaded. The handler creates AdCreatives in Graph Batch, then creates PAUSED Ads in Graph Batch using the returned creative ids.\n\nUse when:\n- The user has many uploaded Meta image_hash values and wants to create matching creatives + ads in one approved operation.\n- The adset/page/link and optional lead_gen_form_id are shared across the batch, with item-level copy/image variations.\n\nDo not use when:\n- Images are not uploaded yet. Use upload_images first.\n- The ads are video ads. Use action:ads/deploy_video_ads_batch.\n- The user needs carousel creatives or Google ads. Use the platform-specific primitive actions instead.\n- The request previously returned META_BATCH_AMBIGUOUS. Query Meta by client_ref/name before retrying; do not automatically resubmit.\n\nWorkflow:\n1. Use upload_images to get image_hash values, or reuse known hashes for the same Meta ad account.\n2. Build items[] with stable client_ref, image_hash, and name. client_ref is appended to creative/ad names so ambiguous recovery can query by name. On v26, obtain an explicit destination_spec choice shared by the batch or overridden per item.\n3. For lead-gen, provide lead_gen_form_id and page_id. The handler preflights destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n4. Submit via action:_batch/submit for HITL review.\n5. Verify via list_ads filtered by adset_id or by the deterministic names.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.items[] preserves input order and includes client_ref, creative_id, ad_id, stage, success, ambiguous, error, and error_code.\n- raw.success=false with META_BATCH_AMBIGUOUS means a non-idempotent Graph Batch write may have reached Meta but no reliable response was received. Do not retry without manual/query confirmation.\n- Partial item failures leave successful creative/ad ids in raw.items[].\n- Each created creative gets one immediate readback in raw.items[].readback. Mismatches propagate outcome=partial; unavailable evidence propagates outcome=unknown.\n\nSide effects:\n- Creates Meta AdCreatives under the supplied account.\n- Creates Meta Ads under the supplied adset with status=PAUSED.\n- No immediate spend; activation requires update_ad with status=ACTIVE.\n- Non-idempotent creative/ad create batches are not automatically whole-batch retried on request-level unknown outcome.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.\n\nReview summary contract:\n- Read the target object back in this turn and quote its current name AND literal id in the review summary, e.g. \"Rename campaign 'Summer Sale' (campaign_id 120210000000001)\". A summary that omits a literal hierarchy id (campaign_id / adset_id / ad_group_id / ad_id) present in the payload is rejected at submit with invalid_ads_payload; $op-N references are exempt.\n- Do not tell the user the change is done or will take effect until the review result reports success and the read-back matches the approved intent.",
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"total\": 50, \"succeeded\": 50, \"failed\": 0, \"ambiguous\": 0, \"items\": [{\"index\": 0, \"client_ref\": \"asset-001\", \"creative_id\": \"23...\", \"ad_id\": \"23...\", \"stage\": \"ad\", \"success\": true}]}"
+    },
+    {
+      "id": "action:ads/deploy_video_ads_batch",
+      "namespace": "ads",
+      "action": "deploy_video_ads_batch",
+      "description": "Create many Meta video creatives and paused ads in one approved operation, uploading the videos first when needed; review-gated bulk write.",
+      "mode": "write",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": true,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/upload_video",
+        "action:ads/get_video",
+        "action:ads/deploy_image_ads_batch",
+        "action:ads/list_ads"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Meta ad account id from ads.list_ad_accounts.rows[].account_id.",
+          "example": "1234567890"
+        },
+        {
+          "name": "adset_id",
+          "type": "string",
+          "required": true,
+          "description": "Meta ad set id that will receive the new paused ads.",
+          "example": "23847900000000123"
+        },
+        {
+          "name": "page_id",
+          "type": "string",
+          "required": true,
+          "description": "Facebook Page id for object_story_spec.page_id and lead-form ownership preflight.",
+          "example": "1234567890"
+        },
+        {
+          "name": "link",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared landing URL, used as the call-to-action link of each video creative; item.link overrides it.",
+          "example": "https://example.com/landing"
+        },
+        {
+          "name": "items",
+          "type": "list",
+          "required": true,
+          "description": "Batch items. Each item requires a stable client_ref and exactly one of media_asset_id (a Soku video upload of this organization), file_url (a public https video URL) or video_id (already in this ad account's library), plus name unless top-level name is provided. Optional video_name names the uploaded library video; thumbnail_image_hash / thumbnail_url set the thumbnail. Items may override message/headline/description/link/call_to_action_type/url_tags/destination_spec.",
+          "example": [
+            {
+              "client_ref": "clip-001",
+              "media_asset_id": "0e3c9a52-7a4c-4a3f-9d1e-2f4f5a6b7c8d",
+              "name": "TalkingHead clip 001",
+              "message": "Book a demo today.",
+              "headline": "Demo available"
+            }
+          ],
+          "source": "user"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared base name used when an item omits name. The handler appends [client_ref] to creative and ad names.",
+          "example": "Lead campaign batch"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared primary text; item.message overrides it.",
+          "example": "Book a demo today."
+        },
+        {
+          "name": "headline",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared headline; item.headline overrides it.",
+          "example": "Grow pipeline faster"
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared link description; item.description overrides it.",
+          "example": "AI-powered campaign workflow."
+        },
+        {
+          "name": "caption",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared display caption; item.caption overrides it.",
+          "example": "example.com"
+        },
+        {
+          "name": "call_to_action_type",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared Meta CTA type. Defaults to SIGN_UP for lead-gen when lead_gen_form_id is supplied.",
+          "example": "SIGN_UP",
+          "source": "constant"
+        },
+        {
+          "name": "url_tags",
+          "type": "string",
+          "required": false,
+          "description": "Optional shared Meta url_tags appended to creative links; item.url_tags overrides it.",
+          "example": "utm_source=meta&utm_medium=paid_social"
+        },
+        {
+          "name": "lead_gen_form_id",
+          "type": "string",
+          "required": false,
+          "description": "Optional Meta Lead Form id. When present the handler validates the adset/campaign/page/form semantics before creating anything.",
+          "example": "123456789012345",
+          "source": "upstream:action:ads/create_lead_form"
+        },
+        {
+          "name": "instagram_user_id",
+          "type": "string",
+          "required": false,
+          "description": "Optional Instagram user id for the creative object_story_spec. Must be the ad-account-connected IG identity from action:ads/get_connected_instagram_accounts — a public IG @handle or the Facebook Page id is rejected by the ads API.",
+          "example": "17841400000000000"
+        },
+        {
+          "name": "instagram_actor_id",
+          "type": "string",
+          "required": false,
+          "description": "Optional legacy alias for instagram_user_id. Use only when the account setup exposes instagram_actor_id.",
+          "example": "17841400000000000"
+        },
+        {
+          "name": "destination_spec",
+          "type": "object",
+          "required": false,
+          "description": "Meta: explicit destination_type WEBSITE_AND_SHOP or WEBSITE_AND_SHOP_OPT_OUT. On v26 new link creatives require an explicit user choice; opt out to preserve a website destination. Verify actual destination from readback.",
+          "example": {
+            "destination_type": "WEBSITE_AND_SHOP_OPT_OUT"
+          },
+          "source": "user",
+          "platform": [
+            "meta"
+          ]
+        }
+      ],
+      "long_description": "Primary use:\nDeploy a batch of Meta video ads with one approval. For items that name a Soku media_asset_id or a public file_url, the handler first uploads the video to the ad account's library and waits for Meta to process it. It then creates AdCreatives in Graph Batch and PAUSED Ads in Graph Batch using the returned creative ids.\n\nUse when:\n- The user has video files (local files uploaded to Soku, public URLs, or existing ad-library video_ids) and wants matching creatives + ads under one ad set.\n- The adset/page and optional link / lead_gen_form_id are shared across the batch, with item-level copy/video variations.\n\nDo not use when:\n- The ads are image ads. Use action:ads/deploy_image_ads_batch.\n- The request previously returned META_BATCH_AMBIGUOUS. Query Meta by client_ref/name before retrying; do not automatically resubmit.\n\nWorkflow:\n1. For local files, upload each to Soku (`soku ads meta asset upload-video`, or POST /api/cli/media/uploads + confirm) and keep the media_asset_id. The URL Meta fetches is signed only when the approved batch runs.\n2. Build items[] with stable client_ref, exactly one of media_asset_id / file_url / video_id, and name. client_ref is appended to creative/ad names so ambiguous recovery can query by name. With a link on v26, obtain an explicit destination_spec choice shared by the batch or overridden per item.\n3. Thumbnails are optional (thumbnail_image_hash from action:ads/upload_images, or thumbnail_url) except for lead-gen video creatives, which require one.\n4. For lead-gen, provide lead_gen_form_id and page_id. The handler preflights destination_type=ON_AD, optimization_goal=LEAD_GENERATION, campaign objective OUTCOME_LEADS/LEAD_GENERATION, and ACTIVE form ownership.\n5. Submit for HITL review. The approved batch runs in the background; poll the review (`soku review wait`) for the result.\n6. Verify via list_ads filtered by adset_id or by the deterministic names.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.items[] preserves input order and includes client_ref, video_id, creative_id, ad_id, stage, success, ambiguous, error, and error_code.\n- At most 20 items per batch (META_BATCH_TOO_MANY_ITEMS otherwise); split larger sets.\n- stage=creative_preflight means the creative would certainly be refused (e.g. a link on v26 with no destination_spec); its video was not uploaded.\n- stage=video with META_VIDEO_NOT_READY means the video is in the library but Meta had not finished processing it within about two and a half minutes; no creative or ad was written for that item. Check action:ads/get_video and deploy it again by video_id once ready. META_VIDEO_PROCESSING_ERROR means Meta could not process the file; META_VIDEO_UPLOAD_ERROR means the upload was refused; stage=video with META_BATCH_AMBIGUOUS means the upload got no reliable answer and the video may exist — check the ad library before resubmitting it.\n- raw.success=false with META_BATCH_AMBIGUOUS means a non-idempotent Graph Batch write may have reached Meta but no reliable response was received. Do not retry without manual/query confirmation.\n- Partial item failures leave successful video/creative/ad ids in raw.items[].\n- Each created creative gets one immediate readback in raw.items[].readback. Mismatches propagate outcome=partial; unavailable evidence propagates outcome=unknown.\n\nSide effects:\n- Uploads media_asset_id / file_url videos to {account_id}/advideos (Meta storage, no spend; removable only in the Meta UI).\n- Creates Meta AdCreatives under the supplied account.\n- Creates Meta Ads under the supplied adset with status=PAUSED.\n- No immediate spend; activation requires update_ad with status=ACTIVE.\n- Non-idempotent creative/ad create batches are not automatically whole-batch retried on request-level unknown outcome.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.\n\nReview summary contract:\n- Read the target object back in this turn and quote its current name AND literal id in the review summary, e.g. \"Rename campaign 'Summer Sale' (campaign_id 120210000000001)\". A summary that omits a literal hierarchy id (campaign_id / adset_id / ad_group_id / ad_id) present in the payload is rejected at submit with invalid_ads_payload; $op-N references are exempt.\n- Do not tell the user the change is done or will take effect until the review result reports success and the read-back matches the approved intent.",
+      "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"total\": 3, \"succeeded\": 3, \"failed\": 0, \"ambiguous\": 0, \"items\": [{\"index\": 0, \"client_ref\": \"clip-001\", \"video_id\": \"12...\", \"video_status\": \"ready\", \"creative_id\": \"23...\", \"ad_id\": \"23...\", \"stage\": \"ad\", \"success\": true}]}"
     },
     {
       "id": "action:ads/download_change_history",
@@ -11136,6 +11298,51 @@
       ],
       "long_description": "Primary use:\nTree view of customers below a Google Ads MCC manager account. Use this to navigate sub-accounts and their currencies / timezones.\n\nUse when:\n- The customer_id supplied is an MCC manager account.\n- You need currency, timezone, or manager flag per sub-account.\n\nDo not use when:\n- The customer_id is a leaf (non-manager) account. The query returns just that account.\n- The platform is Meta. Meta does not expose an analogous tree.\n\nWorkflow:\n1. Call this action with the MCC customer_id.\n2. Use the sub-accounts as the account_id for later actions.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.root_customer_id matches the supplied MCC.\n- raw.customers[].level indicates depth in the manager hierarchy.\n- Filters out status='CANCELED'.\n\nAudit guidance (batch 4 P2):\n- google: Guidance: The capability docs advertise account_ids as 'Optional list of customer IDs to narrow the tree response', but the get_tree_structure handler does not implement any narrowing — the agent will believe it can filter and silently receive the full tree. This is a guidance/contract mismatch that will cause the agent to mis-plan. Also note: Docs do not state that there is no depth limit or pagination, so the agent cannot anticipate large responses on big MCCs. Capability gap: No level/depth filter: the handler always returns the entire descendant hierarchy (no WHERE customer_client.level <= N). The official hierarchy example uses customer_client.level <= 1 for direct children; large MCCs return very large unbounded result sets with no pagination or limit param.",
       "output_shape": "{\"success\": true, \"root_customer_id\": \"1234567890\", \"customers\": [{\"customer_id\": 1234567890, \"name\": \"...\", \"resource_name\": \"customers/1234567890\", \"currency\": \"USD\", \"timezone\": \"America/Los_Angeles\", \"manager\": true, \"level\": 0}]}"
+    },
+    {
+      "id": "action:ads/get_video",
+      "namespace": "ads",
+      "action": "get_video",
+      "description": "Read one Meta ad-library video by id: whether Meta has finished processing it, its title, length and thumbnail.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/upload_video",
+        "action:ads/create_ad_creative"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Meta ad account id from ads.list_ad_accounts.rows[].account_id.",
+          "example": "1234567890"
+        },
+        {
+          "name": "video_id",
+          "type": "string",
+          "required": true,
+          "description": "Meta video id from action:ads/upload_video (raw.video_id). Source: the upload's review result.",
+          "example": "1234567890123456"
+        }
+      ],
+      "long_description": "Primary use:\nCheck a video uploaded with action:ads/upload_video until Meta reports it ready. A video id can only be used in a creative once Meta has encoded it.\n\nUse when:\n- action:ads/upload_video answered with raw.video_status `processing`.\n- The user names an existing ad-library video_id and wants to know whether it is usable.\n\nDo not use when:\n- The upload has not been approved yet. Its review result carries the video_id once it runs.\n- The platform is not Meta.\n\nWorkflow:\n1. Take video_id from action:ads/upload_video (raw.video_id).\n2. Call this action directly; no HITL review is required. Poll about every 10-30 seconds while raw.video_status is `processing`.\n3. When it is `ready`, use the id in action:ads/create_ad_creative or action:ads/deploy_video_ads_batch.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.video_status is `ready` (uploaded, encoded, thumbnails extracted), `processing`, or `error` (Meta could not process the file; upload it again).\n- raw.processing_progress is Meta's percent, 0-100, when reported.\n- raw.title is the name the video was uploaded with; raw.length is seconds.\n- raw.picture is Meta's thumbnail URL for display only: Meta says not to use its CDN image URLs as a creative thumbnail.\n\nSide effects:\n- None. Read-only Graph API call.",
+      "output_shape": "{\"id\": \"video_id\", \"video_id\": \"video_id\", \"name\": \"...\", \"picture\": \"https://...\", \"video_status\": \"ready|processing|error\", \"processing_progress\": 100, \"status\": {\"video_status\": \"ready\", \"processing_progress\": 100}}"
     },
     {
       "id": "action:ads/list_account_negative_keywords",
@@ -19106,6 +19313,16 @@
           ]
         },
         {
+          "name": "media_asset_id",
+          "type": "string",
+          "required": false,
+          "description": "Meta: id of an image already uploaded to Soku (POST /api/cli/media/uploads/confirm) instead of image_url / bytes_base64. Must belong to this organization. Source: the Soku media upload's media_asset_id.",
+          "example": "0e3c9a52-7a4c-4a3f-9d1e-2f4f5a6b7c8d",
+          "platform": [
+            "meta"
+          ]
+        },
+        {
           "name": "name",
           "type": "string",
           "required": false,
@@ -19138,7 +19355,7 @@
           ]
         }
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nDownload a public https image, validate it, and POST the bytes to Meta's {account_id}/adimages. Returns image_hash for action:ads/create_ad_creative.\n\nUse when:\n- The user wants to ingest a new image asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http (non-https), or an IP literal. The handler rejects such URLs before any upload.\n- The image is larger than 25 MB. The handler returns an error.\n- The platform is Google. Use action:ads/upload_image_asset (returns asset_id).\n\nWorkflow:\n1. Get a public https image URL <= 25 MB without redirects.\n2. Submit for HITL review. Meta URL bytes are captured before approval so later URL expiry cannot replace or invalidate the approved image.\n3. Use the returned image_hash in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.image_hash is the value to feed into create_ad_creative.image_hash.\n- Errors: 'Image exceeds 25 MB byte limit.' or 'Image URL returned a redirect.'\n\nSide effects:\n- Downloads the URL (rejects redirects, enforces 25 MB cap, validates public https).\n- Base64-encodes and POSTs to {account_id}/adimages; image is stored against the account.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs describe image_url as the input but do not state the internal mechanism is base64 'bytes' upload (not a Meta-fetched URL), nor that the 25MB cap is stricter than Meta's ~30MB native limit — an agent could wrongly assume a <30MB image will succeed. Also note: Docs do not mention image format constraints (Meta accepts JPG/PNG; GIF/WEBP/other may be rejected by Meta with code 100), so the agent cannot pre-validate format. Capability gap: copy_from: cross-account image reuse (clone an existing hash into another account) is unreachable in all three layers; agent must re-upload bytes per account.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nDownload a public https image, validate it, and POST the bytes to Meta's {account_id}/adimages. Returns image_hash for action:ads/create_ad_creative.\n\nUse when:\n- The user wants to ingest a new image asset for ad creatives.\n- The image is a local file: upload it to Soku first (POST /api/cli/media/uploads + confirm) and pass the returned media_asset_id; the bytes are read from Soku when the approved upload runs.\n\nDo not use when:\n- The source URL is private, http (non-https), or an IP literal. The handler rejects such URLs before any upload.\n- The image is larger than 25 MB. The handler returns an error.\n- The platform is Google. Use action:ads/upload_image_asset (returns asset_id).\n\nWorkflow:\n1. Get a public https image URL <= 25 MB without redirects.\n2. Submit for HITL review. Meta URL bytes are captured before approval so later URL expiry cannot replace or invalidate the approved image.\n3. Use the returned image_hash in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.image_hash is the value to feed into create_ad_creative.image_hash.\n- Errors: 'Image exceeds 25 MB byte limit.' or 'Image URL returned a redirect.'\n\nSide effects:\n- Downloads the URL (rejects redirects, enforces 25 MB cap, validates public https).\n- Base64-encodes and POSTs to {account_id}/adimages; image is stored against the account.\n- Consumes Meta storage quota but no ad spend.\n- Reversible only via the Meta UI; no L1.5 remove handler.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs describe image_url as the input but do not state the internal mechanism is base64 'bytes' upload (not a Meta-fetched URL), nor that the 25MB cap is stricter than Meta's ~30MB native limit — an agent could wrongly assume a <30MB image will succeed. Also note: Docs do not mention image format constraints (Meta accepts JPG/PNG; GIF/WEBP/other may be rejected by Meta with code 100), so the agent cannot pre-validate format. Capability gap: copy_from: cross-account image reuse (clone an existing hash into another account) is unreachable in all three layers; agent must re-upload bytes per account.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"image_hash\": \"hex_md5\", \"images\": [{\"hash\": \"...\", \"url\": \"...\", \"width\": 1200, \"height\": 628, \"name\": \"...\"}]}\nTikTok output: resource_id is the uploaded image_id; raw preserves image_id and id. image_hash belongs to the Meta response only."
     },
     {
@@ -19235,7 +19452,7 @@
           "name": "images",
           "type": "list",
           "required": true,
-          "description": "List of image upload objects. Meta accepts image_url or bytes_base64; TikTok accepts a public HTTPS image_url only (an object with image_url/url or a bare URL string). name and stable client_ref are optional metadata. Required when platform=tiktok.",
+          "description": "List of image upload objects. Meta accepts image_url, bytes_base64, or media_asset_id (a Soku media upload of this organization); TikTok accepts a public HTTPS image_url only (an object with image_url/url or a bare URL string). name and stable client_ref are optional metadata. Required when platform=tiktok.",
           "example": [
             {
               "client_ref": "asset-001",
@@ -19262,7 +19479,7 @@
       "id": "action:ads/upload_video",
       "namespace": "ads",
       "action": "upload_video",
-      "description": "Upload a video to a Meta or TikTok ad account from a public URL after HITL review and return video_id for async encoding or readiness checks.",
+      "description": "Upload a video to a Meta or TikTok ad account after HITL review — from a public URL, or on Meta from a Soku media_asset_id — and return video_id with Meta's processing status.",
       "mode": "write",
       "platforms": [
         "meta",
@@ -19271,6 +19488,7 @@
       "requires_review": true,
       "freshness_kind": "synced",
       "see_also": [
+        "action:ads/get_video",
         "action:ads/upload_image",
         "action:ads/create_ad_creative"
       ],
@@ -19297,9 +19515,19 @@
         {
           "name": "file_url",
           "type": "string",
-          "required": true,
-          "description": "Meta only: public https URL of the video to ingest. Required -- this is the only supported upload path (Meta's resumable chunked/source upload for very large files is NOT supported by this action). Must be a direct https URL (no http, no IP literal, no redirect); the handler SSRF-validates it and rejects redirects. Prefer reasonably sized MP4/H.264 clips; multi-GB assets that require chunked upload will fail. Source: user-provided public https URL of the video file.",
+          "required": false,
+          "description": "Meta only: public https URL of the video to ingest. Give exactly one of file_url or media_asset_id. Must be a direct https URL (no http, no IP literal, no redirect); the handler SSRF-validates it and rejects redirects. Meta's resumable chunked upload is not supported, so prefer reasonably sized MP4/H.264 clips. Source: user-provided public https URL of the video file.",
           "example": "https://example.com/clip.mp4",
+          "platform": [
+            "meta"
+          ]
+        },
+        {
+          "name": "media_asset_id",
+          "type": "string",
+          "required": false,
+          "description": "Meta only: id of a video already uploaded to Soku, as returned by `soku ads meta asset upload-video` / POST /api/cli/media/uploads/confirm. Give exactly one of file_url or media_asset_id. Must belong to this organization. Source: the Soku media upload's media_asset_id.",
+          "example": "0e3c9a52-7a4c-4a3f-9d1e-2f4f5a6b7c8d",
           "platform": [
             "meta"
           ]
@@ -19326,7 +19554,7 @@
           "name": "name",
           "type": "string",
           "required": false,
-          "description": "Meta only: optional asset name for the uploaded video in the ad account media library. Distinct from title/description (which annotate the video). Free-form, agent- or user-provided. Source: agent-provided or user-provided label (e.g. a campaign/asset naming convention).",
+          "description": "Meta only: optional asset name for the uploaded video in the ad account media library. Distinct from title/description (which annotate the video). Defaults to the uploaded file's name for a media_asset_id. Source: agent-provided or user-provided label (e.g. a campaign/asset naming convention).",
           "example": "summer-sale-hero-15s",
           "platform": [
             "meta"
@@ -19366,8 +19594,8 @@
           ]
         }
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nSubmit a public https video URL to Meta's {account_id}/advideos. Meta downloads + encodes asynchronously; the returned video_id may not be immediately usable in creatives.\n\nUse when:\n- The user wants to ingest a new video asset for ad creatives.\n\nDo not use when:\n- The source URL is private, http, or an IP literal. The handler rejects it.\n- The platform is Google.\n\nWorkflow:\n1. Get a public https video URL.\n2. Submit this write through action:_batch/submit for HITL review.\n3. After Meta finishes encoding, use the video_id in action:ads/create_ad_creative.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new video_id; raw.success indicates upload accepted, not encoding done.\n\nSide effects:\n- POSTs file_url to {account_id}/advideos; Meta pulls and encodes the file asynchronously.\n- Encoding is async on Meta's side — the video may not be ready for creatives immediately.\n- No immediate spend; consumes Meta storage quota.\n- Reversible only via the Meta UI.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
-      "output_shape": "{\"id\": \"video_id\", \"success\": true}\nTikTok output: resource_id is the uploaded video_id; raw preserves video_id, id, ready, and any transcoding warnings."
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nAdd a video to Meta's {account_id}/advideos library so creatives can use it. Meta fetches the file itself and then transcodes it; the action waits up to 60 seconds for that and reports how far it got.\n\nUse when:\n- The user wants to ingest a new video asset for ad creatives.\n- The video is a local file: upload it to Soku first (`soku ads meta asset upload-video`, or POST /api/cli/media/uploads + confirm) and pass the returned media_asset_id. The URL Meta fetches is signed only when the approved upload runs, so the approval can happen any time within the review window.\n\nDo not use when:\n- The source URL is private, http, or an IP literal. The handler rejects it.\n- You only have a short-lived signed URL (e.g. from `soku files publish`) and the approval may take longer than it lives. Upload to Soku and use media_asset_id instead.\n- The platform is Google.\n\nWorkflow:\n1. Get a public https video URL, or a media_asset_id from the Soku media upload.\n2. Submit this write for HITL review (exactly one of file_url / media_asset_id on Meta).\n3. When raw.video_status is `processing`, poll action:ads/get_video until it is `ready`, then use the video_id in action:ads/create_ad_creative or action:ads/deploy_video_ads_batch.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id / raw.video_id is the new video_id.\n- raw.video_status is `ready` (uploaded, encoded, thumbnails extracted) or `processing` (Meta has it and is still transcoding); raw.processing_progress is Meta's percent when it reports one.\n- raw.success=false with video_status `error` means Meta could not process the file; the library entry is unusable.\n\nSide effects:\n- POSTs file_url to {account_id}/advideos; Meta pulls and encodes the file asynchronously. A media_asset_id is turned into a URL signed for two hours at execution time.\n- No immediate spend; consumes Meta storage quota.\n- Reversible only via the Meta UI.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
+      "output_shape": "{\"id\": \"video_id\", \"video_id\": \"video_id\", \"success\": true, \"video_status\": \"ready\", \"processing_progress\": 100}\nTikTok output: resource_id is the uploaded video_id; raw preserves video_id, id, ready, and any transcoding warnings."
     },
     {
       "id": "action:applovin/asset_performance",
