@@ -31,7 +31,7 @@ Read only the reference files needed for the user's task:
 | Ads, GA4, or PostHog reads; raw `soku call`; command discovery | `references/data-capabilities.md` and `references/capability-flow.md` |
 | Meta/Google/ChatGPT Ads writes, image/video uploads, video ads from local files, bulk create, review-gated approval | `references/ads-write.md` |
 | SEO Hosting, automations, Context Hub files, temporary public file URLs | `references/seo-automation-files.md` |
-| Third-party APIs through server-side credential injection; security rules | `references/egress-security.md` |
+| Third-party APIs through server-side credential injection; what calls cost and `soku credits`; security rules | `references/egress-security.md` |
 | Installing, updating, or removing Soku-managed local skills; finding out what an upgrade changed | `references/skills-updates.md` |
 
 For an installed business skill such as `soku-ads-report`, read that skill too.

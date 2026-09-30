@@ -10,6 +10,7 @@ import { registerBrandCommands } from './commands/brand.js'
 import { registerCallCommand } from './commands/call.js'
 import { registerChangelogCommand } from './commands/changelog.js'
 import { registerContextCommands } from './commands/context.js'
+import { registerCreditsCommands } from './commands/credits.js'
 import { registerEgressCommands } from './commands/egress.js'
 import { registerFilesCommands } from './commands/files.js'
 import { registerGeneratedCommands } from './commands/generated.js'
@@ -42,6 +43,7 @@ registerGeneratedCommands(program)
 registerAdsCommands(program)
 registerCallCommand(program)
 registerEgressCommands(program)
+registerCreditsCommands(program)
 registerLiveSurfaceCommands(program)
 registerReviewCommands(program)
 registerSeoHostingCommands(program)
