@@ -3,12 +3,19 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.24",
+      "date": "2026-10-02",
+      "notes": [
+        "Egress calls now say what they cost: after the response body, `soku egress` prints on stderr the credits the call was charged and the workspace balance left, and adds a warning once the balance is negative or low for the calls being made (under 1,000 credits, or under ten calls at the last call's price). stdout is still exactly the vendor's bytes. `soku credits` shows the workspace balance, the plan, and your own egress calls from the last 7 days with each call's cost and the balance after it.",
+        "The bundled skill's egress reference now covers cost: Soku-paid data needs a paid plan while your own connections stay free on any plan, a card quote is the cheapest call on that route rather than a ceiling, row-billed vendors such as Ahrefs scale with rows and columns, and what `no_paid_plan`, `insufficient_credits` and `cost_parameter_out_of_bounds` mean."
+      ],
       "commands": {
-        "added": [],
-        "changed": [],
+        "added": [
+          "credits"
+        ],
+        "changed": [
+          "egress prints the settled charge and the remaining workspace balance on stderr after the response body; against a server that reports no charge it prints nothing."
+        ],
         "removed": []
       },
       "capabilities": {

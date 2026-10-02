@@ -406,7 +406,47 @@ async function runEgress(parsed: ParsedCurl): Promise<void> {
     const source = Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0])
     await pipeline(source, responseSink(parsed.output))
   }
+  // After the body, on stderr, so stdout stays exactly the vendor's bytes.
+  for (const line of describeCharge(res.headers)) process.stderr.write(`${line}\n`)
   process.exit(ExitCode.OK)
+}
+
+/** Below this many credits a charge line also warns, whatever the call cost. */
+export const LOW_BALANCE_CREDITS = 1000
+
+/** What a settled call cost and what is left, from the server's settlement headers.
+ *
+ * A customer's balance went from 39,824 to -1,495 in three and a half minutes
+ * and nothing said so until the next call was refused. The server reports the
+ * settled charge on every egress response; this turns it into a line an agent
+ * relays and a person notices, plus a warning once the balance is low relative
+ * to the calls being made. Nothing is printed when the server sent no charge
+ * (an older server, or a charge that failed to record).
+ */
+export function describeCharge(headers: Headers): string[] {
+  const charged = parseCredits(headers.get('x-soku-credits-charged'))
+  if (charged === null) return []
+  const balance = parseCredits(headers.get('x-soku-credits-balance'))
+  const lines = [
+    balance === null
+      ? `soku: this call cost ${charged} credits`
+      : `soku: this call cost ${charged} credits; workspace balance ${balance}`,
+  ]
+  if (balance !== null && balance < 0) {
+    lines.push(
+      'soku: warning: the workspace balance is negative; calls Soku pays for are refused until credits are added (see `soku credits`)',
+    )
+  } else if (balance !== null && (balance < LOW_BALANCE_CREDITS || balance < charged * 10)) {
+    lines.push(
+      `soku: warning: ${balance} credits left; at ${charged} per call that is about ${charged > 0 ? Math.floor(balance / charged) : 'many'} more (see \`soku credits\`)`,
+    )
+  }
+  return lines
+}
+
+function parseCredits(value: string | null): number | null {
+  if (value === null || !/^-?\d+$/.test(value.trim())) return null
+  return Number(value.trim())
 }
 
 interface ProviderItem {

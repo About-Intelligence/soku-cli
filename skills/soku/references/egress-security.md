@@ -81,7 +81,31 @@ Do not abort a skill because a key looks missing. Route the call through
 ## Response Semantics
 
 Successful upstream responses are returned verbatim on stdout, not wrapped in a
-success envelope. Soku-level failures use the normal CLI error envelope.
+success envelope. Soku-level failures use the normal CLI error envelope. The
+cost of a settled call is printed on stderr, after the body.
+
+## Cost And Credits
+
+- A call on Soku's credential (you did not pass your own vendor key) is Soku
+  paying the vendor: it needs a paid Soku plan, and it is charged in credits
+  from what the vendor reports for that exact call (1,000 credits = $1).
+- After every settled call the CLI prints what it cost and the balance left,
+  e.g. `soku: this call cost 23 credits; workspace balance 39801`, and warns
+  when the balance is low or negative. Relay these lines to the user.
+- `soku credits` shows the workspace balance, the plan, and your egress calls
+  from the last 7 days with each call's cost and the balance after it.
+- A card's `quote_usd_micros` is the cheapest call on that route, not a ceiling.
+  Row-billed vendors scale with the rows and columns you ask for — Ahrefs
+  consumes `max(50, rows × per-row column cost)` units, and volume, difficulty
+  and traffic columns cost 10 each — so set `limit` to what you will read,
+  select only the columns you need, and read the charge line after the first
+  call before repeating it.
+- Refused before anything is charged, and never the vendor refusing you:
+  `no_paid_plan` (Soku-paid data on a Free plan; your own connections stay
+  free), `insufficient_credits` (the balance does not cover the call's quote;
+  every call needs at least 1 credit), and `cost_parameter_out_of_bounds` (the
+  parameter that sets the call's size is missing or above the route's ceiling,
+  e.g. Ahrefs `limit` is required and at most 100).
 
 ## General Security Rules
 

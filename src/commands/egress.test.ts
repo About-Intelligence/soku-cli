@@ -8,6 +8,7 @@ import {
   CurlUsageError,
   buildUrlEncodedSegment,
   curlEscape,
+  describeCharge,
   expandShortBundle,
   parseCurl,
   responseSink,
@@ -373,4 +374,29 @@ test('responseSink writes to the -o file, and to stdout without one', async () =
   assert.deepEqual([...readFileSync(target)], [0x89, 0x50, 0x4e, 0x47])
 
   assert.equal(responseSink(undefined), process.stdout)
+})
+
+test('a settled call reports what it cost and what is left', () => {
+  const lines = describeCharge(
+    new Headers({ 'x-soku-credits-charged': '23', 'x-soku-credits-balance': '39801' }),
+  )
+  assert.deepEqual(lines, ['soku: this call cost 23 credits; workspace balance 39801'])
+})
+
+test('a call that leaves the balance low or negative warns', () => {
+  const low = describeCharge(
+    new Headers({ 'x-soku-credits-charged': '9429', 'x-soku-credits-balance': '7934' }),
+  )
+  assert.equal(low.length, 2)
+  assert.match(low[1], /7934 credits left; at 9429 per call that is about 0 more/)
+
+  const negative = describeCharge(
+    new Headers({ 'x-soku-credits-charged': '9429', 'x-soku-credits-balance': '-1495' }),
+  )
+  assert.match(negative[1], /balance is negative/)
+})
+
+test('no charge header means no charge line', () => {
+  assert.deepEqual(describeCharge(new Headers()), [])
+  assert.deepEqual(describeCharge(new Headers({ 'x-soku-credits-charged': 'soon' })), [])
 })
