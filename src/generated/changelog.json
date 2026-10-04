@@ -3,6 +3,47 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
+      "version": "unreleased",
+      "date": null,
+      "notes": [],
+      "commands": {
+        "added": [],
+        "changed": [],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 355,
+          "after": 355,
+          "added": 0,
+          "removed": 0,
+          "changed": 3
+        },
+        "added": [],
+        "removed": [],
+        "changed": [
+          {
+            "id": "ads/list_conversion_groups",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/query_multi_dimension",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/query_single_dimension",
+            "fields": [
+              "long_description"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0-alpha.24",
       "date": "2026-10-02",
       "notes": [
