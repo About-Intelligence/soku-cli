@@ -14,14 +14,126 @@
       "capabilities": {
         "counts": {
           "before": 355,
-          "after": 355,
+          "after": 349,
           "added": 0,
-          "removed": 0,
-          "changed": 5
+          "removed": 6,
+          "changed": 18
         },
         "added": [],
-        "removed": [],
+        "removed": [
+          {
+            "id": "ads/add_campaign_ad_units",
+            "mode": "risk",
+            "description": "Deprecated legacy compatibility: Append ChatGPT Ads ad units to a campaign."
+          },
+          {
+            "id": "ads/archive_ad_unit",
+            "mode": "risk",
+            "description": "Deprecated legacy compatibility: Toggle archive state for one ChatGPT Ads ad unit; review-gated risk action."
+          },
+          {
+            "id": "ads/create_ad_unit",
+            "mode": "write",
+            "description": "Deprecated legacy compatibility: Create a ChatGPT Ads ad unit draft; review-gated."
+          },
+          {
+            "id": "ads/generate_ad_units",
+            "mode": "write",
+            "description": "Deprecated legacy compatibility: Generate ChatGPT Ads draft ad units from a landing page URL."
+          },
+          {
+            "id": "ads/migrate_legacy_ad_units",
+            "mode": "risk",
+            "description": "Migrate explicit legacy Ad Unit records into paused Ad Groups and authored Ads; review-gated risk action."
+          },
+          {
+            "id": "ads/replace_campaign_ad_units",
+            "mode": "risk",
+            "description": "Deprecated legacy compatibility: Replace the full ChatGPT Ads ad-unit set on a campaign."
+          }
+        ],
         "changed": [
+          {
+            "id": "ads/archive_ad",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "output_shape",
+              "see_also"
+            ]
+          },
+          {
+            "id": "ads/archive_ad_group",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "output_shape",
+              "see_also"
+            ]
+          },
+          {
+            "id": "ads/create_ad",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad_group",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_campaign",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "see_also"
+            ]
+          },
+          {
+            "id": "ads/get_ad_group",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "output_shape",
+              "see_also"
+            ]
+          },
+          {
+            "id": "ads/get_campaign",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "see_also"
+            ]
+          },
+          {
+            "id": "ads/list_ad_groups",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "output_shape",
+              "see_also"
+            ]
+          },
+          {
+            "id": "ads/list_campaigns",
+            "fields": [
+              "description",
+              "long_description",
+              "see_also"
+            ]
+          },
           {
             "id": "ads/list_conversion_groups",
             "fields": [
@@ -41,9 +153,39 @@
             ]
           },
           {
+            "id": "ads/remove_campaign",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad_group",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/update_adset",
             "fields": [
               "input_params"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description"
             ]
           },
           {
