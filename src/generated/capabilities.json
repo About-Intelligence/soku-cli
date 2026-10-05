@@ -8003,6 +8003,62 @@
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"total\": 3, \"succeeded\": 3, \"failed\": 0, \"ambiguous\": 0, \"items\": [{\"index\": 0, \"client_ref\": \"clip-001\", \"video_id\": \"12...\", \"video_status\": \"ready\", \"creative_id\": \"23...\", \"ad_id\": \"23...\", \"stage\": \"ad\", \"success\": true}]}"
     },
     {
+      "id": "action:ads/describe_dashboard",
+      "namespace": "ads",
+      "action": "describe_dashboard",
+      "description": "Read what the Brand's Dashboard shows: the Overview KPI strip, the summary blocks (Traffic & Cost + ROI and up to two P0 conversion groups) and the Breakdown tab's default campaign table, with registry definitions.",
+      "mode": "read",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads",
+        "linkedin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/query_single_dimension",
+        "action:ads/query_multi_dimension",
+        "action:ads/list_conversion_groups"
+      ],
+      "input_params": [
+        {
+          "name": "date_start",
+          "type": "string",
+          "required": false,
+          "description": "ISO start date. Pass together with date_end; omit both for the Dashboard default (14 days ending yesterday, UTC).",
+          "example": "2026-09-10"
+        },
+        {
+          "name": "date_end",
+          "type": "string",
+          "required": false,
+          "description": "ISO end date (inclusive). Pass together with date_start.",
+          "example": "2026-09-23"
+        },
+        {
+          "name": "account_ids",
+          "type": "list",
+          "required": false,
+          "description": "Internal Dashboard account ids (integers) — the ids the Dashboard account filter uses, as passed in the web Chat turn context. Omit for every ad account granted to the Brand.",
+          "example": [
+            101,
+            102
+          ]
+        },
+        {
+          "name": "breakdown_limit",
+          "type": "integer",
+          "required": false,
+          "description": "Breakdown rows to return, by spend. Default 20, max 100.",
+          "example": 20
+        }
+      ],
+      "long_description": "Primary use:\nAnswer questions about the Dashboard ('what does my Dashboard say', 'why is ROAS 2.1x there') with the same numbers the page renders. Values come from the same summary and breakdown services the Dashboard calls, not a re-derivation.\n\nDate window priority:\n1. A date range the user states in Chat. 2. The Dashboard filter the user is looking at (web Chat passes it in the turn context). 3. Omit date_start and date_end: the Dashboard default, the 14 days ending yesterday. The web computes 'yesterday' in the viewer's browser timezone; this action has no viewer and uses UTC, so near midnight the default can differ from the page by one day — pass the dates from the turn context when you have them.\n\nOutput semantics:\n- overview.kpi_strip: 4 cards in page order (spend, all_conversion_summary_count, all_conversion_summary_value, roas).\n- overview.summary_blocks: 'traffic' (spend, clicks, impressions, cpm, roas) then one block per P0 conversion group (at most 2, ordered by sort_order then id). A group block shows conversions always and value / cost_per / roas / rate only when the group declares that label; a metric whose data is still pending is omitted, as on the page (see overview.conversion_coverage).\n- Every card has the Dashboard click-snapshot shape {kind, artifact, source, section, metric_key, label, value, definition}; definition is the Metric Registry entry for metric_key (group:{slug}:{kind} for group metrics). Group metrics never change the top-level roas.\n- breakdown: the page's default preset — dimensions ['campaign'], the default column set, rows sorted by spend (top breakdown_limit). column_metric_keys maps each column to its registry slug ('conversions' is all_conversion_summary_count, not the platform's Conversions field; ctr is a ratio). truncated is true when rows were cut.\n- report_context: dates, accounts with timezone/currency/freshness, partial_day and the effective attribution per platform and per group.\n- date_source: 'request' or 'dashboard_default'.\n\nLimits:\n- Brand-level default view only. Per-user saved views are not reachable (this action has no user identity) and the web does not persist them; custom Breakdown dimensions or columns the user picked on the page are not reflected. For another cut use ads/query_single_dimension or ads/query_multi_dimension.",
+      "output_shape": "{\"date_start\": \"2026-09-10\", \"date_end\": \"2026-09-23\", \"date_source\": \"dashboard_default\", \"account_ids\": [101], \"overview\": {\"kpi_strip\": [{\"kind\": \"metric\", \"artifact\": \"summary_metric\", \"source\": \"dashboard_report\", \"section\": \"kpi_strip\", \"metric_key\": \"roas\", \"label\": \"ROAS\", \"value\": 2.1, \"definition\": {\"slug\": \"roas\", \"formula\": \"all_conversion_summary_value / spend\", \"...\": \"...\"}}], \"summary_blocks\": [{\"section\": \"traffic\", \"title\": \"Traffic & Cost + ROI\", \"cards\": []}, {\"section\": \"group:purchase\", \"title\": \"Purchase\", \"group\": {\"id\": 7, \"name\": \"Purchase\", \"slug\": \"purchase\"}, \"cards\": []}], \"conversion_coverage\": \"complete\"}, \"breakdown\": {\"dimensions\": [\"campaign\"], \"columns\": [\"spend\", \"impressions\", \"cpm\", \"clicks\", \"ctr\", \"conversions\", \"cpa\", \"roas\"], \"column_metric_keys\": {\"conversions\": \"all_conversion_summary_count\", \"...\": \"...\"}, \"rows\": [{\"dimensions\": {\"campaign\": {\"key\": \"123\", \"label\": \"Brand Search\"}}, \"spend\": 120.5, \"...\": \"...\"}], \"total_row_count\": 42, \"truncated\": true}, \"report_context\": {\"date_start\": \"2026-09-10\", \"accounts\": [], \"...\": \"...\"}}"
+    },
+    {
       "id": "action:ads/download_change_history",
       "namespace": "ads",
       "action": "download_change_history",

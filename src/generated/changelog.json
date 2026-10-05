@@ -14,12 +14,18 @@
       "capabilities": {
         "counts": {
           "before": 355,
-          "after": 349,
-          "added": 0,
+          "after": 350,
+          "added": 1,
           "removed": 6,
           "changed": 18
         },
-        "added": [],
+        "added": [
+          {
+            "id": "ads/describe_dashboard",
+            "mode": "read",
+            "description": "Read what the Brand's Dashboard shows: the Overview KPI strip, the summary blocks (Traffic & Cost + ROI and up to two P0 conversion groups) and the Breakdown tab's default campaign table, with registry definitions."
+          }
+        ],
         "removed": [
           {
             "id": "ads/add_campaign_ad_units",
