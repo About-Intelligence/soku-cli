@@ -5250,7 +5250,7 @@
           "name": "daily_budget",
           "type": "number",
           "required": false,
-          "description": "Daily budget in USD; provider minimum $25, also subject to configured product minimum. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
+          "description": "Daily budget in USD; subject to the configured product minimum below. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "example": 25,
           "platform": [
             "google",
@@ -17738,7 +17738,7 @@
           "name": "daily_budget",
           "type": "number",
           "required": false,
-          "description": "Daily budget in USD; provider minimum $25, also subject to configured product minimum. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
+          "description": "Daily budget in USD; subject to the configured product minimum below. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "example": 25,
           "platform": [
             "chatgpt_ads"
