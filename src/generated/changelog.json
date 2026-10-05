@@ -17,7 +17,7 @@
           "after": 350,
           "added": 1,
           "removed": 6,
-          "changed": 18
+          "changed": 26
         },
         "added": [
           {
@@ -192,6 +192,54 @@
             "fields": [
               "description",
               "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "bigquery/query",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/get_conversion_overview",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/get_daily_trend",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/get_property_overview",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/list_events",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/list_metrics",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/list_top_pages",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/list_traffic_sources",
+            "fields": [
               "long_description"
             ]
           },
