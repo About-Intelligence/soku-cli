@@ -137,7 +137,8 @@
           {
             "id": "ads/list_conversion_groups",
             "fields": [
-              "long_description"
+              "long_description",
+              "output_shape"
             ]
           },
           {
