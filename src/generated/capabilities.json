@@ -17357,6 +17357,16 @@
           ]
         },
         {
+          "name": "roas_bid",
+          "type": "number",
+          "required": false,
+          "description": "TikTok only: new Minimum ROAS goal for a value-optimization ad group (deep_bid_type=VO_MIN_ROAS, usually with bid_type=BID_TYPE_NO_BID), e.g. 0.35 means 35% return on spend. Other ad groups are refused; use bid_amount for Cost Cap bids. Range 0.01-10 for in-app ad revenue (AD_REVENUE_VALUE), 0.01-20 for TikTok Shop product shopping ads, 0.01-1000 otherwise. The result carries previous_roas_bid.",
+          "example": 0.35,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "location_ids",
           "type": "list",
           "required": false,
@@ -23429,7 +23439,7 @@
           "description": "Short human-readable sentence describing this change for the review card."
         }
       ],
-      "long_description": "Primary use: turn the user's sentence 'who may change what, by how much' into the one rule at (target, who). Re-configuring the same coordinate replaces the previous rule — no stacking. limits is a closed set of four per-parameter bounds, each decided from this write alone: max_value (absolute cap), min_value (absolute floor), max_delta_pct (max relative move vs the current platform value; on bid coordinates delta_basis picks the reference: daily_sync = the bid at the last daily sync, so a day's bids stay in one corridor; last_change = the last bid Soku verifiably wrote, so every change is bounded — ask the user which they want), allowed_values (closed value list). Bids are guarded on ads/update_adset.bid_amount_micros (TikTok and Meta, converted to account-currency micros whatever unit the platform uses) and ads/update_ad_group.cpc_bid_micros (Google). There is no total-spend limit here — a brand's overall daily spend is capped by the ad platform's own account-level daily budget. on_violation require_human downgrades auto approvals to a human card; deny hard-rejects. Every set_rule itself goes through human review — never applied silently. Do not use for pausing everything now: that is guardrails/set_emergency_stop.",
+      "long_description": "Primary use: turn the user's sentence 'who may change what, by how much' into the one rule at (target, who). Re-configuring the same coordinate replaces the previous rule — no stacking. limits is a closed set of four per-parameter bounds, each decided from this write alone: max_value (absolute cap), min_value (absolute floor), max_delta_pct (max relative move vs the current platform value; on bid coordinates delta_basis picks the reference: daily_sync = the bid at the last daily sync, so a day's bids stay in one corridor; last_change = the last bid Soku verifiably wrote, so every change is bounded — ask the user which they want), allowed_values (closed value list). Bids are guarded on ads/update_adset.bid_amount_micros (TikTok and Meta, converted to account-currency micros whatever unit the platform uses), ads/update_ad_group.cpc_bid_micros (Google) and ads/update_adset.roas_bid (a TikTok value-optimization ad group's Minimum ROAS goal, a plain ratio). There is no total-spend limit here — a brand's overall daily spend is capped by the ad platform's own account-level daily budget. on_violation require_human downgrades auto approvals to a human card; deny hard-rejects. Every set_rule itself goes through human review — never applied silently. Do not use for pausing everything now: that is guardrails/set_emergency_stop.",
       "output_shape": "{change: created|updated, rule: {id, target, who, limits, on_violation, ...}}"
     },
     {

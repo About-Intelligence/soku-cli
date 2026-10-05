@@ -17,7 +17,7 @@
           "after": 355,
           "added": 0,
           "removed": 0,
-          "changed": 3
+          "changed": 5
         },
         "added": [],
         "removed": [],
@@ -36,6 +36,18 @@
           },
           {
             "id": "ads/query_single_dimension",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_adset",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "guardrails/set_rule",
             "fields": [
               "long_description"
             ]
