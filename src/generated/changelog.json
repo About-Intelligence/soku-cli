@@ -17,7 +17,7 @@
           "after": 350,
           "added": 1,
           "removed": 6,
-          "changed": 26
+          "changed": 27
         },
         "added": [
           {
@@ -162,6 +162,14 @@
           {
             "id": "ads/remove_campaign",
             "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_bid_modifier",
+            "fields": [
+              "description",
               "input_params",
               "long_description"
             ]
