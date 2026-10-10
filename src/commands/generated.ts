@@ -65,6 +65,27 @@ function toCamel(name: string): string {
   return name.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase())
 }
 
+/** Pick the one param that owns a Commander option value for `platform`.
+ *
+ * Commander stores `--objective-type` (TikTok `objective_type`) and
+ * `--objectiveType` (LinkedIn `objectiveType`) under the same camelCase key,
+ * so one typed flag would otherwise be read as both params and rejected as
+ * "does not apply" for the other platform. The value belongs to the peer that
+ * applies to the selected platform; with none applicable, to the snake_case
+ * peer, so the error names the flag the user most likely typed.
+ */
+export function optionOwner(
+  peers: ManifestParam[],
+  platform: string | undefined,
+): ManifestParam {
+  if (peers.length === 1) return peers[0]
+  const applicable = platform === undefined
+    ? []
+    : peers.filter((param) => param.platform?.includes(platform) ?? false)
+  if (applicable.length) return applicable[0]
+  return peers.find((param) => !/[A-Z]/.test(param.name)) ?? peers[0]
+}
+
 function isJsonType(type: string): boolean {
   // object / list, plus unions that include either (e.g. "string|list").
   return /\b(object|list)\b/.test(type)
@@ -330,14 +351,30 @@ export function buildGeneratedCommands(
       )
     }
 
+    const peersByKey = new Map<string, ManifestParam[]>()
+    for (const param of spec.input_params) {
+      const key = toCamel(param.name)
+      peersByKey.set(key, [...(peersByKey.get(key) ?? []), param])
+    }
+    const valueFor = (
+      param: ManifestParam,
+      options: Record<string, unknown>,
+      platform: string | undefined,
+    ): unknown => {
+      const key = toCamel(param.name)
+      return optionOwner(peersByKey.get(key) ?? [param], platform) === param ? options[key] : undefined
+    }
+    const selectedPlatform = (options: Record<string, unknown>): string | undefined =>
+      (options.platform as string | undefined) ?? (spec.platforms.length === 1 ? spec.platforms[0] : undefined)
+
     cmd.hook('preAction', () => {
       const options = cmd.opts()
-      const platform = options.platform ?? (spec.platforms.length === 1 ? spec.platforms[0] : undefined)
+      const platform = selectedPlatform(options)
       if (platform !== undefined && spec.platforms.length && !spec.platforms.includes(platform)) {
         cmd.error(`--platform must be one of: ${spec.platforms.join(', ')}.`, { exitCode: ExitCode.USAGE })
       }
       for (const param of spec.input_params) {
-        const value = options[toCamel(param.name)]
+        const value = valueFor(param, options, platform)
         const scoped = Boolean(param.platform?.length || param.required_platforms?.length)
         if (!scoped) continue
         if (platform === undefined) {
@@ -358,8 +395,9 @@ export function buildGeneratedCommands(
 
     cmd.action(async (opts: Record<string, unknown>) => {
       const payload: Record<string, unknown> = {}
+      const platform = selectedPlatform(opts)
       for (const param of spec.input_params) {
-        const value = opts[toCamel(param.name)]
+        const value = valueFor(param, opts, platform)
         if (value !== undefined) payload[param.name] = value
       }
       if (spec.requires_review && typeof opts.summary === 'string') {
