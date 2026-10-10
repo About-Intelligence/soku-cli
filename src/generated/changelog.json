@@ -14,12 +14,17 @@
       "capabilities": {
         "counts": {
           "before": 355,
-          "after": 350,
-          "added": 1,
+          "after": 351,
+          "added": 2,
           "removed": 6,
           "changed": 27
         },
         "added": [
+          {
+            "id": "ads/describe_board",
+            "mode": "read",
+            "description": "Read a saved Dashboard board the user can open (their own, one shared with them, or a system board): its cards with the numbers the Boards page shows."
+          },
           {
             "id": "ads/describe_dashboard",
             "mode": "read",

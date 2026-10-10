@@ -8003,6 +8003,89 @@
       "output_shape": "{\"success\": true, \"account_id\": \"act_...\", \"total\": 3, \"succeeded\": 3, \"failed\": 0, \"ambiguous\": 0, \"items\": [{\"index\": 0, \"client_ref\": \"clip-001\", \"video_id\": \"12...\", \"video_status\": \"ready\", \"creative_id\": \"23...\", \"ad_id\": \"23...\", \"stage\": \"ad\", \"success\": true}]}"
     },
     {
+      "id": "action:ads/describe_board",
+      "namespace": "ads",
+      "action": "describe_board",
+      "description": "Read a saved Dashboard board the user can open (their own, one shared with them, or a system board): its cards with the numbers the Boards page shows.",
+      "mode": "read",
+      "platforms": [
+        "google",
+        "meta",
+        "tiktok",
+        "chatgpt_ads",
+        "linkedin"
+      ],
+      "requires_review": false,
+      "freshness_kind": "synced",
+      "see_also": [
+        "action:ads/describe_dashboard",
+        "action:ads/query_single_dimension"
+      ],
+      "input_params": [
+        {
+          "name": "board_id",
+          "type": "string",
+          "required": false,
+          "description": "A saved board's id from the turn context. Pass this or system_key.",
+          "example": "0b8f8a39-5d0e-4c4a-9d47-2f6f1c3e7a10"
+        },
+        {
+          "name": "system_key",
+          "type": "string",
+          "required": false,
+          "description": "A system board's key from the turn context. Pass this or board_id.",
+          "example": "overview"
+        },
+        {
+          "name": "date_start",
+          "type": "string",
+          "required": false,
+          "description": "ISO start date of the board window. Pass together with date_end.",
+          "example": "2026-09-25"
+        },
+        {
+          "name": "date_end",
+          "type": "string",
+          "required": false,
+          "description": "ISO end date (inclusive). Pass together with date_start.",
+          "example": "2026-10-08"
+        },
+        {
+          "name": "account_ids",
+          "type": "list",
+          "required": false,
+          "description": "Internal Dashboard account ids the board is filtered to; an empty list means every account granted to the Brand. Omit to use the saved filter.",
+          "example": [
+            101,
+            102
+          ]
+        },
+        {
+          "name": "platform",
+          "type": "string",
+          "required": false,
+          "description": "Board platform filter ('all' for none). Omit to use the saved one.",
+          "example": "google"
+        },
+        {
+          "name": "reference_date",
+          "type": "string",
+          "required": false,
+          "description": "The page's 'yesterday', the anchor of relative windows. Default: yesterday in UTC.",
+          "example": "2026-10-08"
+        },
+        {
+          "name": "as_of",
+          "type": "string",
+          "required": false,
+          "description": "The page's reporting snapshot (ISO instant) from the turn context; the cards are read at it. Expired or omitted: the current instant (see as_of_source).",
+          "example": "2026-10-09T16:17:13.635Z"
+        }
+      ],
+      "long_description": "Primary use:\nAnswer questions about the board the user is looking at on the Boards page ('what does this board say', 'why did the trend card drop') with the same numbers the page renders. Every card is answered by the page's own card query with the page's own scope, not a re-derivation.\n\nWhich board:\nPass board_id (a saved board) or system_key (a system board such as 'overview', 'creative' or 'platform:google') exactly as the web Chat turn context gives them. The board is looked up as the user: another user's board answers 404, the same as a board that does not exist. The Home board is the Overview page: read it with ads/describe_dashboard.\n\nScope:\nPass date_start / date_end, account_ids, platform, reference_date and as_of from the turn context: they are the board-level filters the page currently shows, which can differ from the saved ones. Omitted, the saved board filters apply, and relative windows (e.g. last 14 days) resolve against reference_date, the page's 'yesterday' (default: yesterday in UTC). A card with its own window or filters keeps them, as on the page.\n\nOutput semantics:\n- board: kind ('own', 'shared' or 'system'), name, and id or system_key.\n- cards: in board order, each with title, size, viz (stat, trend, bar, donut, table), metrics (key, unit, kind), dimension, status ('ok' or 'error' with error.code), current {date_start, date_end, totals, series for trend, rows / others / total_rows for ranked charts}, comparison (previous period, when the card compares) and coverage (uncovered accounts, historical gaps, pending reporting dates). A card that failed does not fail the others.\n- Values are what the page displays before formatting; read each metric's unit: 'currency' is an amount in the account currency, 'micros' is currency x 1,000,000 (e.g. cpc), 'ratio' is a plain ratio (ROAS 2.08 = 2.08x).\n- date_source: 'request' or 'board'.\n- as_of / as_of_source: the snapshot the cards were read at; 'page' when the page's as_of was used, 'now' when it was omitted or had expired.\n\nLimits:\n- Reads the saved board: card edits the user has not saved are not visible.\n- Needs a user-scoped token; read-only.",
+      "output_shape": "{\"board\": {\"kind\": \"own\", \"id\": \"0b8f…\", \"name\": \"Weekly review\", \"definition_version\": 3, \"definition_saved_at\": \"2026-10-09T12:00:00\"}, \"date_start\": \"2026-09-25\", \"date_end\": \"2026-10-08\", \"date_source\": \"request\", \"reference_date\": \"2026-10-08\", \"account_ids\": null, \"platform\": null, \"as_of\": \"2026-10-09T12:00:00Z\", \"cards\": [{\"title\": \"Totals\", \"size\": \"sm\", \"id\": \"c_totals\", \"status\": \"ok\", \"viz\": \"stat\", \"metrics\": [{\"key\": \"spend\", \"unit\": \"currency\", \"kind\": \"raw\"}], \"dimension\": null, \"current\": {\"date_start\": \"2026-09-25\", \"date_end\": \"2026-10-08\", \"totals\": {\"spend\": 15863.24}}, \"comparison\": null, \"coverage\": {\"uncovered_accounts\": []}}]}"
+    },
+    {
       "id": "action:ads/describe_dashboard",
       "namespace": "ads",
       "action": "describe_dashboard",
@@ -8055,7 +8138,7 @@
           "example": 20
         }
       ],
-      "long_description": "Primary use:\nAnswer questions about the Dashboard ('what does my Dashboard say', 'why is ROAS 2.1x there') with the same numbers the page renders. Values come from the same summary and breakdown services the Dashboard calls, not a re-derivation.\n\nDate window priority:\n1. A date range the user states in Chat. 2. The Dashboard filter the user is looking at (web Chat passes it in the turn context). 3. Omit date_start and date_end: the Dashboard default, the 14 days ending yesterday. The web computes 'yesterday' in the viewer's browser timezone; this action has no viewer and uses UTC, so near midnight the default can differ from the page by one day — pass the dates from the turn context when you have them.\n\nOutput semantics:\n- overview.kpi_strip: 4 cards in page order (spend, all_conversion_summary_count, all_conversion_summary_value, roas).\n- overview.summary_blocks: 'traffic' (spend, clicks, impressions, cpm, roas) then one block per P0 conversion group (at most 2, ordered by sort_order then id). A group block shows conversions always and value / cost_per / roas / rate only when the group declares that label; a metric whose data is still pending is omitted, as on the page (see overview.conversion_coverage).\n- Every card has the Dashboard click-snapshot shape {kind, artifact, source, section, metric_key, label, value, definition}; definition is the Metric Registry entry for metric_key (group:{slug}:{kind} for group metrics). Group metrics never change the top-level roas.\n- breakdown: the page's default preset — dimensions ['campaign'], the default column set, rows sorted by spend (top breakdown_limit). column_metric_keys maps each column to its registry slug ('conversions' is all_conversion_summary_count, not the platform's Conversions field; ctr is a ratio). truncated is true when rows were cut.\n- report_context: dates, accounts with timezone/currency/freshness, partial_day and the effective attribution per platform and per group.\n- date_source: 'request' or 'dashboard_default'.\n\nLimits:\n- Brand-level default view only. Per-user saved views are not reachable (this action has no user identity) and the web does not persist them; custom Breakdown dimensions or columns the user picked on the page are not reflected. For another cut use ads/query_single_dimension or ads/query_multi_dimension.",
+      "long_description": "Primary use:\nAnswer questions about the Dashboard ('what does my Dashboard say', 'why is ROAS 2.1x there') with the same numbers the page renders. Values come from the same summary and breakdown services the Dashboard calls, not a re-derivation.\n\nDate window priority:\n1. A date range the user states in Chat. 2. The Dashboard filter the user is looking at (web Chat passes it in the turn context). 3. Omit date_start and date_end: the Dashboard default, the 14 days ending yesterday. The web computes 'yesterday' in the viewer's browser timezone; this action has no viewer and uses UTC, so near midnight the default can differ from the page by one day — pass the dates from the turn context when you have them.\n\nOutput semantics:\n- overview.kpi_strip: 4 cards in page order (spend, all_conversion_summary_count, all_conversion_summary_value, roas).\n- overview.summary_blocks: 'traffic' (spend, clicks, impressions, cpm, roas) then one block per P0 conversion group (at most 2, ordered by sort_order then id). A group block shows conversions always and value / cost_per / roas / rate only when the group declares that label; a metric whose data is still pending is omitted, as on the page (see overview.conversion_coverage).\n- Every card has the Dashboard click-snapshot shape {kind, artifact, source, section, metric_key, label, value, definition}; definition is the Metric Registry entry for metric_key (group:{slug}:{kind} for group metrics). Group metrics never change the top-level roas.\n- breakdown: the page's default preset — dimensions ['campaign'], the default column set, rows sorted by spend (top breakdown_limit). column_metric_keys maps each column to its registry slug ('conversions' is all_conversion_summary_count, not the platform's Conversions field; ctr is a ratio). truncated is true when rows were cut.\n- report_context: dates, accounts with timezone/currency/freshness, partial_day and the effective attribution per platform and per group.\n- date_source: 'request' or 'dashboard_default'.\n\nLimits:\n- Brand-level default view only: custom Breakdown dimensions or columns the user picked on the page are not reflected (the page does not save them). A saved board is read with ads/describe_board. For another cut use ads/query_single_dimension or ads/query_multi_dimension.",
       "output_shape": "{\"date_start\": \"2026-09-10\", \"date_end\": \"2026-09-23\", \"date_source\": \"dashboard_default\", \"account_ids\": [101], \"overview\": {\"kpi_strip\": [{\"kind\": \"metric\", \"artifact\": \"summary_metric\", \"source\": \"dashboard_report\", \"section\": \"kpi_strip\", \"metric_key\": \"roas\", \"label\": \"ROAS\", \"value\": 2.1, \"definition\": {\"slug\": \"roas\", \"formula\": \"all_conversion_summary_value / spend\", \"...\": \"...\"}}], \"summary_blocks\": [{\"section\": \"traffic\", \"title\": \"Traffic & Cost + ROI\", \"cards\": []}, {\"section\": \"group:purchase\", \"title\": \"Purchase\", \"group\": {\"id\": 7, \"name\": \"Purchase\", \"slug\": \"purchase\"}, \"cards\": []}], \"conversion_coverage\": \"complete\"}, \"breakdown\": {\"dimensions\": [\"campaign\"], \"columns\": [\"spend\", \"impressions\", \"cpm\", \"clicks\", \"ctr\", \"conversions\", \"cpa\", \"roas\"], \"column_metric_keys\": {\"conversions\": \"all_conversion_summary_count\", \"...\": \"...\"}, \"rows\": [{\"dimensions\": {\"campaign\": {\"key\": \"123\", \"label\": \"Brand Search\"}}, \"spend\": 120.5, \"...\": \"...\"}], \"total_row_count\": 42, \"truncated\": true}, \"report_context\": {\"date_start\": \"2026-09-10\", \"accounts\": [], \"...\": \"...\"}}"
     },
     {
