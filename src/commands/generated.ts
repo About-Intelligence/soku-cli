@@ -66,8 +66,9 @@ function toCamel(name: string): string {
 }
 
 function isJsonType(type: string): boolean {
-  // object / list, plus unions that include either (e.g. "string|list").
-  return /\b(object|list)\b/.test(type)
+  // object / list / array (incl. "array<string>"), plus unions that include
+  // one of them (e.g. "string|list").
+  return /\b(object|list|array)\b/.test(type)
 }
 
 function isNumberType(type: string): boolean {
