@@ -17,7 +17,7 @@
           "after": 351,
           "added": 2,
           "removed": 6,
-          "changed": 27
+          "changed": 28
         },
         "added": [
           {
@@ -106,6 +106,12 @@
               "input_params",
               "long_description",
               "see_also"
+            ]
+          },
+          {
+            "id": "ads/get_account_pages",
+            "fields": [
+              "long_description"
             ]
           },
           {
