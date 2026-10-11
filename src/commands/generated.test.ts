@@ -356,3 +356,66 @@ test('latest manifest exposes campaign tracking and new integration opt-outs', (
   assert.ok(sub(group(program, 'thinkingdata'), 'query-metric').options.some((option) => option.long === '--no-use-cache'))
   assert.ok(sub(group(program, 'applovin_max'), 'run-report').options.some((option) => option.long === '--no-exclude-zero-rows'))
 })
+
+test('camelCase-colliding params resolve to the selected platform (objective_type vs objectiveType)', async () => {
+  // Regression: `--objective-type APP_PROMOTION --platform tiktok` failed with
+  // "--objectiveType does not apply to platform tiktok" because commander stores
+  // both TikTok objective_type and LinkedIn objectiveType under one key.
+  const manifest: CapabilityManifest = { actions: [{
+    ...fixture.actions[0],
+    action: 'create_campaign',
+    mode: 'write',
+    platforms: ['tiktok', 'linkedin', 'google'],
+    input_params: [
+      { name: 'platform', type: 'string', required: true, description: 'Platform.' },
+      { name: 'objectiveType', type: 'string', required: false, platform: ['linkedin'], description: 'LinkedIn objective.' },
+      { name: 'objective_type', type: 'string', required: true, platform: ['tiktok'], description: 'TikTok objective.' },
+      { name: 'dailyBudget', type: 'object', required: false, platform: ['linkedin'], description: 'LinkedIn budget.' },
+      { name: 'daily_budget', type: 'number', required: false, platform: ['google'], description: 'Google budget.' },
+    ],
+  }] }
+  const run = async (args: string[]): Promise<Record<string, unknown> | undefined> => {
+    const program = new Command().exitOverride().configureOutput({ writeErr: () => {} })
+    buildGeneratedCommands(program, manifest)
+    const command = sub(group(program, 'ads'), 'create-campaign')
+    let parsed: Record<string, unknown> | undefined
+    command.action((options: Record<string, unknown>) => { parsed = options })
+    await program.parseAsync(['ads', 'create-campaign', ...args], { from: 'user' })
+    return parsed
+  }
+
+  assert.equal((await run(['--platform', 'tiktok', '--objective-type', 'APP_PROMOTION']))?.objectiveType, 'APP_PROMOTION')
+  assert.equal((await run(['--platform', 'linkedin', '--objectiveType', 'WEBSITE_VISITS']))?.objectiveType, 'WEBSITE_VISITS')
+  assert.equal((await run(['--platform', 'google', '--daily-budget', '25']))?.dailyBudget, 25)
+  await assert.rejects(
+    run(['--platform', 'tiktok']),
+    /--objective-type is required for platform tiktok/,
+  )
+})
+
+test('typed payload carries only the param that owns a colliding flag', async () => {
+  const peers = [
+    { name: 'objectiveType', type: 'string', required: false, platform: ['linkedin'], description: '' },
+    { name: 'objective_type', type: 'string', required: true, platform: ['tiktok'], description: '' },
+  ]
+  const { optionOwner } = await import('./generated.js')
+  assert.equal(optionOwner(peers, 'tiktok').name, 'objective_type')
+  assert.equal(optionOwner(peers, 'linkedin').name, 'objectiveType')
+  // No applicable peer: blame the snake_case flag the user most likely typed.
+  assert.equal(optionOwner(peers, 'meta').name, 'objective_type')
+  assert.equal(optionOwner(peers, undefined).name, 'objective_type')
+})
+
+test('committed manifest: tiktok create-campaign accepts --objective-type', async () => {
+  const manifest = JSON.parse(readFileSync('src/generated/capabilities.json', 'utf8')) as CapabilityManifest
+  const program = new Command().exitOverride().configureOutput({ writeErr: () => {} })
+  buildGeneratedCommands(program, manifest)
+  const command = sub(group(program, 'ads'), 'create-campaign')
+  let dispatched = false
+  command.action(() => { dispatched = true })
+  await program.parseAsync([
+    'ads', 'create-campaign', '--platform', 'tiktok', '--account-id', 'adv', '--name', 'n',
+    '--objective-type', 'APP_PROMOTION', '--summary', 's',
+  ], { from: 'user' })
+  assert.ok(dispatched)
+})

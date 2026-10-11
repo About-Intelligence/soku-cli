@@ -5,7 +5,9 @@
     {
       "version": "unreleased",
       "date": null,
-      "notes": [],
+      "notes": [
+        "Fix typed flags that two platforms spell alike: `ads create-campaign --platform tiktok --objective-type ...` (and `--daily-budget` / `--total-budget` on Google and ChatGPT Ads) was rejected as not applying to the platform because LinkedIn's camelCase param of the same name claimed the value; the value now goes to the param of the selected platform."
+      ],
       "commands": {
         "added": [],
         "changed": [],
