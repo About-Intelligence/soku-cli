@@ -17,7 +17,7 @@
           "after": 351,
           "added": 2,
           "removed": 6,
-          "changed": 28
+          "changed": 30
         },
         "added": [
           {
@@ -85,6 +85,12 @@
             ]
           },
           {
+            "id": "ads/bulk_create_campaigns",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
             "id": "ads/create_ad",
             "fields": [
               "input_params",
@@ -96,6 +102,12 @@
             "fields": [
               "description",
               "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_adset",
+            "fields": [
               "long_description"
             ]
           },
