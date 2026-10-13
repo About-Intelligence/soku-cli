@@ -16,8 +16,8 @@
       "capabilities": {
         "counts": {
           "before": 355,
-          "after": 351,
-          "added": 2,
+          "after": 352,
+          "added": 3,
           "removed": 6,
           "changed": 30
         },
@@ -31,6 +31,11 @@
             "id": "ads/describe_dashboard",
             "mode": "read",
             "description": "Read what the Brand's Dashboard shows: the Overview KPI strip, the summary blocks (Traffic & Cost + ROI and up to two P0 conversion groups) and the Breakdown tab's default campaign table, with registry definitions."
+          },
+          {
+            "id": "appmagic/request",
+            "mode": "read",
+            "description": "Call the appmagic API, supplied by your own account. AppMagic mobile-game market intelligence — download and net-revenue estimates, SDK reverse lookup, ad creatives and impression mix, retention and ARPDAU, soft launches and cross-store top charts"
           }
         ],
         "removed": [

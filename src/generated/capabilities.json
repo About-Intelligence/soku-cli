@@ -20352,6 +20352,51 @@
       "output_shape": "data.{account, requested_columns[], window, rows[], summary.{totals, unreadable_columns}, truncated, report_envelope, report_format, upstream_code, upstream_count, data_freshness, limit, offset, possibly_more_rows, unavailable_metrics?}"
     },
     {
+      "id": "action:appmagic/request",
+      "namespace": "appmagic",
+      "action": "request",
+      "description": "Call the appmagic API, supplied by your own account. AppMagic mobile-game market intelligence — download and net-revenue estimates, SDK reverse lookup, ad creatives and impression mix, retention and ARPDAU, soft launches and cross-store top charts",
+      "mode": "read",
+      "platforms": [],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": false,
+          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
+        },
+        {
+          "name": "query",
+          "type": "object",
+          "required": false,
+          "description": "Query parameters as a JSON object."
+        },
+        {
+          "name": "body",
+          "type": "object",
+          "required": false,
+          "description": "JSON request body, for endpoints that take one."
+        },
+        {
+          "name": "headers",
+          "type": "object",
+          "required": false,
+          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
+        }
+      ],
+      "long_description": "Calls api.appmagic.rocks with your organization's own appmagic account, connected in Settings -> Integrations and granted to the calling brand. Soku charges nothing; the call runs on your plan and quota. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
+      "output_shape": null
+    },
+    {
       "id": "action:appsflyer/list_accounts",
       "namespace": "appsflyer",
       "action": "list_accounts",
