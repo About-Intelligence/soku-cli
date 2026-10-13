@@ -3662,7 +3662,7 @@
           "name": "max_cpc",
           "type": "number",
           "required": false,
-          "description": "Positive USD click bid; encoded only as Ad Group bidding_config.max_bid_micros. Never written to the Campaign.",
+          "description": "Positive USD number, at most six decimal places; encoded as integer Ad Group bidding_config.max_bid_micros (1 USD = 1000000 micros). CPC bid for clicks and CPA bid for conversions (both billing_event_type=click); CPM bid for reach (bidding_type=impressions, billing_event_type=impression, sent per impression: $6.99 CPM -> 6990 micros). Billing follows the parent Campaign bidding_type. Not a Campaign field.",
           "example": 6.99,
           "platform": [
             "chatgpt_ads"
@@ -3672,7 +3672,7 @@
           "name": "bidding_config",
           "type": "object",
           "required": false,
-          "description": "Native bid object: positive integer max_bid_micros and billing_event_type=click|impression. Impression bids are per impression, not CPM.",
+          "description": "Native bid object: positive integer max_bid_micros and billing_event_type matching the parent Campaign (impression for bidding_type=impressions, click for clicks/conversions). strategy is always fixed_bid (sent explicitly; other strategies are rejected). Impression bids are per impression, not CPM.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -4718,7 +4718,7 @@
           "name": "campaign_draft",
           "type": "object",
           "required": false,
-          "description": "Preferred managed source: complete Dashboard tree with schema_version=1, campaign, groups. Preserve node IDs and unedited fields. Groups are manual and require a bid; Ads require permanent imageUrl or an existing uploaded file. Review binds the saved version; approval creates paused resources before managed Launch. Do not combine with direct Campaign fields. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
+          "description": "Preferred managed source: complete Dashboard tree with schema_version=1, campaign, groups. Preserve node IDs and unedited fields. Groups are manual and require maxCpc as a USD string (CPC for Clicks, CPA for Conversions, CPM for Reach). Conversions requires campaign.conversionEventSettingId containing the selected standard or custom event-name string; it becomes conversion_event_setting_ids=[event]. Ads require permanent imageUrl or an existing uploaded file. Review binds the saved version; approval creates paused resources before managed Launch. Do not combine with direct Campaign fields. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -5369,7 +5369,7 @@
           "name": "conversion_event_setting_ids",
           "type": "list",
           "required": false,
-          "description": "Native active conversion-setting IDs for a conversion-optimized campaign.",
+          "description": "Exactly one event-name string. Standard choices: purchase, sign_up, download, booking, add_to_cart. Custom event names are supported (lowercase letters, digits and single underscores). Immutable after creation.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -16591,7 +16591,7 @@
           "name": "max_cpc",
           "type": "number",
           "required": false,
-          "description": "Positive USD click bid; encoded only as Ad Group bidding_config.max_bid_micros. Never written to the Campaign.",
+          "description": "Positive USD number, at most six decimal places; encoded as integer Ad Group bidding_config.max_bid_micros (1 USD = 1000000 micros). CPC bid for clicks and CPA bid for conversions (both billing_event_type=click); CPM bid for reach (bidding_type=impressions, billing_event_type=impression, sent per impression: $6.99 CPM -> 6990 micros). Billing follows the parent Campaign bidding_type. Not a Campaign field.",
           "example": 6.99,
           "platform": [
             "chatgpt_ads"
@@ -16601,7 +16601,7 @@
           "name": "bidding_config",
           "type": "object",
           "required": false,
-          "description": "Native bid object: positive integer max_bid_micros and billing_event_type=click|impression. Impression bids are per impression, not CPM.",
+          "description": "Native bid object: positive integer max_bid_micros and billing_event_type matching the parent Campaign (impression for bidding_type=impressions, click for clicks/conversions). strategy is always fixed_bid (sent explicitly; other strategies are rejected). Impression bids are per impression, not CPM.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -20350,51 +20350,6 @@
       ],
       "long_description": "Query arbitrary closed-set MAX reporting columns; unknown columns are rejected locally. The last 1–2 hours may be incomplete. estimated_revenue is estimated USD revenue, not settled payment. Official reference: https://support.applovin.com/en/max/reporting-apis/revenue-reporting-api. The last 45 days are available; hour requires the last 30 days. Empty reports are valid. fill_rate means responses / attempts. requests cannot accompany network/network_placement/max_placement; attempts/responses/fill_rate require network or network_placement and forbid max_placement. App-level example: dimensions=[day,application], metrics=[estimated_revenue,impressions,requests]. Network example: dimensions=[day,network], metrics=[estimated_revenue,attempts,responses,fill_rate]. Use list_accounts to resolve a granted account; list_apps only lists apps with traffic in the window. Use filters.package_name for an app or filters.network_placement for a placement (slashes are valid). Totals cover only the fetched page. If truncated, repeat with limit<=100 and advance offset by upstream_count, not the displayed row count; never add a clipped page's totals again when paging over its rows. If possibly_more_rows is true, request the next page; a final empty page is valid. Do not sum ecpm/fill_rate or equate estimated revenue to settlement. No cohort, user-level data or writes. 429 is never retried automatically.",
       "output_shape": "data.{account, requested_columns[], window, rows[], summary.{totals, unreadable_columns}, truncated, report_envelope, report_format, upstream_code, upstream_count, data_freshness, limit, offset, possibly_more_rows, unavailable_metrics?}"
-    },
-    {
-      "id": "action:appmagic/request",
-      "namespace": "appmagic",
-      "action": "request",
-      "description": "Call the appmagic API, supplied by your own account. AppMagic mobile-game market intelligence — download and net-revenue estimates, SDK reverse lookup, ad creatives and impression mix, retention and ARPDAU, soft launches and cross-store top charts",
-      "mode": "read",
-      "platforms": [],
-      "requires_review": false,
-      "freshness_kind": "realtime",
-      "see_also": [],
-      "input_params": [
-        {
-          "name": "path",
-          "type": "string",
-          "required": true,
-          "description": "Vendor API path, starting with '/'. Must be one this provider exposes — call describe_capability on this tool to list them. Query parameters go in `query`, not here."
-        },
-        {
-          "name": "method",
-          "type": "string",
-          "required": false,
-          "description": "HTTP method. Defaults to GET; only methods the endpoint declares are accepted."
-        },
-        {
-          "name": "query",
-          "type": "object",
-          "required": false,
-          "description": "Query parameters as a JSON object."
-        },
-        {
-          "name": "body",
-          "type": "object",
-          "required": false,
-          "description": "JSON request body, for endpoints that take one."
-        },
-        {
-          "name": "headers",
-          "type": "object",
-          "required": false,
-          "description": "Extra request headers the vendor requires. Authentication is supplied by Soku and cannot be overridden."
-        }
-      ],
-      "long_description": "Calls api.appmagic.rocks with your organization's own appmagic account, connected in Settings -> Integrations and granted to the calling brand. Soku charges nothing; the call runs on your plan and quota. Only the endpoints this provider exposes are reachable; describe_capability lists them.",
-      "output_shape": null
     },
     {
       "id": "action:appsflyer/list_accounts",
