@@ -16,10 +16,10 @@
       "capabilities": {
         "counts": {
           "before": 355,
-          "after": 351,
-          "added": 2,
+          "after": 352,
+          "added": 3,
           "removed": 6,
-          "changed": 30
+          "changed": 35
         },
         "added": [
           {
@@ -31,6 +31,11 @@
             "id": "ads/describe_dashboard",
             "mode": "read",
             "description": "Read what the Brand's Dashboard shows: the Overview KPI strip, the summary blocks (Traffic & Cost + ROI and up to two P0 conversion groups) and the Breakdown tab's default campaign table, with registry definitions."
+          },
+          {
+            "id": "ads/get_chatgpt_ads_report",
+            "mode": "read",
+            "description": "Online ChatGPT Ads daily campaign performance for ordinary chat, using the same provider lane and normalization as Dashboard ingestion."
           }
         ],
         "removed": [
@@ -123,6 +128,12 @@
             ]
           },
           {
+            "id": "ads/gaql_search",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/get_account_pages",
             "fields": [
               "long_description"
@@ -145,6 +156,18 @@
               "input_params",
               "long_description",
               "see_also"
+            ]
+          },
+          {
+            "id": "ads/get_insights",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/get_resource_metadata",
+            "fields": [
+              "long_description"
             ]
           },
           {
@@ -237,24 +260,36 @@
           {
             "id": "ga4/get_conversion_overview",
             "fields": [
+              "description",
+              "freshness_kind",
+              "input_params",
               "long_description"
             ]
           },
           {
             "id": "ga4/get_daily_trend",
             "fields": [
+              "description",
+              "freshness_kind",
+              "input_params",
               "long_description"
             ]
           },
           {
             "id": "ga4/get_property_overview",
             "fields": [
+              "description",
+              "freshness_kind",
+              "input_params",
               "long_description"
             ]
           },
           {
             "id": "ga4/list_events",
             "fields": [
+              "description",
+              "freshness_kind",
+              "input_params",
               "long_description"
             ]
           },
@@ -267,11 +302,23 @@
           {
             "id": "ga4/list_top_pages",
             "fields": [
+              "description",
+              "freshness_kind",
+              "input_params",
               "long_description"
             ]
           },
           {
             "id": "ga4/list_traffic_sources",
+            "fields": [
+              "description",
+              "freshness_kind",
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/run_report",
             "fields": [
               "long_description"
             ]
@@ -280,6 +327,12 @@
             "id": "guardrails/set_rule",
             "fields": [
               "long_description"
+            ]
+          },
+          {
+            "id": "thinkingdata/query_metric",
+            "fields": [
+              "input_params"
             ]
           }
         ]
