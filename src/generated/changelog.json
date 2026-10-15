@@ -19,7 +19,7 @@
           "after": 352,
           "added": 3,
           "removed": 6,
-          "changed": 35
+          "changed": 36
         },
         "added": [
           {
@@ -186,6 +186,14 @@
               "description",
               "long_description",
               "see_also"
+            ]
+          },
+          {
+            "id": "ads/list_conversion_actions",
+            "fields": [
+              "description",
+              "long_description",
+              "output_shape"
             ]
           },
           {
