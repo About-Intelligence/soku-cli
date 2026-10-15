@@ -19,7 +19,7 @@
           "after": 352,
           "added": 3,
           "removed": 6,
-          "changed": 38
+          "changed": 39
         },
         "added": [
           {
@@ -173,6 +173,12 @@
           },
           {
             "id": "ads/get_resource_metadata",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/list_ad_accounts",
             "fields": [
               "long_description"
             ]
