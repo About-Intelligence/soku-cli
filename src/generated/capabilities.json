@@ -13635,8 +13635,13 @@
           "name": "source",
           "type": "string",
           "required": false,
-          "description": "auto (default): live core and supported device/network combinations; online: require live; offline: Dashboard/cleaned snapshot.",
-          "example": "auto"
+          "description": "auto (default): live core and supported device/network combinations; online: require live; offline: existing synchronized Dashboard/cleaned data, with no live fallback or JIT sync request. Choose offline when the user limits the request to already-synced data or forbids live reads. No-sync independently forbids synchronization/backfill, not online reads; honor an explicit online-only request with online even when sync is forbidden. Readiness does not select the source or prove complete range coverage.",
+          "example": "auto",
+          "enum": [
+            "auto",
+            "online",
+            "offline"
+          ]
         },
         {
           "name": "attribution_window",
@@ -13732,8 +13737,13 @@
           "name": "source",
           "type": "string",
           "required": false,
-          "description": "auto (default): live core and supported device/network breakdowns; online: require live; offline: Dashboard/cleaned snapshot.",
-          "example": "auto"
+          "description": "auto (default): live core and supported device/network breakdowns; online: require live; offline: existing synchronized Dashboard/cleaned data, with no live fallback or JIT sync request. Choose offline when the user limits the request to already-synced data or forbids live reads. No-sync independently forbids synchronization/backfill, not online reads; honor an explicit online-only request with online even when sync is forbidden. Readiness does not select the source or prove complete range coverage.",
+          "example": "auto",
+          "enum": [
+            "auto",
+            "online",
+            "offline"
+          ]
         },
         {
           "name": "platform",
