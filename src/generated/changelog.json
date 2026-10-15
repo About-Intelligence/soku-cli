@@ -19,7 +19,7 @@
           "after": 352,
           "added": 3,
           "removed": 6,
-          "changed": 36
+          "changed": 37
         },
         "added": [
           {
@@ -125,6 +125,13 @@
               "input_params",
               "long_description",
               "see_also"
+            ]
+          },
+          {
+            "id": "ads/create_lead_form",
+            "fields": [
+              "input_params",
+              "output_shape"
             ]
           },
           {

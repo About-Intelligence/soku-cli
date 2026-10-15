@@ -6467,7 +6467,7 @@
           "name": "questions",
           "type": "list",
           "required": true,
-          "description": "List of question objects. Each entry typically includes {type: EMAIL|FULL_NAME|PHONE|...|CUSTOM, key?, label?}."
+          "description": "List of question objects. Each entry typically includes {type: EMAIL|FULL_NAME|PHONE|...} for preset fields, or {type: CUSTOM, label: question text, key?, options?} for custom questions. label is allowed only for CUSTOM; omit label on preset fields. type is an open provider string; conditional fields are preserved."
         },
         {
           "name": "privacy_policy",
@@ -6486,7 +6486,7 @@
           "name": "thank_you_page",
           "type": "object",
           "required": false,
-          "description": "Optional thank-you page object. website_url (if set) must be public https. Legacy button_url is accepted by Soku for compatibility but is converted before calling Meta."
+          "description": "Optional thank-you page object. website_url (if set) must be public https. Legacy button_url is accepted by Soku for compatibility but is converted before calling Meta. Supported fields include button_type, title, body, button_text, business_phone_number, country_code, enable_messenger, lead_gen_use_case, status and gated_file. Configuration readback does not establish functional WhatsApp delivery or account eligibility."
         },
         {
           "name": "locale",
@@ -6508,7 +6508,7 @@
         }
       ],
       "long_description": "Primary use:\nCreate a Lead Ads form on a Facebook Page with questions, privacy policy URL, optional context card and thank-you page.\n\nUse when:\n- The user wants to launch a Lead Ads campaign and needs a leadgen_form_id.\n\nDo not use when:\n- The form already exists. Use action:ads/list_lead_forms first.\n- The platform is Google.\n\nWorkflow:\n1. Choose page_id via action:ads/get_account_pages.\n2. Define questions, privacy_policy {url, link_text} (url must be public https), follow_up_action_url, and optional thank_you_page.website_url.\n3. Submit via action:_batch/submit for HITL review.\n4. Reference the new form_id in action:ads/create_ad with creative wired to leadgen_form_id.\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw.id is the new lead_form_id.\n\nSide effects:\n- POSTs {page_id}/leadgen_forms. The form is attached to the Page, not the ad account.\n- privacy_policy.url, follow_up_action_url, and (if provided) thank_you_page.website_url are validated as public https URLs.\n- Meta has no lead-form delete; retire an unwanted form via action:ads/archive_lead_form.\n\nIdempotency: this review-gated action accepts a reserved optional payload field `client_request_id` (string, <=128 chars; a dispatcher control field, deliberately not listed in input_params). Recommended for create-style writes. After a lost or unknown submission outcome, retry with the SAME key so the server replays the original submission instead of creating a duplicate; use a NEW key for a genuinely new operation.",
-      "output_shape": "{\"id\": \"lead_form_id\"}"
+      "output_shape": "{\"id\": \"lead_form_id\"}\nPost-write readback (cross-cutting): after a successful write on this action's registered platforms the resource is re-read and compared with the submitted intent; the success envelope carries a `readback` node with status one of verified | mismatch | unverified. verified: every intended field matched AND none stayed unconfirmed; readback.fields holds the platform's ACTUAL values and resource_id is the read-back id. mismatch: readback.mismatches[{field, intended, actual}] plus top-level outcome=partial — the platform silently altered a value; reconcile before further writes. Follow readback.guidance: disclose partial application and exact differences; do not call an unverified difference expected or equivalent. unverified: top-level outcome=unknown while the write STAYS successful — either the resource could not be read back, or (reason=unconfirmed_fields) intended fields never appeared on the read surface (readback.unconfirmed_fields) — do NOT recreate the resource and do NOT blindly retry the mutation; read the resource back first and reconcile."
     },
     {
       "id": "action:ads/create_lookalike_audience",
