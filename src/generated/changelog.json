@@ -19,7 +19,7 @@
           "after": 352,
           "added": 3,
           "removed": 6,
-          "changed": 37
+          "changed": 38
         },
         "added": [
           {
@@ -208,6 +208,12 @@
             "fields": [
               "long_description",
               "output_shape"
+            ]
+          },
+          {
+            "id": "ads/list_dimensions",
+            "fields": [
+              "long_description"
             ]
           },
           {
