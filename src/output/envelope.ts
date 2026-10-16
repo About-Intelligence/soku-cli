@@ -27,6 +27,18 @@ export interface ErrorEnvelope {
   }
 }
 
+/** Make writes to a stdio stream finish before `process.exit` runs.
+ *
+ * Node writes to pipes asynchronously on macOS, so exiting right after
+ * `write` keeps only what the pipe took in one go (64 KB) and drops the rest:
+ * an agent reading `soku ... | jq` got cut-off JSON. Files and Linux pipes are
+ * already synchronous, where this is a no-op. */
+function writeBlocking(stream: NodeJS.WriteStream, text: string): void {
+  const handle = (stream as unknown as { _handle?: { setBlocking?: (blocking: boolean) => void } })._handle
+  handle?.setBlocking?.(true)
+  stream.write(text)
+}
+
 export function isTty(): boolean {
   return Boolean(process.stdout.isTTY)
 }
@@ -185,11 +197,11 @@ export function emitSuccessExit<T>(
   human?: (data: T) => string,
 ): never {
   if (!isTty()) {
-    process.stdout.write(`${JSON.stringify({ ok: true, data })}\n`)
+    writeBlocking(process.stdout, `${JSON.stringify({ ok: true, data })}\n`)
   } else if (human) {
-    process.stdout.write(`${human(data)}\n`)
+    writeBlocking(process.stdout, `${human(data)}\n`)
   } else {
-    process.stdout.write(`${renderHumanData(data)}\n`)
+    writeBlocking(process.stdout, `${renderHumanData(data)}\n`)
   }
   process.exit(code)
 }
@@ -205,13 +217,13 @@ export function emitError(
   if (isTty()) {
     let out = `${red('✖')} ${message}`
     if (hint) out += `\n  ${dim(hint)}`
-    process.stderr.write(`${out}\n`)
+    writeBlocking(process.stderr, `${out}\n`)
   } else {
     const envelope: ErrorEnvelope = {
       ok: false,
       error: { type, message, ...(hint ? { hint } : {}), ...(details ? { details } : {}) },
     }
-    process.stderr.write(`${JSON.stringify(envelope)}\n`)
+    writeBlocking(process.stderr, `${JSON.stringify(envelope)}\n`)
   }
   process.exit(code)
 }
