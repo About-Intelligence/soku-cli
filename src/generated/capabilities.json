@@ -10407,6 +10407,55 @@
       "output_shape": "{\"data\": [{\"campaign_id\": \"...\", \"campaign_name\": \"...\", \"impressions\": \"...\", \"clicks\": \"...\", \"spend\": \"...\", \"actions\": [{\"action_type\": \"link_click\", \"value\": \"...\"}], \"action_values\": [{\"action_type\": \"offsite_conversion.fb_pixel_purchase\", \"value\": \"...\"}]}], \"paging\": {...}}\nTikTok output: read top-level resource_id for a normalized resource id when present; raw preserves the provider-native TikTok response. When the preceding shape describes another provider, ignore its Meta/Google-only fields."
     },
     {
+      "id": "action:ads/get_lead_form",
+      "namespace": "ads",
+      "action": "get_lead_form",
+      "description": "Read an exact Meta lead form, its owning Page and full native ending page.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/list_lead_forms",
+        "action:ads/get_page_whatsapp_destination"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Connected Meta ad account id."
+        },
+        {
+          "name": "page_id",
+          "type": "string",
+          "required": true,
+          "description": "Exact owning Page id."
+        },
+        {
+          "name": "form_id",
+          "type": "string",
+          "required": true,
+          "description": "Existing lead form id."
+        }
+      ],
+      "long_description": "Read an existing form before creating another one. Uses the existing Page credential, requires exact form id and Page ownership evidence, and returns status, questions, privacy policy, legal_content and thank_you_page. A foreign or missing owning Page is refused, not inferred from a name or list order. Native WhatsApp configuration does not establish Page/destination eligibility or a working sales chat. A DRAFT value alone does not establish that Graph supports publishing that draft; do not recreate it or silently substitute a website CTA.",
+      "output_shape": "{\"id\":\"...\",\"page_id\":\"...\",\"status\":\"...\",\"questions\":[...],\"thank_you_page\":{...},\"legal_content\":{...},\"ownership\":{\"status\":\"verified\"}}"
+    },
+    {
       "id": "action:ads/get_leads",
       "namespace": "ads",
       "action": "get_leads",
@@ -10655,6 +10704,49 @@
       ],
       "long_description": "Primary use:\nInspect Meta-native account opportunity score and recommendation payloads.\n\nUse when:\n- The user asks for Meta optimization opportunities similar to Google recommendations.\n- A live account audit needs Meta opportunity_score without querying synced metrics.\n\nDo not use when:\n- The user needs stable cross-platform KPI reporting. Use action:ads/query_single_dimension or action:ads/query_multi_dimension instead.\n- The user needs Google recommendations or Google change history. Use action:ads/get_recommendations or action:ads/get_change_history.\n- The diagnostic candidate has no public Graph API endpoint; such actions are not registered in this PR.\n\nWorkflow:\n1. Call action:ads/list_ad_accounts if account_id is unknown.\n2. Call this action with platform=meta and account_id.\n3. Use raw.opportunity_score and raw.recommendations to plan next diagnostic or optimization steps.\n\nOutput semantics:\n- Top-level envelope includes success, platform, action, raw, and freshness=realtime.\n- raw is the native Meta Graph API response and preserves Graph diagnostic fields.\n- These diagnostics are live platform reads and are not written to synced metrics storage.",
       "output_shape": "{\"id\": \"act_...\", \"opportunity_score\": 82, \"recommendations\": {\"data\": [...]}, \"recommendations_error\": \"...optional, present only when the recommendations edge failed...\"}  // opportunity_score is an integer 0-100 (not a 0-1 fraction); may be null/absent when not yet rolled out for the account or when the token lacks ads performance read scope."
+    },
+    {
+      "id": "action:ads/get_page_whatsapp_destination",
+      "namespace": "ads",
+      "action": "get_page_whatsapp_destination",
+      "description": "Read Page-linked WhatsApp number and terms facts; eligibility remains explicit.",
+      "mode": "read",
+      "platforms": [
+        "meta"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [
+        "action:ads/get_lead_form",
+        "action:ads/get_account_pages"
+      ],
+      "input_params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "description": "Supported platforms: meta.",
+          "example": "meta",
+          "enum": [
+            "meta"
+          ],
+          "source": "constant"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": true,
+          "description": "Connected Meta ad account id."
+        },
+        {
+          "name": "page_id",
+          "type": "string",
+          "required": true,
+          "description": "Exact Page id."
+        }
+      ],
+      "long_description": "Read only id, has_whatsapp_number, has_whatsapp_business_number, whatsapp_number and leadgen_tos_accepted through the existing Page credential. Missing fields or permission failures do not prove eligibility; provider failures retain normal error classification. Returned facts are observations, not a complete native Instant Form WhatsApp eligibility decision. This does not send messages, create/connect accounts, change credentials, publish forms or prove the actual chat destination.",
+      "output_shape": "{\"page_id\":\"...\",\"read_status\":\"observed|unconfirmed\",\"observations\":{...},\"unconfirmed_fields\":[...],\"eligibility\":\"unknown\"}"
     },
     {
       "id": "action:ads/get_pmax_campaign",
@@ -12954,8 +13046,8 @@
           ]
         }
       ],
-      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nInventory of leadgen forms attached to a Facebook Page.\n\nUse when:\n- You need a lead_form_id before action:ads/get_leads.\n- The user asks which lead forms exist on a page.\n- Pairing a new lead ad with an EXISTING form: enumerate here (page with 'after' until exhausted) and match on content — status=ACTIVE plus the intended questions/privacy_policy/follow_up_action_url, not name alone — instead of guessing an id or creating a duplicate form. (Exception: the deploy-ads copy mode intentionally RECREATES each source form per its own procedure; do not substitute this pairing flow there.)\n\nDo not use when:\n- The user wants leads themselves. Use action:ads/get_leads.\n- The platform is Google.\n\nWorkflow:\n1. Get a page_id via action:ads/get_account_pages.\n2. Call this action.\n3. Pick the form: prefer status=ACTIVE and an exact/near name match from the user's brief; when ambiguous, compare questions and created_time, or ask the user rather than guessing.\n4. To confirm which form an EXISTING ad uses, read the ad's creative via action:ads/get_ad_creatives — the form id lives at object_story_spec.link_data|video_data.call_to_action.value.lead_gen_form_id (action:ads/get_leads also accepts an ad id directly and resolves the form).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph paged response; status values include ACTIVE, ARCHIVED.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs do not state the returned field set is fixed/hardcoded; an agent that needs leads_count or category cannot get them and the docs give no hint that fields is non-controllable. Also note: No mention of the leads_retrieval / pages_manage_ads permission prerequisite. If a Page lacks the right token scope or admin role, the call fails with a Graph permission error; the docs only point the agent to get_account_pages for page_id and give no troubleshooting guidance for permission failures. Capability gap: before cursor (backward pagination) — absent from all three layers; only forward paging via after is possible.",
-      "output_shape": "{\"data\": [{\"id\": \"lead_form_id\", \"name\": \"...\", \"status\": \"ACTIVE|ARCHIVED\", \"questions\": [...], \"privacy_policy_url\": \"...\", \"created_time\": \"ISO\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
+      "long_description": "Supported platforms: meta, tiktok. For TikTok, use platform=tiktok and the parameters tagged for TikTok. Provider-specific guidance below is conditional and does not narrow the supported-platform list.\n\nTikTok behavior:\nThis action calls its provider-native TikTok Marketing API handler and returns the native TikTok response; do not infer Meta Graph fields.\n\nOther-platform guidance (not applicable when platform=tiktok):\nPrimary use:\nInventory of leadgen forms attached to a Facebook Page, including thank_you_page and legal_content. Use get_lead_form for exact-id ownership verification.\n\nUse when:\n- You need a lead_form_id before action:ads/get_leads.\n- The user asks which lead forms exist on a page.\n- Pairing a new lead ad with an EXISTING form: enumerate here (page with 'after' until exhausted) and match on content — status=ACTIVE plus the intended questions/privacy_policy/follow_up_action_url, not name alone — instead of guessing an id or creating a duplicate form. (Exception: the deploy-ads copy mode intentionally RECREATES each source form per its own procedure; do not substitute this pairing flow there.)\n\nDo not use when:\n- The user wants leads themselves. Use action:ads/get_leads.\n- The platform is Google.\n\nWorkflow:\n1. Get a page_id via action:ads/get_account_pages.\n2. Call this action.\n3. Pick the form: prefer status=ACTIVE and an exact/near name match from the user's brief; when ambiguous, compare questions and created_time, or ask the user rather than guessing.\n4. To confirm which form an EXISTING ad uses, read the ad's creative via action:ads/get_ad_creatives — the form id lives at object_story_spec.link_data|video_data.call_to_action.value.lead_gen_form_id (action:ads/get_leads also accepts an ad id directly and resolves the form).\n\nOutput semantics:\n- Top-level envelope: see Cross-cutting envelope in capabilities-api.md.\n- raw is the Graph paged response; status values include ACTIVE, ARCHIVED.\n\nAudit guidance (batch 4 P2):\n- meta: Guidance: Capability docs do not state the returned field set is fixed/hardcoded; an agent that needs leads_count or category cannot get them and the docs give no hint that fields is non-controllable. Also note: No mention of the leads_retrieval / pages_manage_ads permission prerequisite. If a Page lacks the right token scope or admin role, the call fails with a Graph permission error; the docs only point the agent to get_account_pages for page_id and give no troubleshooting guidance for permission failures. Capability gap: before cursor (backward pagination) — absent from all three layers; only forward paging via after is possible.",
+      "output_shape": "{\"data\": [{\"id\": \"lead_form_id\", \"name\": \"...\", \"status\": \"ACTIVE|ARCHIVED|DELETED|DRAFT\", \"questions\": [...], \"privacy_policy_url\": \"...\", \"created_time\": \"ISO\"}], \"paging\": {...}}\nTikTok output: {\"success\":true,\"raw\":{\"success\":true,\"data\":[...],\"page_info\":{\"page\":1,\"page_size\":N,\"total_number\":N,\"total_page\":N}}}"
     },
     {
       "id": "action:ads/list_operation_records",

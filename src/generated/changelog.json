@@ -16,10 +16,10 @@
       "capabilities": {
         "counts": {
           "before": 355,
-          "after": 352,
-          "added": 3,
+          "after": 354,
+          "added": 5,
           "removed": 6,
-          "changed": 39
+          "changed": 40
         },
         "added": [
           {
@@ -36,6 +36,16 @@
             "id": "ads/get_chatgpt_ads_report",
             "mode": "read",
             "description": "Online ChatGPT Ads daily campaign performance for ordinary chat, using the same provider lane and normalization as Dashboard ingestion."
+          },
+          {
+            "id": "ads/get_lead_form",
+            "mode": "read",
+            "description": "Read an exact Meta lead form, its owning Page and full native ending page."
+          },
+          {
+            "id": "ads/get_page_whatsapp_destination",
+            "mode": "read",
+            "description": "Read Page-linked WhatsApp number and terms facts; eligibility remains explicit."
           }
         ],
         "removed": [
@@ -220,6 +230,13 @@
             "id": "ads/list_dimensions",
             "fields": [
               "long_description"
+            ]
+          },
+          {
+            "id": "ads/list_lead_forms",
+            "fields": [
+              "long_description",
+              "output_shape"
             ]
           },
           {
