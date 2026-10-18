@@ -19,7 +19,7 @@
           "after": 354,
           "added": 5,
           "removed": 6,
-          "changed": 40
+          "changed": 41
         },
         "added": [
           {
@@ -344,6 +344,12 @@
           },
           {
             "id": "ga4/list_metrics",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ga4/list_properties",
             "fields": [
               "long_description"
             ]
