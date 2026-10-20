@@ -1583,8 +1583,6 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
     .option('--name <name>', 'New campaign name')
     .option('--status <status>', 'active | paused')
     .option('--daily-budget <amount>', 'Daily budget in account currency')
-    .option('--landing-page <url>', 'Campaign landing page URL')
-    .option('--objective <objective>', 'clicks | reach | conversions | leads')
     .option('--end-time <iso>', 'Campaign end time (ISO 8601)')
     .requiredOption(...SUMMARY_OPT)
     .option(...PARAM_OPT, collectParam, {})
@@ -1595,8 +1593,6 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
         name?: string
         status?: string
         dailyBudget?: string
-        landingPage?: string
-        objective?: string
         endTime?: string
       } & WriteOpts) => {
         await runAdsWrite(
@@ -1610,8 +1606,6 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
             daily_budget: opts.dailyBudget
               ? parseNumberFlag('--daily-budget', opts.dailyBudget)
               : undefined,
-            landing_page: opts.landingPage,
-            campaign_objective: opts.objective,
             end_time: opts.endTime,
           },
           opts,
@@ -1648,6 +1642,9 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
     true,
   )
 }
+
+// The bid unit follows the parent campaign's objective (ad_groups.py _bid_micros).
+const MAX_CPC_HELP = 'Ad group bid in USD: CPC (clicks), CPA (conversions) or CPM (reach)'
 
 function registerChatgptAdGroupCommands(chatgpt: Command): void {
   const adGroup = chatgpt
@@ -1699,19 +1696,10 @@ function registerChatgptAdGroupCommands(chatgpt: Command): void {
     .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
     .requiredOption('--campaign-id <id>', 'Parent campaign id')
     .requiredOption('--name <name>', 'Ad group name')
-    .requiredOption('--landing-page <url>', 'Ad group landing page URL')
-    .requiredOption('--brand-name <name>', 'Brand name shown with the ads')
-    .option('--group-type <type>', 'manual | generative')
-    .option('--context <text>', 'Ad group targeting context')
-    .option('--negative-context <text>', 'Context to avoid')
-    .option('--ad-prompt <text>', 'Prompt for generative ads')
-    .option('--image-url <url>', 'Ad group image URL')
-    .option('--daily-budget <amount>', 'Daily budget in account currency')
-    .option('--max-cpc <amount>', 'Max cost per click')
-    .option('--example-query <text>', 'Example user query the ads should match')
-    .option('--allowed-countries <list>', 'Comma-separated country codes')
-    .option('--allowed-devices <list>', 'Comma-separated device types')
-    .option('--ads <json>', 'Inline JSON array of authored ads (manual groups)', (v) =>
+    .requiredOption('--landing-page <url>', 'Default landing page URL for the inline --ads')
+    .option('--context <text>', 'Ad group targeting context (one hint per line)')
+    .option('--max-cpc <amount>', MAX_CPC_HELP)
+    .option('--ads <json>', 'Inline JSON array of authored ads', (v) =>
       parseJsonValue('--ads', v),
     )
     .requiredOption(...SUMMARY_OPT)
@@ -1722,17 +1710,8 @@ function registerChatgptAdGroupCommands(chatgpt: Command): void {
         campaignId: string
         name: string
         landingPage: string
-        brandName: string
-        groupType?: string
         context?: string
-        negativeContext?: string
-        adPrompt?: string
-        imageUrl?: string
-        dailyBudget?: string
         maxCpc?: string
-        exampleQuery?: string
-        allowedCountries?: string
-        allowedDevices?: string
         ads?: unknown
       } & WriteOpts) => {
         await runAdsWrite(
@@ -1743,19 +1722,8 @@ function registerChatgptAdGroupCommands(chatgpt: Command): void {
             campaign_id: opts.campaignId,
             name: opts.name,
             landing_page: opts.landingPage,
-            brand_name: opts.brandName,
-            group_type: opts.groupType,
             context: opts.context,
-            negative_context: opts.negativeContext,
-            ad_prompt: opts.adPrompt,
-            image_url: opts.imageUrl,
-            daily_budget: opts.dailyBudget
-              ? parseNumberFlag('--daily-budget', opts.dailyBudget)
-              : undefined,
             max_cpc: opts.maxCpc ? parseNumberFlag('--max-cpc', opts.maxCpc) : undefined,
-            example_query: opts.exampleQuery,
-            allowed_countries: splitCommaList(opts.allowedCountries),
-            allowed_devices: splitCommaList(opts.allowedDevices),
             ads: opts.ads,
           },
           opts,
@@ -1770,11 +1738,8 @@ function registerChatgptAdGroupCommands(chatgpt: Command): void {
     .requiredOption('--ad-group-id <id>', 'Ad group id')
     .option('--name <name>', 'New ad group name')
     .option('--status <status>', 'active | paused')
-    .option('--context <text>', 'Ad group targeting context')
-    .option('--landing-page <url>', 'Ad group landing page URL')
-    .option('--brand-name <name>', 'Brand name shown with the ads')
-    .option('--image-url <url>', 'Ad group image URL')
-    .option('--daily-budget <amount>', 'Daily budget in account currency')
+    .option('--context <text>', 'Ad group targeting context (one hint per line)')
+    .option('--max-cpc <amount>', MAX_CPC_HELP)
     .requiredOption(...SUMMARY_OPT)
     .option(...PARAM_OPT, collectParam, {})
     .action(
@@ -1784,10 +1749,7 @@ function registerChatgptAdGroupCommands(chatgpt: Command): void {
         name?: string
         status?: string
         context?: string
-        landingPage?: string
-        brandName?: string
-        imageUrl?: string
-        dailyBudget?: string
+        maxCpc?: string
       } & WriteOpts) => {
         await runAdsWrite(
           'chatgpt_ads',
@@ -1798,12 +1760,7 @@ function registerChatgptAdGroupCommands(chatgpt: Command): void {
             name: opts.name,
             status: opts.status,
             context: opts.context,
-            landing_page: opts.landingPage,
-            brand_name: opts.brandName,
-            image_url: opts.imageUrl,
-            daily_budget: opts.dailyBudget
-              ? parseNumberFlag('--daily-budget', opts.dailyBudget)
-              : undefined,
+            max_cpc: opts.maxCpc ? parseNumberFlag('--max-cpc', opts.maxCpc) : undefined,
           },
           opts,
         )

@@ -285,7 +285,7 @@ soku ads chatgpt campaign create \
 soku ads chatgpt ad-group create \
   --account-id <account_id> --campaign-id <campaign_id> \
   --name "Brand intent" --landing-page "https://example.com/?utm_source=chatgpt_ads" \
-  --brand-name "Example" --max-cpc 2 --context "Users asking about Example" \
+  --max-cpc 2 --context "Users asking about Example" \
   --summary "Add ad group Brand intent"
 
 soku ads chatgpt ad create \
@@ -297,7 +297,7 @@ soku ads chatgpt ad create \
 ```
 
 To change one group's bid, update that group only
-(`soku ads chatgpt ad-group update ... -p max_cpc=3`); the campaign and sibling
+(`soku ads chatgpt ad-group update ... --max-cpc 3`); the campaign and sibling
 groups are not written.
 
 Reads need no `--summary`: `soku ads chatgpt account info` (billing facts plus

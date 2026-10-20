@@ -7,14 +7,18 @@
       "date": null,
       "notes": [
         "Fix typed flags that two platforms spell alike: `ads create-campaign --platform tiktok --objective-type ...` (and `--daily-budget` / `--total-budget` on Google and ChatGPT Ads) was rejected as not applying to the platform because LinkedIn's camelCase param of the same name claimed the value; the value now goes to the param of the selected platform.",
-        "ChatGPT Ads: one campaign holds any number of ad groups, each with its own bid (`max_cpc`) and any number of ads. `ads chatgpt campaign create` drops the campaign-level `--max-cpc`, `--billing-model` and `--allowed-countries` flags and the `leads` objective, which the server rejects; set the bid on each ad group and geo with `-p geo_targets=[...]`. `ads chatgpt ad create|update` drop `--cta` and `--description`, which OpenAI Ads rejects (`ad create` required `--cta`, so it always failed)."
+        "ChatGPT Ads: one campaign holds any number of ad groups, each with its own bid (`max_cpc`) and any number of ads. `ads chatgpt campaign create` drops the campaign-level `--max-cpc`, `--billing-model` and `--allowed-countries` flags and the `leads` objective, which the server rejects; set the bid on each ad group and geo with `-p geo_targets=[...]`. `ads chatgpt ad create|update` drop `--cta` and `--description`, which OpenAI Ads rejects (`ad create` required `--cta`, so it always failed).",
+        "ChatGPT Ads: `ads chatgpt ad-group create` keeps `--name`, `--landing-page` (the default URL for the inline `--ads`), `--context`, `--max-cpc` and `--ads`, and drops `--brand-name`, `--group-type`, `--negative-context`, `--ad-prompt`, `--image-url`, `--daily-budget`, `--example-query`, `--allowed-countries` and `--allowed-devices`, which the server rejects or never writes (`--brand-name` was required, so it always sent a dead field). `ads chatgpt ad-group update` drops `--landing-page`, `--brand-name`, `--image-url` and `--daily-budget` and adds `--max-cpc`, so you can set each ad group's bid on its own. `ads chatgpt campaign update` drops `--landing-page` (update the ad's landing page instead) and `--objective` (the bidding type is fixed at create)."
       ],
       "commands": {
         "added": [],
         "changed": [
           "ads chatgpt campaign create",
           "ads chatgpt ad create",
-          "ads chatgpt ad update"
+          "ads chatgpt ad update",
+          "ads chatgpt ad-group create",
+          "ads chatgpt ad-group update",
+          "ads chatgpt campaign update"
         ],
         "removed": [
           "ads chatgpt campaign migrate-legacy"
