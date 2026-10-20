@@ -1515,18 +1515,15 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
     .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
     .requiredOption('--name <name>', 'Campaign name')
     .requiredOption('--landing-page <url>', 'Campaign landing page URL')
-    .requiredOption('--objective <objective>', 'clicks | reach | conversions | leads')
+    .requiredOption('--objective <objective>', 'clicks | reach | conversions')
     .option('--budget-daily-micros <micros>', 'Daily budget in micros')
     .option('--budget-daily <amount>', 'Daily budget in account currency')
     .option('--ad-groups <json>', 'Inline JSON array of ad groups', (v) =>
       parseJsonValue('--ad-groups', v),
     )
     .option('--ad-groups-file <file>', 'File containing the JSON array of ad groups')
-    .option('--billing-model <model>', 'cpm | cpc | cpa')
-    .option('--max-cpc <amount>', 'Max cost per click')
     .option('--start-time <iso>', 'Campaign start time (ISO 8601)')
     .option('--end-time <iso>', 'Campaign end time (ISO 8601)')
-    .option('--allowed-countries <list>', 'Comma-separated country codes')
     .option('--allowed-devices <list>', 'Comma-separated device types')
     .requiredOption(...SUMMARY_OPT)
     .option(...PARAM_OPT, collectParam, {})
@@ -1540,11 +1537,8 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
         budgetDaily?: string
         adGroups?: unknown
         adGroupsFile?: string
-        billingModel?: string
-        maxCpc?: string
         startTime?: string
         endTime?: string
-        allowedCountries?: string
         allowedDevices?: string
       } & WriteOpts) => {
         const budgetMicros = resolveBudgetMicros(opts.budgetDaily, opts.budgetDailyMicros)
@@ -1572,11 +1566,8 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
             campaign_objective: opts.objective,
             budget_daily_micros: budgetMicros,
             ad_groups: adGroups,
-            billing_model: opts.billingModel,
-            max_cpc: opts.maxCpc ? parseNumberFlag('--max-cpc', opts.maxCpc) : undefined,
             start_time: opts.startTime,
             end_time: opts.endTime,
-            allowed_countries: splitCommaList(opts.allowedCountries),
             allowed_devices: splitCommaList(opts.allowedDevices),
           },
           opts,
@@ -1643,46 +1634,6 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
         opts,
       )
     })
-
-  campaign
-    .command('migrate-legacy')
-    .description(
-      'Migrate legacy ChatGPT Ads ad units on a campaign into paused Ad Groups and Ads',
-    )
-    .requiredOption('--account-id <id>', 'ChatGPT Ads account id')
-    .requiredOption('--campaign-id <id>', 'Campaign id')
-    .option('--legacy-ad-units <json>', 'Inline JSON array of legacy ad unit descriptors', (v) =>
-      parseJsonValue('--legacy-ad-units', v),
-    )
-    .option('--legacy-ad-units-file <file>', 'File containing the JSON array of legacy ad units')
-    .requiredOption(...SUMMARY_OPT)
-    .option(...PARAM_OPT, collectParam, {})
-    .action(
-      async (opts: {
-        accountId: string
-        campaignId: string
-        legacyAdUnits?: unknown
-        legacyAdUnitsFile?: string
-      } & WriteOpts) => {
-        const legacyAdUnits = resolveJsonArray(
-          'legacy_ad_units',
-          '--legacy-ad-units',
-          '--legacy-ad-units-file',
-          opts.legacyAdUnits,
-          opts.legacyAdUnitsFile,
-        )
-        await runAdsWrite(
-          'chatgpt_ads',
-          'migrate_legacy_ad_units',
-          {
-            account_id: opts.accountId,
-            campaign_id: opts.campaignId,
-            legacy_ad_units: legacyAdUnits,
-          },
-          opts,
-        )
-      },
-    )
 
   addActivatePause(
     campaign,
@@ -1900,9 +1851,7 @@ function registerChatgptAdCommands(chatgpt: Command): void {
     .requiredOption('--name <name>', 'Ad name')
     .requiredOption('--headline <text>', 'Ad headline')
     .requiredOption('--copy <text>', 'Ad body copy')
-    .requiredOption('--cta <text>', 'Call to action')
     .requiredOption('--landing-page <url>', 'Ad landing page URL')
-    .option('--description <text>', 'Ad description')
     .option('--image-url <url>', 'Ad image URL')
     .requiredOption(...SUMMARY_OPT)
     .option(...PARAM_OPT, collectParam, {})
@@ -1913,9 +1862,7 @@ function registerChatgptAdCommands(chatgpt: Command): void {
         name: string
         headline: string
         copy: string
-        cta: string
         landingPage: string
-        description?: string
         imageUrl?: string
       } & WriteOpts) => {
         await runAdsWrite(
@@ -1927,9 +1874,7 @@ function registerChatgptAdCommands(chatgpt: Command): void {
             name: opts.name,
             headline: opts.headline,
             copy: opts.copy,
-            cta: opts.cta,
             landing_page: opts.landingPage,
-            description: opts.description,
             image_url: opts.imageUrl,
           },
           opts,
@@ -1946,9 +1891,7 @@ function registerChatgptAdCommands(chatgpt: Command): void {
     .option('--name <name>', 'New ad name')
     .option('--headline <text>', 'Ad headline')
     .option('--copy <text>', 'Ad body copy')
-    .option('--cta <text>', 'Call to action')
     .option('--landing-page <url>', 'Ad landing page URL')
-    .option('--description <text>', 'Ad description')
     .option('--image-url <url>', 'Ad image URL')
     .option('--status <status>', 'active | paused')
     .requiredOption(...SUMMARY_OPT)
@@ -1961,9 +1904,7 @@ function registerChatgptAdCommands(chatgpt: Command): void {
         name?: string
         headline?: string
         copy?: string
-        cta?: string
         landingPage?: string
-        description?: string
         imageUrl?: string
         status?: string
       } & WriteOpts) => {
@@ -1977,9 +1918,7 @@ function registerChatgptAdCommands(chatgpt: Command): void {
             name: opts.name,
             headline: opts.headline,
             copy: opts.copy,
-            cta: opts.cta,
             landing_page: opts.landingPage,
-            description: opts.description,
             image_url: opts.imageUrl,
             status: opts.status,
           },
