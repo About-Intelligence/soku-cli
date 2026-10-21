@@ -3,8 +3,8 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
+      "version": "0.1.0-alpha.25",
+      "date": "2026-10-21",
       "notes": [
         "Fix typed flags that two platforms spell alike: `ads create-campaign --platform tiktok --objective-type ...` (and `--daily-budget` / `--total-budget` on Google and ChatGPT Ads) was rejected as not applying to the platform because LinkedIn's camelCase param of the same name claimed the value; the value now goes to the param of the selected platform.",
         "ChatGPT Ads: one campaign holds any number of ad groups, each with its own bid (`max_cpc`) and any number of ads. `ads chatgpt campaign create` drops the campaign-level `--max-cpc`, `--billing-model` and `--allowed-countries` flags and the `leads` objective, which the server rejects; set the bid on each ad group and geo with `-p geo_targets=[...]`. `ads chatgpt ad create|update` drop `--cta` and `--description`, which OpenAI Ads rejects (`ad create` required `--cta`, so it always failed).",
