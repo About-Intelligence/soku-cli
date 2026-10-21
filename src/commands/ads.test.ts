@@ -376,6 +376,45 @@ test('ads chatgpt ad create requires authored-ad content fields', () => {
   }
 })
 
+test('ads chatgpt ad-group and campaign update expose only fields the backend accepts', () => {
+  const program = new Command()
+  const ads = program.command('ads').description('ads data capabilities')
+  registerAdsEntities(ads)
+  const flagsOf = (...path: string[]) =>
+    findCommand(ads, 'chatgpt', ...path).options.map((o) => o.long)
+
+  const groupCreate = flagsOf('ad-group', 'create')
+  for (const flag of ['--name', '--landing-page', '--context', '--max-cpc', '--ads']) {
+    assert.ok(groupCreate.includes(flag), `chatgpt ad-group create missing ${flag}`)
+  }
+  // group_body rejects these, or drops them without writing anything.
+  for (const flag of [
+    '--brand-name',
+    '--group-type',
+    '--negative-context',
+    '--ad-prompt',
+    '--image-url',
+    '--daily-budget',
+    '--example-query',
+    '--allowed-countries',
+    '--allowed-devices',
+  ]) {
+    assert.equal(groupCreate.includes(flag), false, `chatgpt ad-group create should not expose ${flag}`)
+  }
+
+  const groupUpdate = flagsOf('ad-group', 'update')
+  assert.ok(groupUpdate.includes('--max-cpc'), 'chatgpt ad-group update missing --max-cpc')
+  for (const flag of ['--landing-page', '--brand-name', '--image-url', '--daily-budget']) {
+    assert.equal(groupUpdate.includes(flag), false, `chatgpt ad-group update should not expose ${flag}`)
+  }
+
+  // Landing pages are updated on the ad; bidding_type is fixed after create.
+  const campaignUpdate = flagsOf('campaign', 'update')
+  for (const flag of ['--landing-page', '--objective']) {
+    assert.equal(campaignUpdate.includes(flag), false, `chatgpt campaign update should not expose ${flag}`)
+  }
+})
+
 test('ads chatgpt activate/pause use lowercase statuses and require account id', () => {
   const program = new Command()
   const ads = program.command('ads').description('ads data capabilities')
