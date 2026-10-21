@@ -304,18 +304,11 @@ test('ads chatgpt command tree exposes account/campaign/ad-group/ad groups', () 
 
   assert.ok(findCommand(chatgpt, 'account', 'info'))
   const campaignVerbs = findCommand(chatgpt, 'campaign').commands.map((cmd) => cmd.name())
-  for (const verb of [
-    'list',
-    'get',
-    'create',
-    'update',
-    'remove',
-    'migrate-legacy',
-    'activate',
-    'pause',
-  ]) {
+  for (const verb of ['list', 'get', 'create', 'update', 'remove', 'activate', 'pause']) {
     assert.ok(campaignVerbs.includes(verb), `chatgpt campaign missing ${verb}`)
   }
+  // The server has no migrate_legacy_ad_units action.
+  assert.equal(campaignVerbs.includes('migrate-legacy'), false)
   const adGroupVerbs = findCommand(chatgpt, 'ad-group').commands.map((cmd) => cmd.name())
   for (const verb of ['list', 'get', 'create', 'update', 'archive', 'activate', 'pause']) {
     assert.ok(adGroupVerbs.includes(verb), `chatgpt ad-group missing ${verb}`)
@@ -349,6 +342,12 @@ test('ads chatgpt campaign create exposes inline ad-groups and required chatgpt 
     assert.ok(flags.includes(flag), `chatgpt campaign create missing ${flag}`)
   }
   assert.equal(flags.includes('--platform'), false)
+  // Bids live on each ad group; the backend rejects these campaign-level fields.
+  for (const flag of ['--max-cpc', '--billing-model', '--allowed-countries']) {
+    assert.equal(flags.includes(flag), false, `chatgpt campaign create should not expose ${flag}`)
+  }
+  const objective = create.options.find((o) => o.long === '--objective')
+  assert.equal(objective?.description, 'clicks | reach | conversions')
 })
 
 test('ads chatgpt ad create requires authored-ad content fields', () => {
@@ -364,11 +363,16 @@ test('ads chatgpt ad create requires authored-ad content fields', () => {
     '--name',
     '--headline',
     '--copy',
-    '--cta',
     '--landing-page',
     '--summary',
   ]) {
     assert.ok(required.includes(flag), `chatgpt ad create should require ${flag}`)
+  }
+  // The backend rejects cta and description on ChatGPT Ads.
+  for (const verb of ['create', 'update']) {
+    const flags = findCommand(ads, 'chatgpt', 'ad', verb).options.map((o) => o.long)
+    assert.equal(flags.includes('--cta'), false, `chatgpt ad ${verb} should not expose --cta`)
+    assert.equal(flags.includes('--description'), false, `chatgpt ad ${verb} should not expose --description`)
   }
 })
 

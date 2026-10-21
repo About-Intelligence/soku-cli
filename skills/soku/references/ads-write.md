@@ -224,48 +224,86 @@ soku ads chatgpt ad --help
 The command path determines platform. Do not add `--platform`; the CLI injects
 `platform=chatgpt_ads`.
 
-The object model is `Campaign → Ad Group → Ad`. `campaign create` requires a
-non-empty inline ad-groups array (`--ad-groups '<json>'` or
-`--ad-groups-file groups.json`); each group is `manual` (with authored `ads`)
-or `generative`. Campaign, ad group, and ad creates are all forced paused by
-the backend; activation is a separate review-gated
-`soku ads chatgpt campaign activate` that the user must explicitly request and
-approve. ChatGPT Ads status literals are lowercase `active` / `paused`, ads
-live under `ad_group_id` (never `adset_id`), and every mutation requires
-`--account-id`.
+The object model is one Campaign with one or more Ad Groups, and each Ad Group
+with one or more Ads. There is no limit on the number of groups or ads.
+`campaign create` requires a non-empty inline ad-groups array
+(`--ad-groups '<json>'` or `--ad-groups-file groups.json`). Every group is an
+authored (`manual`) group with its own `ads`; OpenAI Ads has no generative
+groups.
+
+Field ownership:
+
+- Campaign level: daily budget, objective (`clicks | reach | conversions`),
+  devices (`--allowed-devices`), geo (`-p geo_targets='["<location_id>"]'`,
+  ids from `list_geo_targets`), and the campaign landing page.
+- Ad Group level: the bid (`max_cpc`, one per group, independent of sibling
+  groups) and `context`. A group `landing_page` is the default for its ads.
+- Ad level: `name`, `headline`, `copy`, `landing_page`, and `image_url` (or an
+  uploaded `file_id`). OpenAI Ads rejects `cta` and `description`.
+
+Campaign, ad group, and ad creates are all forced paused by the backend;
+activation is a separate review-gated `soku ads chatgpt campaign activate`
+that the user must explicitly request and approve. ChatGPT Ads status literals
+are lowercase `active` / `paused`, ads live under `ad_group_id` (never
+`adset_id`), and every mutation requires `--account-id`.
+
+`groups.json` for one campaign with two groups, each with its own bid and two
+ads:
+
+```json
+[
+  {
+    "name": "Pricing intent",
+    "max_cpc": 2.5,
+    "context": "Users comparing project tool pricing",
+    "ads": [
+      {"name": "Pricing A", "headline": "Plans from $9", "copy": "Compare every plan side by side.", "landing_page": "https://example.com/pricing?utm_source=chatgpt_ads", "image_url": "https://example.com/img/pricing-a.png"},
+      {"name": "Pricing B", "headline": "Free for small teams", "copy": "Start free, upgrade when you grow.", "landing_page": "https://example.com/pricing?utm_source=chatgpt_ads", "image_url": "https://example.com/img/pricing-b.png"}
+    ]
+  },
+  {
+    "name": "Feature intent",
+    "max_cpc": 3.5,
+    "context": "Users asking how to plan team projects",
+    "ads": [
+      {"name": "Feature A", "headline": "Plan sprints faster", "copy": "Boards, timelines and docs in one place.", "landing_page": "https://example.com/features?utm_source=chatgpt_ads", "image_url": "https://example.com/img/feature-a.png"},
+      {"name": "Feature B", "headline": "One view for every team", "copy": "See work across teams at a glance.", "landing_page": "https://example.com/features?utm_source=chatgpt_ads", "image_url": "https://example.com/img/feature-b.png"}
+    ]
+  }
+]
+```
 
 ```bash
 soku ads chatgpt campaign create \
   --account-id <account_id> --name "Launch Test" \
-  --landing-page "https://example.com/?utm_source=chatgpt_ads" \
+  --landing-page "https://example.com/" \
   --objective clicks --budget-daily 300 \
-  --ad-groups '[{"group_type":"manual","name":"AG 1","landing_page":"https://example.com/?utm_source=chatgpt_ads","brand_name":"Example","ads":[{"name":"Ad 1","headline":"Headline","copy":"Body","cta":"Learn more","landing_page":"https://example.com/?utm_source=chatgpt_ads"}]}]' \
-  --summary "Create paused ChatGPT Ads campaign Launch Test"
+  --allowed-devices desktop_web,ios_app \
+  --ad-groups-file groups.json \
+  --summary "Create paused ChatGPT Ads campaign Launch Test with 2 ad groups and 4 ads"
 
 soku ads chatgpt ad-group create \
   --account-id <account_id> --campaign-id <campaign_id> \
-  --name "AG 2" --landing-page "https://example.com/?utm_source=chatgpt_ads" \
-  --brand-name "Example" --group-type generative \
-  --summary "Add generative ad group AG 2"
+  --name "Brand intent" --landing-page "https://example.com/?utm_source=chatgpt_ads" \
+  --brand-name "Example" --max-cpc 2 --context "Users asking about Example" \
+  --summary "Add ad group Brand intent"
 
 soku ads chatgpt ad create \
   --account-id <account_id> --ad-group-id <ad_group_id> \
-  --name "Ad 2" --headline "Headline" --copy "Body" --cta "Learn more" \
+  --name "Brand A" --headline "Headline" --copy "Body" \
   --landing-page "https://example.com/?utm_source=chatgpt_ads" \
-  --summary "Add authored ad Ad 2"
+  --image-url "https://example.com/img/brand-a.png" \
+  --summary "Add authored ad Brand A"
 ```
+
+To change one group's bid, update that group only
+(`soku ads chatgpt ad-group update ... -p max_cpc=3`); the campaign and sibling
+groups are not written.
 
 Reads need no `--summary`: `soku ads chatgpt account info` (billing facts plus
 activation/tracking preflight), `campaign list|get`, `ad-group list|get`.
 Archives (`campaign remove`, `ad-group archive`, `ad archive`) are
 provider-side archive toggles — verify current state with a read first.
-
-Legacy ad-unit campaigns (`create_ad_unit`, `generate_ad_units`,
-`add_campaign_ad_units`, `replace_campaign_ad_units`, `archive_ad_unit`) are
-deprecated and stay on the raw `soku call ads <action>` surface for existing
-campaigns only; do not use them for new deployments. Migrate a legacy campaign
-with `soku ads chatgpt campaign migrate-legacy` (moves ad units into paused Ad
-Groups and authored Ads).
 
 ## Review Gate
 
