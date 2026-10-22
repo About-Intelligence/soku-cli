@@ -1096,9 +1096,15 @@
           "type": "number",
           "required": false,
           "description": "Rule value multiplier."
+        },
+        {
+          "name": "confirm_subset_overlap",
+          "type": "boolean",
+          "required": false,
+          "description": "Set true only after the customer confirmed that a Meta custom conversion and the event it re-counts (base_action_id), or two custom conversions on the same base, belong in one group; the double-count warning then rides the approval card instead of rejecting the submission."
         }
       ],
-      "long_description": "Adds a rule to an Admin View conversion_group after human approval. The server validates conversion_action_id/account_id against the current brand's granted ad accounts at approval execution time.",
+      "long_description": "Adds a rule to an Admin View conversion_group after human approval. The server validates conversion_action_id/account_id against the current brand's granted ad accounts at approval execution time. A rule that would sit next to a Meta custom conversion's base event (base_action_id), or next to another custom conversion on the same base, is rejected at submit with 422 io_preflight_failed (CONVERSION_GROUP_DOUBLE_COUNT) unless confirm_subset_overlap=true.",
       "output_shape": "{\"rule\": {\"id\": 1}, \"conversion_group\": {\"version\": \"opaque\"}}"
     },
     {
@@ -1457,9 +1463,15 @@
           "type": "list",
           "required": true,
           "description": "Template objects. Each requires slug/template_slug and may include name, description, derived_metrics, metadata, rules[], goal_ids[], manual_campaigns[]."
+        },
+        {
+          "name": "confirm_subset_overlap",
+          "type": "boolean",
+          "required": false,
+          "description": "Set true only after the customer confirmed that a Meta custom conversion and the event it re-counts (base_action_id), or two custom conversions on the same base, belong in one group; the double-count warning then rides the approval card instead of rejecting the submission."
         }
       ],
-      "long_description": "Primary use:\nApply user-approved conversion group setup recommendations from suggest_conversion_group_setup. This is the default write path for onboarding: it can create missing Admin View groups and add explicitly selected rules, goal links, or manual campaign include/exclude entries in one human approval.\n\nSafety semantics:\n- Existing groups are not overwritten by default; precise updates still use update_conversion_group with expected_version.\n- Every rule target is validated against the current brand's granted ad accounts.\n- The action is review-gated and initially returns pending_review_id.",
+      "long_description": "Primary use:\nApply user-approved conversion group setup recommendations from suggest_conversion_group_setup. This is the default write path for onboarding: it can create missing Admin View groups and add explicitly selected rules, goal links, or manual campaign include/exclude entries in one human approval.\n\nSafety semantics:\n- Existing groups are not overwritten by default; precise updates still use update_conversion_group with expected_version.\n- Every rule target is validated against the current brand's granted ad accounts.\n- A rule set that maps a Meta custom conversion next to the event it re-counts (its base_action_id in list_conversion_actions), or two custom conversions on the same base, is rejected with 422 io_preflight_failed (CONVERSION_GROUP_DOUBLE_COUNT) naming the pair; map the base event alone, or only the subset. confirm_subset_overlap=true keeps both and shows the warning on the approval card.\n- The action is review-gated and initially returns pending_review_id.",
       "output_shape": "{\"created_groups\": [{\"id\": 1, \"slug\": \"qualified-new-user\"}], \"existing_groups\": [], \"rules_added\": [{\"id\": 10}], \"existing_rules\": [], \"goals_bound\": [], \"manual_campaigns_set\": []}"
     },
     {

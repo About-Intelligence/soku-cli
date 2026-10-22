@@ -17,11 +17,25 @@
           "after": 354,
           "added": 0,
           "removed": 0,
-          "changed": 2
+          "changed": 4
         },
         "added": [],
         "removed": [],
         "changed": [
+          {
+            "id": "ads/add_conversion_group_rule",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/apply_conversion_group_template",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
           {
             "id": "ads/create_adset",
             "fields": [
