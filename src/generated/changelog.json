@@ -17,11 +17,17 @@
           "after": 354,
           "added": 0,
           "removed": 0,
-          "changed": 1
+          "changed": 2
         },
         "added": [],
         "removed": [],
         "changed": [
+          {
+            "id": "ads/create_adset",
+            "fields": [
+              "input_params"
+            ]
+          },
           {
             "id": "ads/get_data_readiness",
             "fields": [

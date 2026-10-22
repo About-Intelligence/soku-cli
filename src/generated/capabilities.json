@@ -4188,7 +4188,7 @@
           "name": "bid_strategy",
           "type": "string",
           "required": false,
-          "description": "Meta only: ad-set bid strategy. One of LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP, COST_CAP, LOWEST_COST_WITH_MIN_ROAS. Cap strategies (LOWEST_COST_WITH_BID_CAP/COST_CAP) require bid_amount. Source: constant enum chosen by the agent based on the user's bidding intent.",
+          "description": "Meta only: ad-set bid strategy. One of LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP, COST_CAP, LOWEST_COST_WITH_MIN_ROAS. Cap strategies (LOWEST_COST_WITH_BID_CAP/COST_CAP) require bid_amount. When omitted on an ad set with its own budget (not CBO) and no bid_amount, the handler defaults to LOWEST_COST_WITHOUT_CAP. Source: constant enum chosen by the agent based on the user's bidding intent.",
           "example": "COST_CAP",
           "enum": [
             "COST_CAP",
