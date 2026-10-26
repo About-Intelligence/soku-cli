@@ -17,7 +17,7 @@
           "after": 356,
           "added": 2,
           "removed": 0,
-          "changed": 9
+          "changed": 18
         },
         "added": [
           {
@@ -48,13 +48,67 @@
             ]
           },
           {
+            "id": "ads/create_ad",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/create_adset",
             "fields": [
               "input_params"
             ]
           },
           {
+            "id": "ads/create_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/get_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/get_data_readiness",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/list_campaigns",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
             "fields": [
               "long_description"
             ]
