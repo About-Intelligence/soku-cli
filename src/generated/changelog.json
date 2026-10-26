@@ -14,12 +14,23 @@
       "capabilities": {
         "counts": {
           "before": 354,
-          "after": 354,
-          "added": 0,
+          "after": 356,
+          "added": 2,
           "removed": 0,
-          "changed": 4
+          "changed": 9
         },
-        "added": [],
+        "added": [
+          {
+            "id": "composio/execute_tool",
+            "mode": "read",
+            "description": "Run a read-only Composio tool for a connected account (runs immediately; write tools are steered to human approval)."
+          },
+          {
+            "id": "composio/list_tools",
+            "mode": "read",
+            "description": "List a connected toolkit's Composio tools (slug, inputs, read/write classification) — the way into toolkits the raw proxy cannot reach."
+          }
+        ],
         "removed": [],
         "changed": [
           {
@@ -46,6 +57,40 @@
             "id": "ads/get_data_readiness",
             "fields": [
               "long_description"
+            ]
+          },
+          {
+            "id": "composio/graphql_mutate",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/graphql_query",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/list_accounts",
+            "fields": [
+              "long_description",
+              "output_shape"
+            ]
+          },
+          {
+            "id": "composio/proxy_get",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "composio/request_change",
+            "fields": [
+              "description",
+              "input_params",
+              "long_description",
+              "output_shape"
             ]
           }
         ]

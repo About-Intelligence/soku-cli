@@ -21096,6 +21096,52 @@
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{document_id, url, title}; partial failure details include {stage, document_id, document_url}"
     },
     {
+      "id": "action:composio/execute_tool",
+      "namespace": "composio",
+      "action": "execute_tool",
+      "description": "Run a read-only Composio tool for a connected account (runs immediately; write tools are steered to human approval).",
+      "mode": "read",
+      "platforms": [
+        "composio_managed"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "toolkit",
+          "type": "string",
+          "required": true,
+          "description": "Toolkit slug from composio/list_accounts.",
+          "example": "highlevel_mcp"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "Connected account id from composio/list_accounts; optional when the brand has exactly one account for the toolkit."
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Tool slug copied from composio/list_tools.",
+          "example": "HIGHLEVEL_MCP_CONTACTS_GET_CONTACTS"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Tool arguments matching the tool's input_schema.",
+          "example": {
+            "limit": 20
+          }
+        }
+      ],
+      "long_description": "Executes one Composio tool from composio/list_tools against the brand's connected account, with Composio injecting the credential server-side. Only tools classified 'read' run here; a 'write' tool is refused with code requires_review whose details.payload is the exact composio/request_change payload to submit for human approval — send that, do not retry here. Build arguments from the tool's input_schema (composio/list_tools with tool=<slug>); never guess argument names. A failed tool returns upstream_error with the provider's message; fix the arguments from the schema before retrying. Surface choice: follow each list_accounts row's preferred_surface. 'tools' (proxy_status 'unverified' — an undeclared toolkit, e.g. any *_mcp toolkit) → call composio/list_tools FIRST (with a query for the task), then run a read tool with composio/execute_tool and a write tool with composio/request_change (tool + arguments, human-approved); fall back to the raw proxy only when list_tools returns no fitting tool. 'proxy' (a declared REST/GraphQL toolkit with a known API host) → the raw proxy actions below. If a proxy call fails with reason html_response, the proxy reached the vendor's website: switch to list_tools / execute_tool, do not retry URL variants.",
+      "output_shape": "data.{toolkit, tool, classification, successful, data, log_id}"
+    },
+    {
       "id": "action:composio/graphql_mutate",
       "namespace": "composio",
       "action": "graphql_mutate",
@@ -21150,7 +21196,7 @@
           "description": "Optional Composio proxy parameter objects."
         }
       ],
-      "long_description": "The write action for GraphQL toolkits (e.g. Monday). GraphQL uses one POST endpoint for reads and writes, so writes cannot use request_change; this action POSTs a mutation document for human approval (HITL). Returns a pending_review_id immediately; the request is forwarded to the vendor only after a human approves. The document must contain a top-level mutation (a pure query is steered to composio/graphql_query; subscriptions are rejected). Writes are opt-in PER TOOLKIT: a GraphQL toolkit that is not write-enabled — and every toolkit whose api_shape is 'unknown' — is refused here. That refusal is not retryable; tell the user the toolkit needs to be write-enabled in Soku. body accepts ONLY query, variables and operationName — any other key is rejected (400), so REST fields cannot ride along with a mutation — and the endpoint must be the toolkit's own GraphQL endpoint (monday /v2) written as a PLAIN path with no query string or fragment, so a '..' traversal onto a REST path is rejected too, as are percent escapes (%2e, %3f, %2f ...), ';', '\\' and '?_method=DELETE'. Get the (account_id, toolkit) from composio/list_accounts. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — those slugs do not exist on this raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. Never guess a mutation shape: a human approves this request.",
+      "long_description": "The write action for GraphQL toolkits (e.g. Monday). GraphQL uses one POST endpoint for reads and writes, so writes cannot use request_change; this action POSTs a mutation document for human approval (HITL). Returns a pending_review_id immediately; the request is forwarded to the vendor only after a human approves. The document must contain a top-level mutation (a pure query is steered to composio/graphql_query; subscriptions are rejected). Writes are opt-in PER TOOLKIT: a GraphQL toolkit that is not write-enabled — and every toolkit whose api_shape is 'unknown' — is refused here. That refusal is not retryable; tell the user the toolkit needs to be write-enabled in Soku. body accepts ONLY query, variables and operationName — any other key is rejected (400), so REST fields cannot ride along with a mutation — and the endpoint must be the toolkit's own GraphQL endpoint (monday /v2) written as a PLAIN path with no query string or fragment, so a '..' traversal onto a REST path is rejected too, as are percent escapes (%2e, %3f, %2f ...), ';', '\\' and '?_method=DELETE'. Get the (account_id, toolkit) from composio/list_accounts. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — tool slugs only run through composio/execute_tool (and request_change's tool form), never as a raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. Never guess a mutation shape: a human approves this request.",
       "output_shape": "202 -> {ok, pending_review_id}; on approval data.{toolkit, endpoint, method, status, data}"
     },
     {
@@ -21198,7 +21244,7 @@
           }
         }
       ],
-      "long_description": "The read action for GraphQL toolkits (e.g. Fireflies). GraphQL uses one POST endpoint for reads and writes, so it cannot use proxy_get; this action POSTs a query-only document to the toolkit's GraphQL endpoint and runs immediately (no HITL). Mutations and subscriptions are rejected here — writes go through composio/graphql_mutate where the toolkit has them enabled. Also usable for a toolkit whose api_shape is 'unknown' once its official reference shows the API is GraphQL. Four guards keep this action from becoming a generic POST tunnel — it is not HITL-gated, so a REST write smuggled into the request would reach the vendor without approval. (1) body accepts ONLY query, variables and operationName, for EVERY toolkit including declared GraphQL ones; any other key is rejected (400), because the body is forwarded to the vendor verbatim. (2) the endpoint must be the toolkit's OWN GraphQL endpoint: a DECLARED GraphQL toolkit is pinned to it exactly (monday /v2, fireflies /graphql, linear /graphql — relative or absolute, both accepted), and an 'unknown' toolkit must pass a path with a segment named 'graphql' (/graphql, /v1/graphql, /api/graphql and /graphql/v1 all qualify; /api/v2/tickets does not). The endpoint path must be a PLAIN path — letters, digits, '-', '.', '_' and '~' only — so '..' traversal, percent escapes (%2e, %3f, %2f ...), ';' and '\\' are all rejected outright, and the path this check reads is the exact path the vendor routes on. (3) the endpoint carries NO query string and NO fragment: '/graphql?_method=DELETE' is rejected (400), because '_method' is the Rails/Laravel/Symfony write override and this action is a POST — put everything in body. (4) parameters is not accepted at all here — a GraphQL request's arguments belong in body.variables, and a proxy parameter would set an upstream header or query parameter on an unreviewed request. To write to a REST endpoint on an unknown-shape toolkit use composio/request_change, which IS approval-gated. Get the (account_id, toolkit) from composio/list_accounts. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — those slugs do not exist on this raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. For GraphQL that means the schema itself (types, queries, variables) — an invented field name fails the whole document. Data is realtime (no cached pipeline). Bulk-read rule: GraphQL is natively batch-friendly — fetch many items with only the fields you need in ONE query (list field + selection set + limit/pagination arguments from the official schema); never loop item-by-item over a list you could select in a single document. Size pages so one response fits in one tool result.",
+      "long_description": "The read action for GraphQL toolkits (e.g. Fireflies). GraphQL uses one POST endpoint for reads and writes, so it cannot use proxy_get; this action POSTs a query-only document to the toolkit's GraphQL endpoint and runs immediately (no HITL). Mutations and subscriptions are rejected here — writes go through composio/graphql_mutate where the toolkit has them enabled. Also usable for a toolkit whose api_shape is 'unknown' once its official reference shows the API is GraphQL. Four guards keep this action from becoming a generic POST tunnel — it is not HITL-gated, so a REST write smuggled into the request would reach the vendor without approval. (1) body accepts ONLY query, variables and operationName, for EVERY toolkit including declared GraphQL ones; any other key is rejected (400), because the body is forwarded to the vendor verbatim. (2) the endpoint must be the toolkit's OWN GraphQL endpoint: a DECLARED GraphQL toolkit is pinned to it exactly (monday /v2, fireflies /graphql, linear /graphql — relative or absolute, both accepted), and an 'unknown' toolkit must pass a path with a segment named 'graphql' (/graphql, /v1/graphql, /api/graphql and /graphql/v1 all qualify; /api/v2/tickets does not). The endpoint path must be a PLAIN path — letters, digits, '-', '.', '_' and '~' only — so '..' traversal, percent escapes (%2e, %3f, %2f ...), ';' and '\\' are all rejected outright, and the path this check reads is the exact path the vendor routes on. (3) the endpoint carries NO query string and NO fragment: '/graphql?_method=DELETE' is rejected (400), because '_method' is the Rails/Laravel/Symfony write override and this action is a POST — put everything in body. (4) parameters is not accepted at all here — a GraphQL request's arguments belong in body.variables, and a proxy parameter would set an upstream header or query parameter on an unreviewed request. To write to a REST endpoint on an unknown-shape toolkit use composio/request_change, which IS approval-gated. Get the (account_id, toolkit) from composio/list_accounts. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — tool slugs only run through composio/execute_tool (and request_change's tool form), never as a raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. For GraphQL that means the schema itself (types, queries, variables) — an invented field name fails the whole document. Data is realtime (no cached pipeline). Bulk-read rule: GraphQL is natively batch-friendly — fetch many items with only the fields you need in ONE query (list field + selection set + limit/pagination arguments from the official schema); never loop item-by-item over a list you could select in a single document. Size pages so one response fits in one tool result.",
       "output_shape": "data.{toolkit, endpoint, method, status, data}"
     },
     {
@@ -21214,8 +21260,66 @@
       "freshness_kind": "realtime",
       "see_also": [],
       "input_params": [],
-      "long_description": "Returns the Composio connected accounts granted to the current brand: each row is (account_id, toolkit, name, status, execution_available, authorization_scope, api_shape, docs_url, api_hosts, base_path, recommended). START HERE for any third-party task — every proxy action needs an (account_id, toolkit) pair from this list; neither is guessable. Do NOT ask the user for an account id; this action is the source of truth. Every connected toolkit is executable (execution_available is true). api_shape is 'rest' (use proxy_get / request_change), 'graphql' (use graphql_query / graphql_mutate), or 'unknown' — meaning Soku has NOT classified this toolkit, not that it is REST. On 'unknown', let the official reference decide the shape: both read actions are open (proxy_get for a REST API, graphql_query for a GraphQL one) and REST writes still go through request_change, but graphql_mutate is refused until the toolkit is explicitly write-enabled — so for a GraphQL write on an unknown toolkit, tell the user it must be enabled by Soku rather than retrying. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — those slugs do not exist on this raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. api_hosts lists the toolkit's curated official hosts: a relative endpoint resolves against the toolkit's PRIMARY host, so reaching any OTHER host in api_hosts needs an absolute https URL. An EMPTY api_hosts means the toolkit has no host allowlist — use a relative endpoint ONLY; an absolute URL is rejected (400). base_path, when non-null, is a path segment Composio's base URL for that toolkit ALREADY includes (e.g. apollo '/api/v1') — your relative endpoint must OMIT it (use '/mixed_people/search', NOT '/api/v1/mixed_people/search'), or the URL double-prefixes and 404s.",
-      "output_shape": "data.rows[].{account_id, toolkit, name, status, execution_available, authorization_scope, api_shape, docs_url, api_hosts, base_path, recommended}"
+      "long_description": "Returns the Composio connected accounts granted to the current brand: each row is (account_id, toolkit, name, status, execution_available, tool_execution_available, proxy_status, preferred_surface, authorization_scope, api_shape, docs_url, api_hosts, base_path, recommended). START HERE for any third-party task — every composio action needs an (account_id, toolkit) pair from this list; neither is guessable. Do NOT ask the user for an account id; this action is the source of truth. tool_execution_available=true means composio/list_tools + composio/execute_tool can run this toolkit's Composio tools. proxy_status is 'supported' when Soku has declared the toolkit's API shape, and 'unverified' otherwise — the raw proxy may then reach the vendor's website instead of its API (typical for *_mcp toolkits). Surface choice: follow each list_accounts row's preferred_surface. 'tools' (proxy_status 'unverified' — an undeclared toolkit, e.g. any *_mcp toolkit) → call composio/list_tools FIRST (with a query for the task), then run a read tool with composio/execute_tool and a write tool with composio/request_change (tool + arguments, human-approved); fall back to the raw proxy only when list_tools returns no fitting tool. 'proxy' (a declared REST/GraphQL toolkit with a known API host) → the raw proxy actions below. If a proxy call fails with reason html_response, the proxy reached the vendor's website: switch to list_tools / execute_tool, do not retry URL variants. api_shape is 'rest' (use proxy_get / request_change), 'graphql' (use graphql_query / graphql_mutate), or 'unknown' — meaning Soku has NOT classified this toolkit, not that it is REST. On 'unknown', let the official reference decide the shape: both read actions are open (proxy_get for a REST API, graphql_query for a GraphQL one) and REST writes still go through request_change, but graphql_mutate is refused until the toolkit is explicitly write-enabled — so for a GraphQL write on an unknown toolkit, tell the user it must be enabled by Soku rather than retrying. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — tool slugs only run through composio/execute_tool (and request_change's tool form), never as a raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. api_hosts lists the toolkit's curated official hosts: a relative endpoint resolves against the toolkit's PRIMARY host, so reaching any OTHER host in api_hosts needs an absolute https URL. An EMPTY api_hosts means the toolkit has no host allowlist — use a relative endpoint ONLY; an absolute URL is rejected (400). base_path, when non-null, is a path segment Composio's base URL for that toolkit ALREADY includes (e.g. apollo '/api/v1') — your relative endpoint must OMIT it (use '/mixed_people/search', NOT '/api/v1/mixed_people/search'), or the URL double-prefixes and 404s.",
+      "output_shape": "data.rows[].{account_id, toolkit, name, status, execution_available, tool_execution_available, proxy_status, preferred_surface, authorization_scope, api_shape, docs_url, api_hosts, base_path, recommended}"
+    },
+    {
+      "id": "action:composio/list_tools",
+      "namespace": "composio",
+      "action": "list_tools",
+      "description": "List a connected toolkit's Composio tools (slug, inputs, read/write classification) — the way into toolkits the raw proxy cannot reach.",
+      "mode": "read",
+      "platforms": [
+        "composio_managed"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "toolkit",
+          "type": "string",
+          "required": true,
+          "description": "Toolkit slug from composio/list_accounts.",
+          "example": "highlevel_mcp"
+        },
+        {
+          "name": "account_id",
+          "type": "string",
+          "required": false,
+          "description": "Connected account id from composio/list_accounts; optional when the brand has exactly one account for the toolkit."
+        },
+        {
+          "name": "query",
+          "type": "string",
+          "required": false,
+          "description": "Words that must all appear in the tool slug/name/description.",
+          "example": "contacts get"
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": false,
+          "description": "Exact tool slug: returns that one tool with its full input_schema.",
+          "example": "HIGHLEVEL_MCP_CONTACTS_GET_CONTACTS"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "required": false,
+          "description": "Page size (default 25, max 100).",
+          "example": 25
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "required": false,
+          "description": "Page offset (use next_offset from the previous page).",
+          "example": 0
+        }
+      ],
+      "long_description": "Returns the Composio tool catalog for a toolkit this brand has connected (composio/list_accounts), each tool annotated with classification ('read' runs now via composio/execute_tool; 'write' needs human approval via composio/request_change with tool + arguments), requires_review, run_with, and a one-line-per-parameter inputs summary. Pass query (space-separated words, all must match slug/name/description, e.g. 'contacts get') to narrow a large catalog, and tool (an exact slug) to get that tool's FULL input_schema before executing it. Paginate with limit (default 25, max 100) and offset; next_offset is null on the last page. account_id may be omitted when the brand has exactly one account for the toolkit. Classification rule: read ONLY when confidently read-only — a readOnlyHint tag or a read verb (GET, LIST, SEARCH, FETCH, RETRIEVE, READ, FIND, LOOKUP, DESCRIBE) in the slug, and no write verb (CREATE, UPDATE, DELETE, SEND, ADD, SET, ...) and no write-hint tag (createHint, updateHint, destructiveHint); everything else, including unknown, is write. Surface choice: follow each list_accounts row's preferred_surface. 'tools' (proxy_status 'unverified' — an undeclared toolkit, e.g. any *_mcp toolkit) → call composio/list_tools FIRST (with a query for the task), then run a read tool with composio/execute_tool and a write tool with composio/request_change (tool + arguments, human-approved); fall back to the raw proxy only when list_tools returns no fitting tool. 'proxy' (a declared REST/GraphQL toolkit with a known API host) → the raw proxy actions below. If a proxy call fails with reason html_response, the proxy reached the vendor's website: switch to list_tools / execute_tool, do not retry URL variants.",
+      "output_shape": "data.{toolkit, account_id, total, offset, limit, next_offset, catalog_truncated, tools[].{slug, name, description, classification, classification_reason, requires_review, run_with, inputs[]}}; with tool: data.{toolkit, account_id, tool.{..., input_schema}}"
     },
     {
       "id": "action:composio/proxy_get",
@@ -21258,7 +21362,7 @@
           "description": "Optional Composio proxy parameter objects; prefer inlining query params in the endpoint URL instead. Each item is {'name': ..., 'value': ..., 'type': 'query'|'header'} and 'type' is REQUIRED and lowercase — 'Query', the OpenAPI spelling 'in', and a missing type are all rejected (400), because Composio would then place the parameter wherever it defaults to rather than where you meant. Header parameters ARE allowed here for the request headers a vendor requires on a read (e.g. Notion-Version, Accept); the one refused family is the method override (X-HTTP-Method-Override, X-Method-Override, X-HTTP-Method), which would turn this GET into an unapproved write — send the real method through composio/request_change instead."
         }
       ],
-      "long_description": "Forwards a GET request to the toolkit's official API; Composio injects the connected account's OAuth credential server-side (you never see a token). Get the (account_id, toolkit) from composio/list_accounts FIRST. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — those slugs do not exist on this raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. Put query parameters directly in the endpoint URL. Only the toolkit's official API hosts are allowed. Anything that mutates state (POST/PUT/PATCH/DELETE) must go through composio/request_change. Data is realtime (no cached pipeline). Bulk-read rule: before fetching more than a few similar items, check the official API reference for a cheaper request shape, in priority order: (1) server-side filtering/search parameters, (2) a list/bulk endpoint returning many items with the fields you need in one call, (3) field projection / partial responses (fields= / format= style parameters) so you fetch only what you need, (4) pagination sized so one page fits in one tool result. Loop item-by-item only when the official API offers none of these, and say so. A vendor batch endpoint that requires POST is a write here (HITL) even if it only reads — for reads, prefer GET-shaped list/search endpoints.",
+      "long_description": "Forwards a GET request to the toolkit's official API; Composio injects the connected account's OAuth credential server-side (you never see a token). Get the (account_id, toolkit) from composio/list_accounts FIRST. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — tool slugs only run through composio/execute_tool (and request_change's tool form), never as a raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. Put query parameters directly in the endpoint URL. Only the toolkit's official API hosts are allowed. Anything that mutates state (POST/PUT/PATCH/DELETE) must go through composio/request_change. Data is realtime (no cached pipeline). Bulk-read rule: before fetching more than a few similar items, check the official API reference for a cheaper request shape, in priority order: (1) server-side filtering/search parameters, (2) a list/bulk endpoint returning many items with the fields you need in one call, (3) field projection / partial responses (fields= / format= style parameters) so you fetch only what you need, (4) pagination sized so one page fits in one tool result. Loop item-by-item only when the official API offers none of these, and say so. A vendor batch endpoint that requires POST is a write here (HITL) even if it only reads — for reads, prefer GET-shaped list/search endpoints.",
       "output_shape": "data.{toolkit, endpoint, method, status, data}"
     },
     {
@@ -21313,7 +21417,7 @@
       "id": "action:composio/request_change",
       "namespace": "composio",
       "action": "request_change",
-      "description": "Write to a connected account's official API (POST/PUT/PATCH/DELETE) via human approval.",
+      "description": "Write to a connected account via human approval — a raw official-API write (POST/PUT/PATCH/DELETE) or a write-classified Composio tool.",
       "mode": "risk",
       "platforms": [
         "composio_managed"
@@ -21339,8 +21443,8 @@
         {
           "name": "method",
           "type": "string",
-          "required": true,
-          "description": "HTTP write method.",
+          "required": false,
+          "description": "HTTP write method (raw form; required with endpoint).",
           "example": "POST",
           "enum": [
             "POST",
@@ -21352,15 +21456,16 @@
         {
           "name": "endpoint",
           "type": "string",
-          "required": true,
-          "description": "Prefer a RELATIVE path: it works for EVERY toolkit — Composio pins it to the toolkit's primary host, so when the official reference shows a full URL on that primary host, copy just the path (and omit any base_path the toolkit lists in list_accounts). Pass an absolute https URL ONLY to reach a secondary official host listed in api_hosts (from list_accounts) — keep such a URL absolute (e.g. from a googledocs account, a Drive write: https://www.googleapis.com/drive/v3/..., or a Slides write: https://slides.googleapis.com/v1/presentations/{presentationId}:batchUpdate per https://developers.google.com/slides/api/reference/rest). When api_hosts is EMPTY the toolkit has no host allowlist, so a relative path is the ONLY valid form — an absolute URL is rejected (400). (Exception: slack — always pass an absolute https://slack.com/api/... URL; a relative /api/... path double-prefixes and 404s.) Endpoint spelling is strict: a relative path starts with EXACTLY one '/' ('/v1/users/me' — '//v1/users', '///v1/users' and a bare 'v1/users' are all rejected), an absolute URL is 'https://host/path' with no userinfo ('https://user@host/...' is rejected), a backslash or control character anywhere is rejected, and a space in the HOST or PATH is rejected (percent-encode it as %20). A space inside a QUERY string is fine — write \"?q=from:a is:unread\" as-is, no encoding needed. These are 400s raised before the call, not vendor errors — fix the spelling rather than retrying.",
-          "example": "/gmail/v1/users/me/drafts"
+          "required": false,
+          "description": "Raw form only (required with method). Prefer a RELATIVE path: it works for EVERY toolkit — Composio pins it to the toolkit's primary host, so when the official reference shows a full URL on that primary host, copy just the path (and omit any base_path the toolkit lists in list_accounts). Pass an absolute https URL ONLY to reach a secondary official host listed in api_hosts (from list_accounts) — keep such a URL absolute (e.g. from a googledocs account, a Drive write: https://www.googleapis.com/drive/v3/..., or a Slides write: https://slides.googleapis.com/v1/presentations/{presentationId}:batchUpdate per https://developers.google.com/slides/api/reference/rest). When api_hosts is EMPTY the toolkit has no host allowlist, so a relative path is the ONLY valid form — an absolute URL is rejected (400). (Exception: slack — always pass an absolute https://slack.com/api/... URL; a relative /api/... path double-prefixes and 404s.) Endpoint spelling is strict: a relative path starts with EXACTLY one '/' ('/v1/users/me' — '//v1/users', '///v1/users' and a bare 'v1/users' are all rejected), an absolute URL is 'https://host/path' with no userinfo ('https://user@host/...' is rejected), a backslash or control character anywhere is rejected, and a space in the HOST or PATH is rejected (percent-encode it as %20). A space inside a QUERY string is fine — write \"?q=from:a is:unread\" as-is, no encoding needed. These are 400s raised before the call, not vendor errors — fix the spelling rather than retrying.",
+          "example": "/gmail/v1/users/me/drafts",
+          "one_of_group": "request_form"
         },
         {
           "name": "body",
           "type": "object",
           "required": false,
-          "description": "JSON request body per the official API.",
+          "description": "Raw form: JSON request body per the official API.",
           "example": {
             "message": {
               "raw": "<base64url-encoded RFC2822>"
@@ -21371,11 +21476,29 @@
           "name": "parameters",
           "type": "list",
           "required": false,
-          "description": "Optional Composio proxy parameter objects."
+          "description": "Raw form: optional Composio proxy parameter objects."
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": false,
+          "description": "Tool form: a Composio tool slug from composio/list_tools (never combined with method/endpoint/body/parameters).",
+          "example": "HIGHLEVEL_MCP_CONTACTS_CREATE_CONTACT",
+          "one_of_group": "request_form"
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Tool form: arguments matching the tool's input_schema.",
+          "example": {
+            "firstName": "Ada",
+            "email": "ada@example.com"
+          }
         }
       ],
-      "long_description": "Submits an official-API write for human approval (HITL). Returns a pending_review_id immediately; the request is forwarded to the vendor only after a human approves. Provide method + endpoint + body (e.g. send a Gmail message, append a Google Sheets row, update a Notion page). Get the (account_id, toolkit) from composio/list_accounts. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — those slugs do not exist on this raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. A write payload is the LAST thing to guess: a human reviews this request, so an invented body wastes their approval. Failure fallback: if the approved write fails with credential_required, credential_needs_reconnect, or an upstream_error that is not a request you can correct (e.g. a 403 permission / scope refusal), do NOT resubmit the same request for approval. When the write was producing a document (a Doc, Sheet, Slides deck or report), deliver the same content as a downloadable file through the sandbox file channel (write it under /brand/outputs, then attach_chat_artifact it) and tell the user the online document could not be created and why; for any other write, report the failure. Either way relay the error's reconnect instruction verbatim (a scope refusal names the Google permission to tick on the consent screen).",
-      "output_shape": "202 -> {ok, pending_review_id}; on approval data.{toolkit, endpoint, method, status, data}"
+      "long_description": "Submits a write for human approval (HITL). Returns a pending_review_id immediately; nothing reaches the vendor until a human approves. Two forms — send EXACTLY one: (a) raw: method + endpoint + body against the official API (e.g. send a Gmail message, append a Google Sheets row, update a Notion page); (b) tool: tool + arguments, a Composio tool slug from composio/list_tools — the form to use when composio/execute_tool answered requires_review (copy its details.payload verbatim). Mixing the two forms, or adding tool_name / vendor_tool_id, is rejected (400). Get the (account_id, toolkit) from composio/list_accounts. Resource discovery: account_id selects a granted connection, not a business resource. Use the provider list/search API to discover relevant workspaces, bases, projects, files or other resource IDs before asking the user for IDs. Ask for a choice only when results are ambiguous or discovery is unavailable; do not guess IDs. authorization_scope=connection grants access through the connected account; discovered resources are not separate Brand grants. For BigQuery projects, use bigquery/list_projects. REFERENCE FIRST — before your FIRST call against a toolkit, open its docs_url (web_search the provider's OFFICIAL API reference when docs_url is null) and copy the exact path, method, query parameters and body shape from it. Do NOT reconstruct an endpoint from memory, from another vendor's API, or from a Composio tool name (e.g. GMAIL_SEND_EMAIL) — tool slugs only run through composio/execute_tool (and request_change's tool form), never as a raw path; never guess. If a call fails with a 4xx, the error carries the toolkit's docs_url, api_hosts and base_path: re-read the reference and fix the request from it — do not retry a guess. A write payload is the LAST thing to guess: a human reviews this request, so an invented body wastes their approval. Failure fallback: if the approved write fails with credential_required, credential_needs_reconnect, or an upstream_error that is not a request you can correct (e.g. a 403 permission / scope refusal), do NOT resubmit the same request for approval. When the write was producing a document (a Doc, Sheet, Slides deck or report), deliver the same content as a downloadable file through the sandbox file channel (write it under /brand/outputs, then attach_chat_artifact it) and tell the user the online document could not be created and why; for any other write, report the failure. Either way relay the error's reconnect instruction verbatim (a scope refusal names the Google permission to tick on the consent screen).",
+      "output_shape": "202 -> {ok, pending_review_id}; on approval raw form data.{toolkit, endpoint, method, status, data}; tool form data.{toolkit, tool, classification, successful, data, log_id}"
     },
     {
       "id": "action:creatives/apply_ops",
