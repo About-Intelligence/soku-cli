@@ -17,7 +17,7 @@
           "after": 356,
           "added": 2,
           "removed": 0,
-          "changed": 18
+          "changed": 20
         },
         "added": [
           {
@@ -69,6 +69,18 @@
             "id": "ads/create_campaign",
             "fields": [
               "long_description"
+            ]
+          },
+          {
+            "id": "ads/deploy_image_ads_batch",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/deploy_video_ads_batch",
+            "fields": [
+              "input_params"
             ]
           },
           {

@@ -7788,7 +7788,7 @@
           "name": "items",
           "type": "list",
           "required": true,
-          "description": "Batch items. Each item requires stable client_ref and image_hash, plus name unless top-level name is provided. Items may override message/headline/description/link/caption/call_to_action_type/url_tags/destination_spec.",
+          "description": "Batch items. Each item requires stable client_ref and image_hash, plus name unless top-level name is provided. Items may override message/headline/description/link/caption/call_to_action_type/url_tags/destination_spec/creative_features.",
           "example": [
             {
               "client_ref": "asset-001",
@@ -7849,6 +7849,16 @@
           "required": false,
           "description": "Optional shared Meta url_tags appended to creative links; item.url_tags overrides it.",
           "example": "utm_source=meta&utm_medium=paid_social"
+        },
+        {
+          "name": "creative_features",
+          "type": "object",
+          "required": false,
+          "description": "Optional shared Meta AI creative enhancements for every creative in the batch, mapping feature name -> OPT_IN | OPT_OUT; item.creative_features overrides it. Same names, defaults and rejections as create_ad_creative.creative_features: add_text_overlay, image_touchups and text_optimizations are opted out when omitted; music_generation and standard_enhancements are rejected.",
+          "example": {
+            "image_touchups": "OPT_OUT",
+            "enhance_cta": "OPT_OUT"
+          }
         },
         {
           "name": "lead_gen_form_id",
@@ -8011,6 +8021,16 @@
           "required": false,
           "description": "Optional shared Meta url_tags appended to creative links; item.url_tags overrides it.",
           "example": "utm_source=meta&utm_medium=paid_social"
+        },
+        {
+          "name": "creative_features",
+          "type": "object",
+          "required": false,
+          "description": "Optional shared Meta AI creative enhancements for every creative in the batch, mapping feature name -> OPT_IN | OPT_OUT; item.creative_features overrides it. Same names, defaults and rejections as create_ad_creative.creative_features: add_text_overlay, image_touchups and text_optimizations are opted out when omitted; music_generation and standard_enhancements are rejected.",
+          "example": {
+            "image_touchups": "OPT_OUT",
+            "enhance_cta": "OPT_OUT"
+          }
         },
         {
           "name": "lead_gen_form_id",
