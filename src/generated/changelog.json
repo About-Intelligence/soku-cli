@@ -14,12 +14,17 @@
       "capabilities": {
         "counts": {
           "before": 354,
-          "after": 356,
-          "added": 2,
+          "after": 357,
+          "added": 3,
           "removed": 0,
-          "changed": 20
+          "changed": 21
         },
         "added": [
+          {
+            "id": "ads/create_identity",
+            "mode": "write",
+            "description": "Create a TikTok custom identity (display name + square avatar) for ads."
+          },
           {
             "id": "composio/execute_tool",
             "mode": "read",
@@ -81,6 +86,12 @@
             "id": "ads/deploy_video_ads_batch",
             "fields": [
               "input_params"
+            ]
+          },
+          {
+            "id": "ads/get_account_pages",
+            "fields": [
+              "long_description"
             ]
           },
           {
