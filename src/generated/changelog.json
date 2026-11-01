@@ -73,6 +73,7 @@
           {
             "id": "ads/create_campaign",
             "fields": [
+              "input_params",
               "long_description"
             ]
           },
