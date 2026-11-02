@@ -17,7 +17,7 @@
           "after": 357,
           "added": 3,
           "removed": 0,
-          "changed": 21
+          "changed": 22
         },
         "added": [
           {
@@ -53,8 +53,15 @@
             ]
           },
           {
+            "id": "ads/bulk_create_ads",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/create_ad",
             "fields": [
+              "input_params",
               "long_description"
             ]
           },
