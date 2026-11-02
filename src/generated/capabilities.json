@@ -5381,7 +5381,7 @@
           "name": "conversion_event_setting_ids",
           "type": "list",
           "required": false,
-          "description": "Exactly one conversion event setting ID: 32 hexadecimal characters (a ces_ prefix is accepted and dropped). Event names such as purchase or lead_created are rejected because they can never launch. Reuse the value from this account's launched Conversions campaigns in list_campaigns (conversion_event_setting_ids); if none exists, tell the user Soku support must set up a conversion event first. Immutable after creation.",
+          "description": "Exactly one standard OpenAI conversion event name: order_created, lead_created, registration_completed, subscription_created, trial_started, checkout_started, items_added, appointment_scheduled, contents_viewed, page_viewed, app_installed or app_opened. The network resolves it to the account's conversion event setting. An existing setting ID (32 hexadecimal characters, ces_ prefix dropped) is also accepted. Custom event names are rejected because OpenAI optimizes only toward standard events. Immutable after creation.",
           "platform": [
             "chatgpt_ads"
           ]

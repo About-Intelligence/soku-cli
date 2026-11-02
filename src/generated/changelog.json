@@ -3,6 +3,35 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
+      "version": "unreleased",
+      "date": null,
+      "notes": [],
+      "commands": {
+        "added": [],
+        "changed": [],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 357,
+          "after": 357,
+          "added": 0,
+          "removed": 0,
+          "changed": 1
+        },
+        "added": [],
+        "removed": [],
+        "changed": [
+          {
+            "id": "ads/create_campaign",
+            "fields": [
+              "input_params"
+            ]
+          }
+        ]
+      }
+    },
+    {
       "version": "0.1.0-alpha.26",
       "date": "2026-11-02",
       "notes": [
