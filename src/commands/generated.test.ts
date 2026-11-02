@@ -345,6 +345,28 @@ test('required boolean accepts explicit false and rejects omission', async () =>
   assert.equal(value, false)
 })
 
+test('array-typed params are parsed as JSON, like object and list params', async () => {
+  const manifest: CapabilityManifest = { actions: [{ ...fixture.actions[0], input_params: [
+    { name: 'metrics', type: 'array<string>', required: false, description: 'Metric names.' },
+    { name: 'sort', type: 'array<object>', required: false, description: 'Sort spec.' },
+    { name: 'sections', type: 'array', required: false, description: 'Sections.' },
+  ] }] }
+  const program = new Command().exitOverride().configureOutput({ writeErr: () => {} })
+  buildGeneratedCommands(program, manifest)
+  const command = sub(group(program, 'ads'), 'list-ad-accounts')
+  let parsed: Record<string, unknown> | undefined
+  command.action((opts) => { parsed = opts })
+  await program.parseAsync([
+    'ads', 'list-ad-accounts',
+    '--metrics', '["dau","revenue"]',
+    '--sort', '[{"field":"revenue","direction":"desc"}]',
+    '--sections', '[{"id":"hero"}]',
+  ], { from: 'user' })
+  assert.deepEqual(parsed?.metrics, ['dau', 'revenue'])
+  assert.deepEqual(parsed?.sort, [{ field: 'revenue', direction: 'desc' }])
+  assert.deepEqual(parsed?.sections, [{ id: 'hero' }])
+})
+
 test('latest manifest exposes campaign tracking and new integration opt-outs', () => {
   const manifest = JSON.parse(readFileSync('src/generated/capabilities.json', 'utf8')) as CapabilityManifest
   const program = new Command()

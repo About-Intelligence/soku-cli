@@ -132,7 +132,7 @@ test('generated boolean values survive JSON serialization at the HTTP boundary',
   assert.ok(spec)
   const baseArgs = ['thinkingdata', 'query-metric']
   for (const param of spec.input_params.filter((param) => param.required && param.type !== 'boolean')) {
-    baseArgs.push(`--${param.name.replace(/_/g, '-')}`, /object|list/.test(param.type) ? '{}' : 'test-value')
+    baseArgs.push(`--${param.name.replace(/_/g, '-')}`, /array/.test(param.type) ? '["test-value"]' : /object|list/.test(param.type) ? '{}' : 'test-value')
   }
   for (const [flags, expected] of [[[], undefined], [['--use-cache'], true], [['--no-use-cache'], false]] as const) {
     await t.test(String(expected), async (child) => {
