@@ -3,9 +3,12 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.26",
+      "date": "2026-11-02",
+      "notes": [
+        "Fix output cut off at 64 KB when stdout or stderr is a pipe on macOS (`soku ... | jq`, or an agent reading the CLI): the JSON envelope now reaches the pipe in full before the CLI exits.",
+        "Generated commands now parse flags typed `array`, `array<string>` or `array<object>` as JSON, like `object` and `list` flags. Before, `--metrics '[\"dau\"]'` went out as the string `\"[\\\"dau\\\"]\"`; a value that is not valid JSON is now refused as a usage error."
+      ],
       "commands": {
         "added": [],
         "changed": [],
