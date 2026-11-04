@@ -17,11 +17,17 @@
           "after": 357,
           "added": 0,
           "removed": 0,
-          "changed": 4
+          "changed": 7
         },
         "added": [],
         "removed": [],
         "changed": [
+          {
+            "id": "ads/bulk_create_ads",
+            "fields": [
+              "long_description"
+            ]
+          },
           {
             "id": "ads/bulk_create_adsets",
             "fields": [
@@ -31,7 +37,8 @@
           {
             "id": "ads/create_ad",
             "fields": [
-              "input_params"
+              "input_params",
+              "long_description"
             ]
           },
           {
@@ -44,6 +51,19 @@
             "id": "ads/create_campaign",
             "fields": [
               "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_identity",
+            "fields": [
+              "description",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/get_account_pages",
+            "fields": [
+              "long_description"
             ]
           }
         ]
