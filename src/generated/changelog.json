@@ -17,7 +17,7 @@
           "after": 357,
           "added": 0,
           "removed": 0,
-          "changed": 7
+          "changed": 8
         },
         "added": [],
         "removed": [],
@@ -57,6 +57,13 @@
             "id": "ads/create_identity",
             "fields": [
               "description",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/describe_board",
+            "fields": [
+              "input_params",
               "long_description"
             ]
           },
