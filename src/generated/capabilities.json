@@ -25463,6 +25463,121 @@
       "output_shape": "{project, headers[], rows[][], row_count, max_rows, truncated, byte_limited, upstream_timeout_seconds, data_timezone, note}"
     },
     {
+      "id": "action:tiktok_mcp/list_tools",
+      "namespace": "tiktok_mcp",
+      "action": "list_tools",
+      "description": "Discover the supported TikTok MCP tools and their live input schemas.",
+      "mode": "read",
+      "platforms": [
+        "tiktok_mcp"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok core_user_id from tiktok_mcp/list_users."
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": false,
+          "description": "Exact tool name to retrieve its full input schema."
+        }
+      ],
+      "long_description": "Only ten vetted reads/link tools and two reviewed creation tools are exposed. Pass tool for its full schema; omitted project_id auto-selects a sole granted login. Use TikTok's official MCP for this journey, independently of the TikTok Marketing API integration. Start with tiktok_mcp/list_users; never ask for or guess a resource id. Fetch each tool's live schema with list_tools(tool=...). Collect and explicitly confirm the company/legal name, Business Center name, registered region, timezone, currency and contact information, plus any required advertiser name, industry, website and other schema fields; never infer these values. Refuse CN, HK, FR, BR and MX up front: those document regions require uploads this flow does not support. Run bc_get before proposing bc_create; reuse a suitable existing BC after confirming with the user. Read bc_advertiser_attribute_get for TikTok's valid region/currency values and other requirements. Only bc_create and bc_advertiser_create are supported writes; submit each via request_change for human approval and wait for its result before the dependent step. Preserve returned bc_id and advertiser_id. If creation times out or its outcome is unknown, read bc_get/auth_advertiser_get/advertiser_info_get to reconcile before retrying, to avoid duplicate accounts. Finish with payment_setup_ui (advertiser_id, bc_id, intent=SETUP_PAYMENT_METHOD or ADD_BALANCE as the user requests) and hand the user data.payment_url as a clickable TikTok payment link. Soku does not collect payment details or execute money movement. tiktok_identity_connect_ui also returns a link/QR to show the user; do not render MCP-App HTML. Report TikTok refusal code, message and request_id and do not claim an account was created or funded after a refusal.",
+      "output_shape": "data.project_id, data.tools[].{name, description, requires_review[, input_schema]}"
+    },
+    {
+      "id": "action:tiktok_mcp/list_users",
+      "namespace": "tiktok_mcp",
+      "action": "list_users",
+      "description": "List TikTok for Business MCP logins granted to this brand.",
+      "mode": "read",
+      "platforms": [
+        "tiktok_mcp"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [],
+      "long_description": "START HERE. Returns core_user_id as project_id and display_name as name. Use TikTok's official MCP for this journey, independently of the TikTok Marketing API integration. Start with tiktok_mcp/list_users; never ask for or guess a resource id. Fetch each tool's live schema with list_tools(tool=...). Collect and explicitly confirm the company/legal name, Business Center name, registered region, timezone, currency and contact information, plus any required advertiser name, industry, website and other schema fields; never infer these values. Refuse CN, HK, FR, BR and MX up front: those document regions require uploads this flow does not support. Run bc_get before proposing bc_create; reuse a suitable existing BC after confirming with the user. Read bc_advertiser_attribute_get for TikTok's valid region/currency values and other requirements. Only bc_create and bc_advertiser_create are supported writes; submit each via request_change for human approval and wait for its result before the dependent step. Preserve returned bc_id and advertiser_id. If creation times out or its outcome is unknown, read bc_get/auth_advertiser_get/advertiser_info_get to reconcile before retrying, to avoid duplicate accounts. Finish with payment_setup_ui (advertiser_id, bc_id, intent=SETUP_PAYMENT_METHOD or ADD_BALANCE as the user requests) and hand the user data.payment_url as a clickable TikTok payment link. Soku does not collect payment details or execute money movement. tiktok_identity_connect_ui also returns a link/QR to show the user; do not render MCP-App HTML. Report TikTok refusal code, message and request_id and do not claim an account was created or funded after a refusal.",
+      "output_shape": "data.rows[].{project_id, name}"
+    },
+    {
+      "id": "action:tiktok_mcp/query",
+      "namespace": "tiktok_mcp",
+      "action": "query",
+      "description": "Read TikTok Business Centers/ad accounts or obtain TikTok payment and identity links.",
+      "mode": "read",
+      "platforms": [
+        "tiktok_mcp"
+      ],
+      "requires_review": false,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok core_user_id from tiktok_mcp/list_users; selects a granted login, not a BC or advertiser."
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Exact tool name from tiktok_mcp/list_tools."
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Arguments from the live tool schema."
+        }
+      ],
+      "long_description": "Immediate tools: user_info_get, bc_get, auth_advertiser_get, advertiser_info_get, bc_asset_get, bc_advertiser_attribute_get, bc_advertiser_qualification_get, advertiser_balance_get, payment_setup_ui, tiktok_identity_connect_ui. Use TikTok's official MCP for this journey, independently of the TikTok Marketing API integration. Start with tiktok_mcp/list_users; never ask for or guess a resource id. Fetch each tool's live schema with list_tools(tool=...). Collect and explicitly confirm the company/legal name, Business Center name, registered region, timezone, currency and contact information, plus any required advertiser name, industry, website and other schema fields; never infer these values. Refuse CN, HK, FR, BR and MX up front: those document regions require uploads this flow does not support. Run bc_get before proposing bc_create; reuse a suitable existing BC after confirming with the user. Read bc_advertiser_attribute_get for TikTok's valid region/currency values and other requirements. Only bc_create and bc_advertiser_create are supported writes; submit each via request_change for human approval and wait for its result before the dependent step. Preserve returned bc_id and advertiser_id. If creation times out or its outcome is unknown, read bc_get/auth_advertiser_get/advertiser_info_get to reconcile before retrying, to avoid duplicate accounts. Finish with payment_setup_ui (advertiser_id, bc_id, intent=SETUP_PAYMENT_METHOD or ADD_BALANCE as the user requests) and hand the user data.payment_url as a clickable TikTok payment link. Soku does not collect payment details or execute money movement. tiktok_identity_connect_ui also returns a link/QR to show the user; do not render MCP-App HTML. Report TikTok refusal code, message and request_id and do not claim an account was created or funded after a refusal.",
+      "output_shape": "data.{project_id, tool, is_error, content[], structured, truncated}; content text contains TikTok {code,message,request_id,data}."
+    },
+    {
+      "id": "action:tiktok_mcp/request_change",
+      "namespace": "tiktok_mcp",
+      "action": "request_change",
+      "description": "Request bc_create or bc_advertiser_create through human approval.",
+      "mode": "risk",
+      "platforms": [
+        "tiktok_mcp"
+      ],
+      "requires_review": true,
+      "freshness_kind": "realtime",
+      "see_also": [],
+      "input_params": [
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "description": "TikTok core_user_id from tiktok_mcp/list_users; selects a granted login, not a BC or advertiser."
+        },
+        {
+          "name": "tool",
+          "type": "string",
+          "required": true,
+          "description": "Exact tool name from tiktok_mcp/list_tools."
+        },
+        {
+          "name": "arguments",
+          "type": "object",
+          "required": false,
+          "description": "Arguments from the live tool schema."
+        }
+      ],
+      "long_description": "Only bc_create and bc_advertiser_create writes are supported; every other write is unavailable even with approval. The brand's login grant is checked again on replay. Use TikTok's official MCP for this journey, independently of the TikTok Marketing API integration. Start with tiktok_mcp/list_users; never ask for or guess a resource id. Fetch each tool's live schema with list_tools(tool=...). Collect and explicitly confirm the company/legal name, Business Center name, registered region, timezone, currency and contact information, plus any required advertiser name, industry, website and other schema fields; never infer these values. Refuse CN, HK, FR, BR and MX up front: those document regions require uploads this flow does not support. Run bc_get before proposing bc_create; reuse a suitable existing BC after confirming with the user. Read bc_advertiser_attribute_get for TikTok's valid region/currency values and other requirements. Only bc_create and bc_advertiser_create are supported writes; submit each via request_change for human approval and wait for its result before the dependent step. Preserve returned bc_id and advertiser_id. If creation times out or its outcome is unknown, read bc_get/auth_advertiser_get/advertiser_info_get to reconcile before retrying, to avoid duplicate accounts. Finish with payment_setup_ui (advertiser_id, bc_id, intent=SETUP_PAYMENT_METHOD or ADD_BALANCE as the user requests) and hand the user data.payment_url as a clickable TikTok payment link. Soku does not collect payment details or execute money movement. tiktok_identity_connect_ui also returns a link/QR to show the user; do not render MCP-App HTML. Report TikTok refusal code, message and request_id and do not claim an account was created or funded after a refusal.",
+      "output_shape": "202 -> {ok, pending_review_id}; on approval data.{project_id, tool, is_error, content[], structured}"
+    },
+    {
       "id": "action:toast/get_order",
       "namespace": "toast",
       "action": "get_order",

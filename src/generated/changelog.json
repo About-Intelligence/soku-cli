@@ -14,12 +14,33 @@
       "capabilities": {
         "counts": {
           "before": 357,
-          "after": 357,
-          "added": 0,
+          "after": 361,
+          "added": 4,
           "removed": 0,
           "changed": 9
         },
-        "added": [],
+        "added": [
+          {
+            "id": "tiktok_mcp/list_tools",
+            "mode": "read",
+            "description": "Discover the supported TikTok MCP tools and their live input schemas."
+          },
+          {
+            "id": "tiktok_mcp/list_users",
+            "mode": "read",
+            "description": "List TikTok for Business MCP logins granted to this brand."
+          },
+          {
+            "id": "tiktok_mcp/query",
+            "mode": "read",
+            "description": "Read TikTok Business Centers/ad accounts or obtain TikTok payment and identity links."
+          },
+          {
+            "id": "tiktok_mcp/request_change",
+            "mode": "risk",
+            "description": "Request bc_create or bc_advertiser_create through human approval."
+          }
+        ],
         "removed": [],
         "changed": [
           {
