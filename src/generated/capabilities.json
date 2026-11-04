@@ -2161,6 +2161,27 @@
           ]
         },
         {
+          "name": "pixel_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: TikTok Pixel ID from list_pixels (or a new one from create_pixel). TikTok requires it, with optimization_event, for a website-conversion ad group optimizing for CONVERT.",
+          "example": "1234567890123456789",
+          "source": "upstream:action:ads/list_pixels",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "optimization_event",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Pixel event a website-conversion ad group optimizes for (CONVERT); for example SHOPPING (Purchase), ON_WEB_CART (Add to Cart), or INITIATE_ORDER (Initiate Checkout). See Pixel events: https://business-api.tiktok.com/portal/docs?id=1739361474981889.",
+          "example": "SHOPPING",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "adgroup_name",
           "type": "string",
           "required": false,
@@ -3054,7 +3075,7 @@
           "name": "creatives",
           "type": "array<object>",
           "required": true,
-          "description": "TikTok only: required — up to 20 creative objects for one ad group. Every creative needs identity_type, identity_id, and ad_format. SINGLE_VIDEO uses video_id or tiktok_item_id. TikTok requires a cover for an uploaded video_id: pass exactly one image_id in image_ids, or Soku fetches and uploads the video's own fresh cover. Soku does not require displayable=true for a video cover; ad/create decides acceptance. CUSTOMIZED_USER supports uploaded images. TT_USER and BC_AUTH_TT additionally support CAROUSEL_ADS; CAROUSEL_ADS requires 2 to 35 image_ids. AUTH_CODE uses tiktok_item_id. BC_AUTH_TT also requires identity_authorized_bc_id. Add objective-specific copy, CTA, and destination fields required by the target ad group. TikTok has no standalone creative object.",
+          "description": "TikTok only: required — up to 20 creative objects for one ad group. Every creative needs identity_type, identity_id, and ad_format. SINGLE_VIDEO uses video_id or tiktok_item_id. TikTok requires a cover for an uploaded video_id: pass exactly one image_id in image_ids, or Soku fetches and uploads the video's own fresh cover. Soku does not require displayable=true for a video cover; ad/create decides acceptance. CUSTOMIZED_USER supports uploaded images. TT_USER and BC_AUTH_TT additionally support CAROUSEL_ADS; CAROUSEL_ADS requires 1 to 35 image_ids. AUTH_CODE uses tiktok_item_id. BC_AUTH_TT also requires identity_authorized_bc_id. Add objective-specific copy, CTA, and destination fields required by the target ad group. TikTok has no standalone creative object.",
           "example": [
             {
               "identity_type": "CUSTOMIZED_USER",
@@ -4444,6 +4465,27 @@
           "required": false,
           "description": "TikTok only: Required for REACH: number of days in the frequency-cap window. Must be an integer from 1 to 30 and supplied together with frequency.",
           "example": 1,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "pixel_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: TikTok Pixel ID from list_pixels (or a new one from create_pixel). TikTok requires it, with optimization_event, for a website-conversion ad group optimizing for CONVERT.",
+          "example": "1234567890123456789",
+          "source": "upstream:action:ads/list_pixels",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "optimization_event",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: Pixel event a website-conversion ad group optimizes for (CONVERT); for example SHOPPING (Purchase), ON_WEB_CART (Add to Cart), or INITIATE_ORDER (Initiate Checkout). See Pixel events: https://business-api.tiktok.com/portal/docs?id=1739361474981889.",
+          "example": "SHOPPING",
           "platform": [
             "tiktok"
           ]

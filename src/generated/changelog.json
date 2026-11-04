@@ -17,11 +17,29 @@
           "after": 357,
           "added": 0,
           "removed": 0,
-          "changed": 1
+          "changed": 4
         },
         "added": [],
         "removed": [],
         "changed": [
+          {
+            "id": "ads/bulk_create_adsets",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_ad",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_adset",
+            "fields": [
+              "input_params"
+            ]
+          },
           {
             "id": "ads/create_campaign",
             "fields": [
