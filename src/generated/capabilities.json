@@ -5371,7 +5371,7 @@
           "name": "geo_targets",
           "type": "list",
           "required": false,
-          "description": "Location IDs from list_geo_targets; encoded under targeting.locations.include.",
+          "description": "Location IDs from list_geo_targets; two-letter country codes go to targeting.locations.countries, other IDs to targeting.locations.include.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -5423,7 +5423,7 @@
           "name": "conversion_event_setting_ids",
           "type": "list",
           "required": false,
-          "description": "Exactly one standard OpenAI conversion event name: order_created, lead_created, registration_completed, subscription_created, trial_started, checkout_started, items_added, appointment_scheduled, contents_viewed, page_viewed, app_installed or app_opened. The network resolves it to the account's conversion event setting. An existing setting ID (32 hexadecimal characters, ces_ prefix dropped) is also accepted. Custom event names are rejected because OpenAI optimizes only toward standard events. Immutable after creation.",
+          "description": "Exactly one standard OpenAI conversion event name: order_created, lead_created, registration_completed, subscription_created, trial_started, checkout_started, items_added or appointment_scheduled. The network resolves it to the account's conversion event setting. An existing setting ID (32 hexadecimal characters, ces_ prefix dropped) is also accepted. The network rejects custom event names because OpenAI optimizes only toward standard events. Immutable after creation.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -18203,7 +18203,7 @@
           "name": "geo_targets",
           "type": "list",
           "required": false,
-          "description": "Location IDs from list_geo_targets; encoded under targeting.locations.include.",
+          "description": "Location IDs from list_geo_targets; two-letter country codes go to targeting.locations.countries, other IDs to targeting.locations.include.",
           "platform": [
             "chatgpt_ads"
           ]

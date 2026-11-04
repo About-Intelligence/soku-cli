@@ -17,7 +17,7 @@
           "after": 357,
           "added": 0,
           "removed": 0,
-          "changed": 8
+          "changed": 9
         },
         "added": [],
         "removed": [],
@@ -71,6 +71,12 @@
             "id": "ads/get_account_pages",
             "fields": [
               "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
+            "fields": [
+              "input_params"
             ]
           }
         ]
