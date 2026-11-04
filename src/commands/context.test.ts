@@ -62,6 +62,24 @@ test('expandUploadPaths: directory recursion preserves structure under --dir', (
   ])
 })
 
+test('expandUploadPaths: directory without --dir lands at the hub root, not "."', () => {
+  const root = makeTree()
+  // `--dir` defaults to '', so this is plain `soku context upload ./folder`.
+  const tasks = expandUploadPaths([root], { dir: '' })
+  const mapped = tasks
+    .map((t) => [t.targetDir, t.filename])
+    .sort((a, b) => a[1].localeCompare(b[1]))
+  assert.deepEqual(mapped, [
+    ['', 'a.md'],
+    ['', 'b.json'],
+    ['sub', 'c.md'],
+    ['sub/deep', 'd.png'],
+  ])
+  // Same target as passing the file on its own, so the two dedupe.
+  const both = expandUploadPaths([join(root, 'a.md'), root], { dir: '' })
+  assert.equal(both.filter((t) => t.filename === 'a.md').length, 1)
+})
+
 test('expandUploadPaths: skips dotfiles and OS cruft', () => {
   const root = makeTree()
   const tasks = expandUploadPaths([root], { dir: 'docs' })
@@ -157,6 +175,29 @@ test('buildVerifyReport: separates missing, wrong size, wrong bytes, and unverif
   assert.equal(report.missing, 1)
   assert.equal(report.mismatched, 2)
   assert.equal(report.unverified, 1)
+})
+
+test('buildVerifyReport: a folder verified without --dir matches root files', () => {
+  const root = makeTree()
+  const tasks = expandUploadPaths([root], { dir: '' })
+  const report = buildVerifyReport(
+    tasks,
+    {
+      dir: '',
+      checksums: true,
+      count: 4,
+      total_bytes: 4,
+      files: [
+        { path: 'a.md', name: 'a.md', size_bytes: 1, md5: 'H' },
+        { path: 'b.json', name: 'b.json', size_bytes: 1, md5: 'H' },
+        { path: 'sub/c.md', name: 'c.md', size_bytes: 1, md5: 'H' },
+        { path: 'sub/deep/d.png', name: 'd.png', size_bytes: 1, md5: 'H' },
+      ],
+    },
+    () => ({ sizeBytes: 1, md5: 'H' }),
+  )
+  assert.equal(report.missing, 0)
+  assert.equal(report.ok, 4)
 })
 
 test('verificationClean: an unverifiable file is not a clean result', () => {

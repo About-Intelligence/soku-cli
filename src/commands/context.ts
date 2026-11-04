@@ -6,7 +6,7 @@
  * POST to mint a signed URL, then PUT the bytes straight to storage.
  */
 
-import { basename, extname, join, relative } from 'node:path'
+import { basename, dirname, extname, join, relative } from 'node:path'
 import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 
@@ -163,8 +163,11 @@ export function expandUploadPaths(
     }
     if (info.isDirectory()) {
       walk(raw, (abs) => {
-        const rel = relative(raw, abs) // preserve structure: a/b.png
-        const dir = join(opts.dir, rel.slice(0, Math.max(0, rel.lastIndexOf('/'))))
+        // Preserve structure: a/b.png lands in <dir>/a. A file at the top of
+        // the folder goes to `--dir` itself; joining it would turn the default
+        // '' into '.', and the file would be sent with target_dir ".".
+        const relDir = dirname(relative(raw, abs))
+        const dir = relDir === '.' ? opts.dir : join(opts.dir, relDir)
         push(abs, dir.replace(/\\/g, '/'), basename(abs))
       })
       continue
