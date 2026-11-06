@@ -2556,6 +2556,16 @@
           ]
         },
         {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok app id.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "app_promotion_type",
           "type": "string",
           "required": false,
@@ -2596,6 +2606,16 @@
           ]
         },
         {
+          "name": "campaign_app_profile_page_state",
+          "type": "string",
+          "required": false,
+          "description": "TikTok campaign app profile page state.",
+          "example": "value",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
           "name": "campaign_type",
           "type": "string",
           "required": false,
@@ -2611,6 +2631,26 @@
           "required": false,
           "description": "TikTok only: parallel item limit; defaults to 4 and is clamped to 1–8.",
           "example": 4,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "disable_skan_campaign",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok disable skan campaign.",
+          "example": true,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "is_advanced_dedicated_campaign",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok is advanced dedicated campaign.",
+          "example": true,
           "platform": [
             "tiktok"
           ]
@@ -3075,7 +3115,7 @@
           "name": "creatives",
           "type": "array<object>",
           "required": true,
-          "description": "TikTok only: required — up to 20 creative objects for one ad group. Every creative needs identity_type, identity_id, and ad_format. SINGLE_VIDEO uses video_id or tiktok_item_id. TikTok requires a cover for an uploaded video_id: pass exactly one image_id in image_ids, or Soku fetches and uploads the video's own fresh cover. Soku does not require displayable=true for a video cover; ad/create decides acceptance. CUSTOMIZED_USER supports uploaded images, only in ad groups with no TikTok placement (TikTok refuses it on automatic placement or PLACEMENT_TIKTOK with 40002). TT_USER and BC_AUTH_TT additionally support CAROUSEL_ADS; CAROUSEL_ADS requires 1 to 35 image_ids. AUTH_CODE uses tiktok_item_id. BC_AUTH_TT also requires identity_authorized_bc_id. Add objective-specific copy, CTA, and destination fields required by the target ad group. TikTok has no standalone creative object.",
+          "description": "TikTok only: required — up to 20 creative objects for one ad group. Every creative needs identity_type, identity_id, and ad_format. SINGLE_VIDEO uses video_id or tiktok_item_id. TikTok requires a cover for an uploaded video_id: pass exactly one image_id in image_ids, or Soku fetches and uploads the video's own fresh cover. Soku does not require displayable=true for a video cover; ad/create decides acceptance. CUSTOMIZED_USER supports uploaded images, only in ad groups with no TikTok placement (TikTok refuses it on automatic placement or PLACEMENT_TIKTOK with 40002). TT_USER and BC_AUTH_TT additionally support CAROUSEL_ADS; CAROUSEL_ADS requires 1 to 35 image_ids. AUTH_CODE uses tiktok_item_id. BC_AUTH_TT also requires identity_authorized_bc_id. Add objective-specific copy, CTA, and destination fields required by the target ad group. An Apple custom product page goes in cpp_url and only works under a campaign_type=IOS14_CAMPAIGN campaign. TikTok has no standalone creative object.",
           "example": [
             {
               "identity_type": "CUSTOMIZED_USER",
@@ -4811,7 +4851,7 @@
           "name": "campaign_type",
           "type": "string",
           "required": false,
-          "description": "Google only (required): campaign type. One of SEARCH, DISPLAY, SHOPPING, VIDEO. Use create_pmax_campaign for PERFORMANCE_MAX; unknown values default to SEARCH with a warning. Backend (registry/executor) rejects the call with HTTP 400 if omitted for Google. Source: constant enum chosen by the agent based on user intent. TikTok: optional campaign type, REGULAR_CAMPAIGN or IOS14_CAMPAIGN (IOS14_CAMPAIGN supports objective_type PRODUCT_SALES only; iOS 14 dedicated campaigns with other objectives use REGULAR_CAMPAIGN).",
+          "description": "Google only (required): campaign type. One of SEARCH, DISPLAY, SHOPPING, VIDEO. Use create_pmax_campaign for PERFORMANCE_MAX; unknown values default to SEARCH with a warning. Backend (registry/executor) rejects the call with HTTP 400 if omitted for Google. Source: constant enum chosen by the agent based on user intent. TikTok: optional campaign type, REGULAR_CAMPAIGN or IOS14_CAMPAIGN, the iOS 14.5+ dedicated campaign (objective_type APP_PROMOTION with app_promotion_type APP_INSTALL, or PRODUCT_SALES). Ads that set an Apple custom product page (creative cpp_url) require an IOS14_CAMPAIGN parent; the type cannot be changed after creation.",
           "example": "SEARCH",
           "enum": [
             "DISPLAY",
@@ -5309,6 +5349,46 @@
           "required": false,
           "description": "TikTok only: optional unique request id used for provider-side idempotency.",
           "example": "202607230001",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "app_id",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: TikTok app id promoted by an iOS dedicated campaign.",
+          "example": "7690650186197041159",
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "is_advanced_dedicated_campaign",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok only: create the iOS dedicated campaign as an advanced dedicated campaign.",
+          "example": false,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "disable_skan_campaign",
+          "type": "boolean",
+          "required": false,
+          "description": "TikTok only: opt the iOS dedicated campaign out of SKAdNetwork attribution.",
+          "example": false,
+          "platform": [
+            "tiktok"
+          ]
+        },
+        {
+          "name": "campaign_app_profile_page_state",
+          "type": "string",
+          "required": false,
+          "description": "TikTok only: App Profile Page state for an App Promotion campaign (ON / OFF).",
+          "example": "OFF",
           "platform": [
             "tiktok"
           ]
