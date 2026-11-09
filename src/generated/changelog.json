@@ -3,12 +3,19 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.27",
+      "date": "2026-11-09",
+      "notes": [
+        "Fix `soku context upload ./folder` without `--dir`: files at the top of the folder were sent with target dir `.`, so `context verify` (and `upload --verify`) reported them `missing` and exited 1 even when the upload worked, and the same file passed both on its own and inside its folder uploaded twice. They now land at the hub root (#32, thanks @Abhishek-B-R).",
+        "`soku call --payload` reads the JSON from a file with `@path` or from stdin with `@-`, like `soku egress`. Base64 media payloads (`ads upload_images`) no longer fail at the shell with `argument list too long`.",
+        "`soku call -p key=value` keeps an integer longer than 2^53 as the string typed. An 18-digit Meta id such as `-p campaign_id=120210000000000123` was parsed as a JSON number and sent as a different id; small numbers such as `limit=25` still parse as numbers.",
+        "A failed call now carries the server's request id as `error.details.request_id` (and prints it on a TTY), so support can find the request in the logs."
+      ],
       "commands": {
         "added": [],
-        "changed": [],
+        "changed": [
+          "call"
+        ],
         "removed": []
       },
       "capabilities": {
