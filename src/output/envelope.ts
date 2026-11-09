@@ -217,6 +217,7 @@ export function emitError(
   if (isTty()) {
     let out = `${red('✖')} ${message}`
     if (hint) out += `\n  ${dim(hint)}`
+    if (typeof details?.request_id === 'string') out += `\n  ${dim(`request id: ${details.request_id}`)}`
     writeBlocking(process.stderr, `${out}\n`)
   } else {
     const envelope: ErrorEnvelope = {

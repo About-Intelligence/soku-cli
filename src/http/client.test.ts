@@ -5,14 +5,14 @@ import { ApiError, apiRequest } from './client.js'
 
 /** Run one request against a fetch stub that answers with `status` + `body`,
  * and return the ApiError the client raises for it. */
-async function errorFor(status: number, body: unknown): Promise<ApiError> {
+async function errorFor(status: number, body: unknown, headers: Record<string, string> = {}): Promise<ApiError> {
   const originalFetch = globalThis.fetch
   const originalToken = process.env.SOKU_TOKEN
   process.env.SOKU_TOKEN = 'test-token'
   globalThis.fetch = (async () =>
     new Response(JSON.stringify(body), {
       status,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...headers },
     })) as typeof fetch
   try {
     await apiRequest('/api/cli/call/ads/create_adset', {
@@ -98,4 +98,14 @@ test('non-JSON body keeps the HTTP status fallback', async () => {
     if (originalToken === undefined) delete process.env.SOKU_TOKEN
     else process.env.SOKU_TOKEN = originalToken
   }
+})
+
+test('a failed call carries the server request id so support can trace it', async () => {
+  // The API sets X-Nex-Request-Id on every response, errors included (issue #15).
+  const err = await errorFor(422, { error: 'invalid_ads_payload', message: 'bad' }, { 'X-Nex-Request-Id': 'req-123' })
+  assert.equal(err.details?.request_id, 'req-123')
+  const withDetails = await errorFor(400, { detail: { error: 'x', message: 'y', details: { field: 'a' } } }, { 'X-Nex-Request-Id': 'req-456' })
+  assert.deepEqual(withDetails.details, { field: 'a', request_id: 'req-456' })
+  const without = await errorFor(422, { error: 'invalid_ads_payload', message: 'bad' })
+  assert.equal(without.details, undefined)
 })

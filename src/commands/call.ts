@@ -65,6 +65,9 @@ function collectParam(entry: string, acc: Record<string, unknown>): Record<strin
   } catch {
     value = raw // keep as string
   }
+  // Platform ids (Meta's are 15-18 digits) exceed 2^53; as a number they would
+  // silently become a different id, so an unsafe integer stays the string typed.
+  if (typeof value === 'number' && !Number.isSafeInteger(value) && /^-?\d+$/.test(raw)) value = raw
   acc[key] = value
   return acc
 }
