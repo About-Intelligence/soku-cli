@@ -211,6 +211,27 @@ test('egress call forwards the bound body through existing egress and writes raw
   assert.equal(result.code, 0)
 })
 
+test('call --payload @path reads a payload too large for argv, merged with -p and --summary', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'soku-call-contract-'))
+  t.after(() => rmSync(dir, { recursive: true, force: true }))
+  const payloadFile = join(dir, 'payload.json')
+  // Larger than Linux's 128 KB per-argument limit, the issue #15 failure.
+  const bytes = 'A'.repeat(300_000)
+  writeFileSync(payloadFile, JSON.stringify({ platform: 'meta', account_id: 'act_1', images: [{ bytes_base64: bytes }] }))
+  const result = await runCliCommand(t, ['call', 'ads', 'upload_images', '--payload', `@${payloadFile}`, '-p', 'account_id="act_2"', '--summary', 'upload 1 image'], { ok: true }, 200, registerCallCommand)
+  assert.match(result.requests[0].url, /\/api\/cli\/call\/ads\/upload_images$/)
+  assert.deepEqual(JSON.parse(String(result.requests[0].init?.body)), {
+    platform: 'meta', account_id: 'act_2', images: [{ bytes_base64: bytes }], _summary: 'upload 1 image',
+  })
+})
+
+test('call --payload @path reports a missing file as a usage error before any request', async (t) => {
+  const result = await runCliCommand(t, ['call', 'ads', 'upload_images', '--payload', '@/nonexistent/soku-payload.json'], { ok: true }, 200, registerCallCommand)
+  assert.equal(result.requests.length, 0)
+  assert.equal(result.output.error.type, 'usage')
+  assert.match(result.output.error.message, /Could not read --payload @\/nonexistent/)
+})
+
 test('egress binder rejection stops before the metered call', async (t) => {
   const result = await runCliCommand(t, ['egress', 'call', 'adyntel', 'linkedin_ads'], { detail: { error: 'invalid_arguments', message: 'at least one search parameter is required' } }, 400, registerEgressCommands)
   assert.equal(result.requests.length, 1)
