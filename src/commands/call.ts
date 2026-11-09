@@ -1,5 +1,7 @@
 /** `soku call <namespace> <action> [--payload '<json>' | -p key=value ...]` */
 
+import { readFileSync } from 'node:fs'
+
 import { Command } from 'commander'
 
 import { apiRequest } from '../http/client.js'
@@ -10,7 +12,7 @@ export function registerCallCommand(program: Command): void {
   program
     .command('call <namespace> <action>')
     .description('Invoke a data capability')
-    .option('--payload <json>', 'Full JSON payload')
+    .option('--payload <json>', 'Full JSON payload, or @path to a JSON file, or @- to read stdin')
     .option(
       '-p, --param <key=value>',
       'Set one payload field (repeatable); values are parsed as JSON when possible',
@@ -29,10 +31,20 @@ export function registerCallCommand(program: Command): void {
       ) => {
         let payload: Record<string, unknown> = {}
         if (opts.payload) {
+          // `@path` / `@-` like `egress`: base64 media payloads exceed the OS
+          // argument-size limit long before the server's.
+          const raw = opts.payload
+          let text = raw
           try {
-            payload = JSON.parse(opts.payload) as Record<string, unknown>
+            if (raw === '@-') text = readFileSync(0, 'utf8')
+            else if (raw.startsWith('@')) text = readFileSync(raw.slice(1), 'utf8')
+          } catch (err) {
+            emitError('usage', `Could not read --payload ${raw}: ${(err as Error).message}`, ExitCode.USAGE)
+          }
+          try {
+            payload = JSON.parse(text) as Record<string, unknown>
           } catch {
-            emitError('usage', '--payload must be valid JSON.', ExitCode.USAGE)
+            emitError('usage', '--payload must be valid JSON (or @path / @- with JSON).', ExitCode.USAGE)
           }
         }
         payload = { ...payload, ...opts.param }
