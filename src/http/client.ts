@@ -75,7 +75,11 @@ export async function apiRequest<T = unknown>(path: string, opts: RequestOptions
   const base = resolveApiBaseUrl(opts.apiBase)
   // Status 0 marks a failure that never reached the server, so a caller
   // classifying retriability sees "no answer" rather than a fabricated code.
+  // Every API response, errors included, carries this header; it is the one
+  // thing support needs to find a failed call in the logs.
+  let requestId: string | null = null
   const fail = (type: string, message: string, status: number, code: ExitCodeValue, hint?: string, details?: Record<string, unknown>): never => {
+    if (requestId) details = { ...details, request_id: requestId }
     if (opts.throwOnError) throw new ApiError(type, message, status, hint, details)
     return emitError(type, message, code, hint, details)
   }
@@ -101,6 +105,7 @@ export async function apiRequest<T = unknown>(path: string, opts: RequestOptions
     )
   }
 
+  requestId = res.headers.get('x-nex-request-id')
   const text = await res.text()
   const parsed = text ? safeJson(text) : null
 

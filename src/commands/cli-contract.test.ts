@@ -483,3 +483,11 @@ test('review wait exits non-zero when the person denies the write', async (t) =>
   assert.deepEqual(result.output.data.reviews.map((r: { status: string }) => r.status), ['rejected'])
   assert.equal(result.code, 5)
 })
+
+test('call -p keeps an id longer than a safe integer exactly as typed', async (t) => {
+  // Issue #15: an 18-digit Meta campaign id parsed as JSON came out as a different id.
+  const result = await runCliCommand(t, ['call', 'ads', 'list_ads', '-p', 'platform=meta', '-p', 'campaign_id=120210000000000123', '-p', 'limit=25'], { ok: true }, 200, registerCallCommand)
+  assert.deepEqual(JSON.parse(String(result.requests[0].init?.body)), {
+    platform: 'meta', campaign_id: '120210000000000123', limit: 25,
+  })
+})
