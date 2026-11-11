@@ -3735,7 +3735,7 @@
           "name": "context",
           "type": "string",
           "required": false,
-          "description": "Newline-separated hints mapped to context_hints; null clears hints.",
+          "description": "Newline-separated hints mapped to context_hints; null clears hints. Set it when the group is created. Once the Campaign has launched (any paused Campaign counts), the provider rejects context changes on update; create a new Ad Group to use different hints.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -3744,7 +3744,7 @@
           "name": "context_hints",
           "type": "list",
           "required": false,
-          "description": "Native ordered text hints.",
+          "description": "Native ordered text hints. Same rule as context: the provider rejects changes after the Campaign has launched.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -16929,7 +16929,7 @@
           "name": "context",
           "type": "string",
           "required": false,
-          "description": "Newline-separated hints mapped to context_hints; null clears hints.",
+          "description": "Newline-separated hints mapped to context_hints; null clears hints. Set it when the group is created. Once the Campaign has launched (any paused Campaign counts), the provider rejects context changes on update; create a new Ad Group to use different hints.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -16938,7 +16938,7 @@
           "name": "context_hints",
           "type": "list",
           "required": false,
-          "description": "Native ordered text hints.",
+          "description": "Native ordered text hints. Same rule as context: the provider rejects changes after the Campaign has launched.",
           "platform": [
             "chatgpt_ads"
           ]
