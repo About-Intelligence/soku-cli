@@ -17,11 +17,23 @@
           "after": 361,
           "added": 0,
           "removed": 0,
-          "changed": 2
+          "changed": 5
         },
         "added": [],
         "removed": [],
         "changed": [
+          {
+            "id": "ads/create_ad_group",
+            "fields": [
+              "input_params"
+            ]
+          },
+          {
+            "id": "ads/create_campaign",
+            "fields": [
+              "input_params"
+            ]
+          },
           {
             "id": "ads/describe_dashboard",
             "fields": [
@@ -32,6 +44,12 @@
             "id": "ads/query_single_dimension",
             "fields": [
               "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad_group",
+            "fields": [
+              "input_params"
             ]
           }
         ]

@@ -3716,7 +3716,7 @@
           "name": "max_cpc",
           "type": "number",
           "required": false,
-          "description": "Positive USD number, at most six decimal places; encoded as integer Ad Group bidding_config.max_bid_micros (1 USD = 1000000 micros). CPC bid for clicks and CPA bid for conversions (both billing_event_type=click); CPM bid for reach (bidding_type=impressions, billing_event_type=impression, sent per impression: $6.99 CPM -> 6990 micros). Billing follows the parent Campaign bidding_type. Not a Campaign field.",
+          "description": "Positive USD number, at most six decimal places; encoded as integer Ad Group bidding_config.max_bid_micros (1 USD = 1000000 micros). CPC bid for clicks and CPA bid for conversions (both billing_event_type=click); CPM bid for reach (bidding_type=impressions, billing_event_type=impression, sent per impression: $6.99 CPM -> 6990 micros). Billing follows the parent Campaign bidding_type. Not a Campaign field. From Nov 18, 2026, ChatGPT Ads treats this bid on any Ad Group launched on or after that date as an average target (Target CPC for clicks, Target CPA for conversions), not a per-auction cap; Ad Groups already live on max bid are expected to keep max-bid behavior for value-only edits through Dec 31, 2026 (OpenAI has not confirmed this), and max bid retires on Jan 1, 2027. Whether Reach (CPM) bids change is not yet confirmed.",
           "example": 6.99,
           "platform": [
             "chatgpt_ads"
@@ -3726,7 +3726,7 @@
           "name": "bidding_config",
           "type": "object",
           "required": false,
-          "description": "Native bid object: positive integer max_bid_micros and billing_event_type matching the parent Campaign (impression for bidding_type=impressions, click for clicks/conversions). strategy is always fixed_bid (sent explicitly; other strategies are rejected). Impression bids are per impression, not CPM.",
+          "description": "Native bid object: positive integer max_bid_micros and billing_event_type matching the parent Campaign (impression for bidding_type=impressions, click for clicks/conversions). strategy is always fixed_bid (sent explicitly; other strategies are rejected), but from Nov 18, 2026 the provider may apply max_bid_micros on newly launched groups as an average target, not a cap (see max_cpc). Impression bids are per impression, not CPM.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -4789,7 +4789,7 @@
           "name": "campaign_draft",
           "type": "object",
           "required": false,
-          "description": "Preferred managed source: complete Dashboard tree with schema_version=1, campaign, groups. Preserve node IDs and unedited fields. One Campaign holds any number of groups and each group any number of Ads; every group needs at least one complete Ad. campaign owns budget, dates, objective, geoTargets and allowedDevices; groups own maxCpc, context, utmParams and their landingPage. Groups are manual and require maxCpc as a USD string (CPC for Clicks, CPA for Conversions, CPM for Reach). Conversions requires campaign.conversionEventSettingId holding the account's conversion event setting ID (32 hex characters, never an event name); it becomes conversion_event_setting_ids=[id]. Ads require permanent imageUrl or an existing uploaded file. Review binds the saved version; approval creates paused resources before managed Launch. Do not combine with direct Campaign fields. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
+          "description": "Preferred managed source: complete Dashboard tree with schema_version=1, campaign, groups. Preserve node IDs and unedited fields. One Campaign holds any number of groups and each group any number of Ads; every group needs at least one complete Ad. campaign owns budget, dates, objective, geoTargets and allowedDevices; groups own maxCpc, context, utmParams and their landingPage. Groups are manual and require maxCpc as a USD string (CPC for Clicks, CPA for Conversions, CPM for Reach); from Nov 18, 2026 it is an average target on newly launched Clicks and Conversions groups, not a per-auction cap (see max_cpc). Conversions requires campaign.conversionEventSettingId holding the account's conversion event setting ID (32 hex characters, never an event name); it becomes conversion_event_setting_ids=[id]. Ads require permanent imageUrl or an existing uploaded file. Review binds the saved version; approval creates paused resources before managed Launch. Do not combine with direct Campaign fields. ChatGPT Ads daily mode requires at least $25.0/day (Soku configuration), including campaign_draft.campaign.dailyBudget. Apply any higher minimum returned for the selected locations. This daily minimum does not apply to total-budget mode.",
           "platform": [
             "chatgpt_ads"
           ]
@@ -16910,7 +16910,7 @@
           "name": "max_cpc",
           "type": "number",
           "required": false,
-          "description": "Positive USD number, at most six decimal places; encoded as integer Ad Group bidding_config.max_bid_micros (1 USD = 1000000 micros). CPC bid for clicks and CPA bid for conversions (both billing_event_type=click); CPM bid for reach (bidding_type=impressions, billing_event_type=impression, sent per impression: $6.99 CPM -> 6990 micros). Billing follows the parent Campaign bidding_type. Not a Campaign field.",
+          "description": "Positive USD number, at most six decimal places; encoded as integer Ad Group bidding_config.max_bid_micros (1 USD = 1000000 micros). CPC bid for clicks and CPA bid for conversions (both billing_event_type=click); CPM bid for reach (bidding_type=impressions, billing_event_type=impression, sent per impression: $6.99 CPM -> 6990 micros). Billing follows the parent Campaign bidding_type. Not a Campaign field. From Nov 18, 2026, ChatGPT Ads treats this bid on any Ad Group launched on or after that date as an average target (Target CPC for clicks, Target CPA for conversions), not a per-auction cap; Ad Groups already live on max bid are expected to keep max-bid behavior for value-only edits through Dec 31, 2026 (OpenAI has not confirmed this), and max bid retires on Jan 1, 2027. Whether Reach (CPM) bids change is not yet confirmed.",
           "example": 6.99,
           "platform": [
             "chatgpt_ads"
@@ -16920,7 +16920,7 @@
           "name": "bidding_config",
           "type": "object",
           "required": false,
-          "description": "Native bid object: positive integer max_bid_micros and billing_event_type matching the parent Campaign (impression for bidding_type=impressions, click for clicks/conversions). strategy is always fixed_bid (sent explicitly; other strategies are rejected). Impression bids are per impression, not CPM.",
+          "description": "Native bid object: positive integer max_bid_micros and billing_event_type matching the parent Campaign (impression for bidding_type=impressions, click for clicks/conversions). strategy is always fixed_bid (sent explicitly; other strategies are rejected), but from Nov 18, 2026 the provider may apply max_bid_micros on newly launched groups as an average target, not a cap (see max_cpc). Impression bids are per impression, not CPM.",
           "platform": [
             "chatgpt_ads"
           ]
