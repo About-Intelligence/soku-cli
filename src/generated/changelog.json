@@ -17,25 +17,316 @@
           "after": 361,
           "added": 0,
           "removed": 0,
-          "changed": 5
+          "changed": 103
         },
         "added": [],
         "removed": [],
         "changed": [
           {
+            "id": "ads/add_account_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_ad_group_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_callouts",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_campaign_webpage_exclusion",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_sitelinks",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/add_structured_snippets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/apply_ad_group_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/apply_campaign_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/apply_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_ad",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/archive_lead_form",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_ad_creatives",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_ads",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_adsets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/bulk_create_campaigns",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad_creative",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/create_ad_group",
             "fields": [
-              "input_params"
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_ad_rule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_adset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_bidding_strategy",
+            "fields": [
+              "long_description"
             ]
           },
           {
             "id": "ads/create_campaign",
             "fields": [
-              "input_params"
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_change_history_task",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_conversion_action",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_custom_conversion",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_gmv_max_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_identity",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_lead_form",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_lookalike_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_pixel",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_pmax_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_product_catalog",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_product_feed",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_rule_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_smart_plus_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_text_asset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_user_list",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/create_youtube_video_asset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/deploy_image_ads_batch",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/deploy_video_ads_batch",
+            "fields": [
+              "long_description"
             ]
           },
           {
             "id": "ads/describe_dashboard",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/enable_ad_automation_audits",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/establish_automation_baseline",
             "fields": [
               "long_description"
             ]
@@ -47,9 +338,311 @@
             ]
           },
           {
+            "id": "ads/register_automation_copy",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_account_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_creative",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_group_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_ad_rule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_adset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_bidding_strategy",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_assets",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_audience_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_campaign_negative_keywords",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_conversion_action",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_keyword",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_label",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_product_catalog",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/remove_product_feed",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/send_conversion_event",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_ad_schedule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_bid_modifier",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_final_url_suffix",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_geo_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_language_targeting",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/set_network_settings",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad",
+            "fields": [
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
             "id": "ads/update_ad_group",
             "fields": [
-              "input_params"
+              "input_params",
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_ad_rule",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_adset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_bidding_strategy",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_conversion_action",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_custom_audience",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_gmv_max_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_keyword",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_pixel",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_pmax_asset_group",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_product_catalog",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_product_feed",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_smart_plus_campaign",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_smart_plus_campaign_status",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/update_user_list",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_custom_audience_file",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_image",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_image_asset",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_images",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/upload_video",
+            "fields": [
+              "long_description"
             ]
           }
         ]
