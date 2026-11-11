@@ -35,11 +35,16 @@ function collectParam(entry: string, acc: Record<string, unknown>): Record<strin
   }
   const key = entry.slice(0, eq)
   const raw = entry.slice(eq + 1)
+  let value: unknown
   try {
-    acc[key] = JSON.parse(raw)
+    value = JSON.parse(raw)
   } catch {
-    acc[key] = raw
+    value = raw
   }
+  // Same guard as `soku call -p`: Meta ids (15-18 digits) exceed 2^53, so as a
+  // number they would silently become a different id. Keep them as typed.
+  if (typeof value === 'number' && !Number.isSafeInteger(value) && /^-?\d+$/.test(raw)) value = raw
+  acc[key] = value
   return acc
 }
 
