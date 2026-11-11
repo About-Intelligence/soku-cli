@@ -92,6 +92,11 @@ function isJsonType(type: string): boolean {
   return /\b(object|list|array)\b/.test(type)
 }
 
+/** A union such as "string|list" also takes a bare string (`--terms ROAS`). */
+function allowsString(type: string): boolean {
+  return type.split('|').includes('string')
+}
+
 function isNumberType(type: string): boolean {
   return type === 'integer' || type === 'number'
 }
@@ -101,6 +106,16 @@ function parseJsonFlag(param: string, raw: string): unknown {
     return JSON.parse(raw)
   } catch {
     return emitError('usage', `--${toKebab(param)} must be valid JSON.`, ExitCode.USAGE)
+  }
+}
+
+/** For a "string|list" union, a value that is not JSON is the plain string
+ * that was typed, instead of a usage error. */
+function parseJsonOrStringFlag(raw: string): unknown {
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return raw
   }
 }
 
@@ -329,7 +344,9 @@ export function buildGeneratedCommands(
       }
       const valueFlag = `${flag} <value>`
       const coerce = isJsonType(param.type)
-        ? (v: string) => parseJsonFlag(param.name, v)
+        ? allowsString(param.type)
+          ? (v: string) => parseJsonOrStringFlag(v)
+          : (v: string) => parseJsonFlag(param.name, v)
         : isNumberType(param.type)
           ? (v: string) => parseNumberFlag(param.name, v)
           : undefined

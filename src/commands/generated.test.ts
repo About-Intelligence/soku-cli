@@ -367,6 +367,33 @@ test('array-typed params are parsed as JSON, like object and list params', async
   assert.deepEqual(parsed?.sections, [{ id: 'hero' }])
 })
 
+test('string|list params take a bare string as well as a JSON list', async (t) => {
+  // A usage error exits the process; turn it into a test failure instead.
+  t.mock.method(process, 'exit', (code: number) => { throw new Error(`process.exit(${code})`) })
+  const manifest: CapabilityManifest = { actions: [{ ...fixture.actions[0], input_params: [
+    { name: 'terms', type: 'string|list', required: false, description: 'One term or a list of terms.' },
+    { name: 'countries', type: 'string|list', required: false, description: 'ISO country codes.' },
+    { name: 'app_ids', type: 'string|list', required: false, description: 'App ids.' },
+    { name: 'networks', type: 'string|list', required: false, description: 'Ad networks.' },
+  ] }] }
+  const program = new Command().exitOverride().configureOutput({ writeErr: () => {} })
+  buildGeneratedCommands(program, manifest)
+  const command = sub(group(program, 'ads'), 'list-ad-accounts')
+  let parsed: Record<string, unknown> | undefined
+  command.action((opts) => { parsed = opts })
+  await program.parseAsync([
+    'ads', 'list-ad-accounts',
+    '--terms', 'ROAS',
+    '--countries', '["US","GB"]',
+    '--app-ids', 'com.example.game',
+    '--networks', '"TikTok"',
+  ], { from: 'user' })
+  assert.equal(parsed?.terms, 'ROAS')
+  assert.deepEqual(parsed?.countries, ['US', 'GB'])
+  assert.equal(parsed?.appIds, 'com.example.game')
+  assert.equal(parsed?.networks, 'TikTok')
+})
+
 test('latest manifest exposes campaign tracking and new integration opt-outs', () => {
   const manifest = JSON.parse(readFileSync('src/generated/capabilities.json', 'utf8')) as CapabilityManifest
   const program = new Command()
