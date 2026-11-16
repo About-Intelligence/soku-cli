@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { Command } from 'commander'
+import { registerAdsEntities } from './ads.js'
 import { registerBrandSkillCommands } from './brand-skill.js'
 import { buildGeneratedCommands, loadManifest } from './generated.js'
 import { registerCallCommand } from './call.js'
@@ -489,5 +490,19 @@ test('call -p keeps an id longer than a safe integer exactly as typed', async (t
   const result = await runCliCommand(t, ['call', 'ads', 'list_ads', '-p', 'platform=meta', '-p', 'campaign_id=120210000000000123', '-p', 'limit=25'], { ok: true }, 200, registerCallCommand)
   assert.deepEqual(JSON.parse(String(result.requests[0].init?.body)), {
     platform: 'meta', campaign_id: '120210000000000123', limit: 25,
+  })
+})
+
+test('ads -p keeps an id longer than a safe integer exactly as typed, like call -p', async (t) => {
+  const result = await runCliCommand(
+    t,
+    ['ads', 'meta', 'adset', 'pause', '--adset-id', '120210000000000456', '--summary', 'pause', '-p', 'campaign_id=120210000000000123', '-p', 'limit=25'],
+    { ok: true },
+    200,
+    (program) => { registerAdsEntities(program.command('ads')) },
+  )
+  assert.deepEqual(JSON.parse(String(result.requests[0].init?.body)), {
+    campaign_id: '120210000000000123', limit: 25,
+    platform: 'meta', adset_id: '120210000000000456', status: 'PAUSED', _summary: 'pause',
   })
 })
