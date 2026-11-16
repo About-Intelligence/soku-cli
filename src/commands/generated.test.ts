@@ -375,6 +375,8 @@ test('string|list params take a bare string as well as a JSON list', async (t) =
     { name: 'countries', type: 'string|list', required: false, description: 'ISO country codes.' },
     { name: 'app_ids', type: 'string|list', required: false, description: 'App ids.' },
     { name: 'networks', type: 'string|list', required: false, description: 'Ad networks.' },
+    { name: 'publisher_ids', type: 'string|list', required: false, description: 'Publisher ids.' },
+    { name: 'categories', type: 'string|list', required: false, description: 'Category ids.' },
   ] }] }
   const program = new Command().exitOverride().configureOutput({ writeErr: () => {} })
   buildGeneratedCommands(program, manifest)
@@ -385,13 +387,17 @@ test('string|list params take a bare string as well as a JSON list', async (t) =
     'ads', 'list-ad-accounts',
     '--terms', 'ROAS',
     '--countries', '["US","GB"]',
-    '--app-ids', 'com.example.game',
+    '--app-ids', '284882215',
     '--networks', '"TikTok"',
+    '--publisher-ids', 'com.example.game',
+    '--categories', '6014',
   ], { from: 'user' })
   assert.equal(parsed?.terms, 'ROAS')
   assert.deepEqual(parsed?.countries, ['US', 'GB'])
-  assert.equal(parsed?.appIds, 'com.example.game')
+  assert.equal(parsed?.appIds, '284882215')
   assert.equal(parsed?.networks, 'TikTok')
+  assert.equal(parsed?.publisherIds, 'com.example.game')
+  assert.equal(parsed?.categories, '6014')
 })
 
 test('latest manifest exposes campaign tracking and new integration opt-outs', () => {

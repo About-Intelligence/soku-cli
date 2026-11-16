@@ -109,11 +109,13 @@ function parseJsonFlag(param: string, raw: string): unknown {
   }
 }
 
-/** For a "string|list" union, a value that is not JSON is the plain string
- * that was typed, instead of a usage error. */
+/** For a "string|list" union, a JSON list or JSON string is used as parsed.
+ * Anything else, including bare text and a number like an iOS app id, is the
+ * plain string that was typed, instead of a usage error. */
 function parseJsonOrStringFlag(raw: string): unknown {
   try {
-    return JSON.parse(raw)
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) || typeof parsed === 'string' ? parsed : raw
   } catch {
     return raw
   }
