@@ -17,7 +17,7 @@
           "after": 361,
           "added": 0,
           "removed": 0,
-          "changed": 103
+          "changed": 104
         },
         "added": [],
         "removed": [],
@@ -309,6 +309,12 @@
           },
           {
             "id": "ads/deploy_video_ads_batch",
+            "fields": [
+              "long_description"
+            ]
+          },
+          {
+            "id": "ads/describe_board",
             "fields": [
               "long_description"
             ]
