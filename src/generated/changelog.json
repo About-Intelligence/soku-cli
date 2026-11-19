@@ -3,12 +3,19 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
-      "version": "unreleased",
-      "date": null,
-      "notes": [],
+      "version": "0.1.0-alpha.28",
+      "date": "2026-11-19",
+      "notes": [
+        "Flags typed `string|list` take a bare value as well as a JSON list: `soku ads resolve-terms --terms ROAS` and `soku sensortower query --countries US` used to fail with `must be valid JSON`. A numeric id such as `--app-ids 284882215` is sent as the string typed; JSON lists are unchanged (#37, thanks @Abhishek-B-R).",
+        "`soku ads <platform> ... -p key=value` keeps an integer longer than 2^53 as the string typed, like `soku call -p` since alpha.27. An 18-digit Meta id passed with `-p campaign_id=...` was sent as a different id (#36, thanks @Abhishek-B-R)."
+      ],
       "commands": {
         "added": [],
-        "changed": [],
+        "changed": [
+          "ads",
+          "ads resolve-terms",
+          "sensortower query"
+        ],
         "removed": []
       },
       "capabilities": {
