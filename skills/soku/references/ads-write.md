@@ -238,6 +238,9 @@ Field ownership:
   ids from `list_geo_targets`), and the campaign landing page.
 - Ad Group level: the bid (`max_cpc`, one per group, independent of sibling
   groups) and `context`. A group `landing_page` is the default for its ads.
+  For clicks and conversions campaigns, a group launched from 2026-11-18
+  uses `max_cpc` as an average target CPC or CPA, not a cap: a single click
+  or conversion can cost more.
 - Ad level: `name`, `headline`, `copy`, `landing_page`, and `image_url` (or an
   uploaded `file_id`). OpenAI Ads rejects `cta` and `description`.
 

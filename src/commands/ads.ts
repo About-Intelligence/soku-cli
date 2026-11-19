@@ -1649,7 +1649,9 @@ function registerChatgptCampaignCommands(chatgpt: Command): void {
 }
 
 // The bid unit follows the parent campaign's objective (ad_groups.py _bid_micros).
-const MAX_CPC_HELP = 'Ad group bid in USD: CPC (clicks), CPA (conversions) or CPM (reach)'
+const MAX_CPC_HELP =
+  'Ad group bid in USD: CPC (clicks), CPA (conversions) or CPM (reach). ' +
+  'Clicks and conversions groups launched from 2026-11-18 use it as an average target, not a cap'
 
 function registerChatgptAdGroupCommands(chatgpt: Command): void {
   const adGroup = chatgpt
