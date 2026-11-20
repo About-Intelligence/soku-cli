@@ -3,6 +3,33 @@
   "historyStartsAt": "0.1.0-alpha.15",
   "entries": [
     {
+      "version": "0.1.0-alpha.29",
+      "date": "2026-11-20",
+      "notes": [
+        "`soku ads chatgpt ad-group create|update --max-cpc` help and the bundled `ads-write.md` say that for clicks and conversions campaigns, an Ad Group launched from 2026-11-18 uses the bid as an average target CPC or CPA, not a cap, so a single click or conversion can cost more. The flag and the request are unchanged (#40)."
+      ],
+      "commands": {
+        "added": [],
+        "changed": [
+          "ads chatgpt ad-group create",
+          "ads chatgpt ad-group update"
+        ],
+        "removed": []
+      },
+      "capabilities": {
+        "counts": {
+          "before": 361,
+          "after": 361,
+          "added": 0,
+          "removed": 0,
+          "changed": 0
+        },
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    },
+    {
       "version": "0.1.0-alpha.28",
       "date": "2026-11-19",
       "notes": [
