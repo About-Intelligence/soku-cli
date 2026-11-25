@@ -347,13 +347,15 @@ test('keeps a --data value that itself looks like a recognized glued option', ()
   assert.equal(r.body?.toString(), '--url=https://payload.invalid')
 })
 
-test('glued --data-raw=@file reads the file, exactly like the space form', () => {
+test('--data-raw sends a leading @ literally instead of reading a file, like curl', () => {
   const file = join(mkdtempSync(join(tmpdir(), 'egress-data-')), 'body.json')
   writeFileSync(file, '{"from":"file"}')
   const glued = parseCurl(['curl', 'https://x.test/a', `--data-raw=@${file}`])
   const spaced = parseCurl(['curl', 'https://x.test/a', '--data-raw', `@${file}`])
-  assert.equal(glued.body?.toString(), '{"from":"file"}')
+  assert.equal(glued.body?.toString(), `@${file}`)
   assert.deepEqual(glued, spaced)
+  const mention = parseCurl(['curl', 'https://x.test/a', '--data-raw', '@soku thanks'])
+  assert.equal(mention.body?.toString(), '@soku thanks')
 })
 
 
