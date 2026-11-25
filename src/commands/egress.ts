@@ -242,9 +242,11 @@ export function parseCurl(tokens: string[]): ParsedCurl {
         if (idx > 0) headers[h.slice(0, idx).trim().toLowerCase()] = h.slice(idx + 1).trim()
         break
       }
+      case '--data-raw':
+        dataParts.push(requireValue(t))
+        break
       case '-d':
       case '--data':
-      case '--data-raw':
       case '--data-ascii':
       case '--data-binary':
         dataParts.push(readData(requireValue(t)).toString())
